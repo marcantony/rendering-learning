@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Neg, Mul, Div};
+use std::{ops::{Add, Sub, Neg, Mul, Div}, fmt::Display};
 
 #[derive(Debug)]
 pub struct Tuple3((f64, f64, f64, f64));
@@ -114,6 +114,12 @@ impl Div<f64> for &Tuple3 {
 
     fn div(self, rhs: f64) -> Self::Output {
         Tuple3::new(self.x() / rhs, self.y() / rhs, self.z() / rhs, self.w() / rhs)
+    }
+}
+
+impl Display for Tuple3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {}, {}, {})", self.x(), self.y(), self.z(), self.w())
     }
 }
 
