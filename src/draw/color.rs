@@ -3,7 +3,7 @@ use std::ops::{Add, Sub, Mul};
 use crate::math::tuple::Tuple3;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Color(Tuple3);
 
 impl Color {

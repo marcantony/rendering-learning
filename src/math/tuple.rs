@@ -1,6 +1,6 @@
 use std::{ops::{Add, Sub, Neg, Mul, Div}, fmt::Display};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tuple3((f64, f64, f64, f64));
 
 impl Tuple3 {
