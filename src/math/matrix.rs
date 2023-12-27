@@ -23,6 +23,18 @@ impl<const N: usize> Matrix<N> {
     pub fn at(&self, x: usize, y: usize) -> f64 {
         self.0[x][y]
     }
+
+    pub fn transpose(&self) -> Self {
+        let mut data = [[0.0; N]; N];
+
+        for n in 0..N {
+            for m in 0..N {
+                data[m][n] = self.0[n][m];
+            }
+        }
+
+        Matrix::new(data)
+    }
 }
 
 impl<const N: usize> PartialEq for Matrix<N> {
@@ -222,6 +234,34 @@ mod tests {
             let b = Matrix::identity();
 
             assert_eq!(&a * &b, a);
+        }
+    }
+
+    mod transpose {
+        use super::*;
+
+        #[test]
+        fn transpose_a_matrix() {
+            let a = Matrix::new([
+                [0.0, 9.0, 3.0, 0.0],
+                [9.0, 8.0, 0.0, 8.0],
+                [1.0, 8.0, 5.0, 3.0],
+                [0.0, 0.0, 5.0, 8.0]
+            ]);
+
+            assert_eq!(a.transpose(), Matrix::new([
+                [0.0, 9.0, 1.0, 0.0],
+                [9.0, 8.0, 8.0, 0.0],
+                [3.0, 0.0, 5.0, 5.0],
+                [0.0, 8.0, 3.0, 8.0]
+            ]))
+        }
+
+        #[test]
+        fn transpose_identity_matrix() {
+            let a = Matrix::<4>::identity();
+
+            assert_eq!(a.transpose(), a);
         }
     }
 }
