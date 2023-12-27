@@ -1,3 +1,14 @@
+const MAX_ULPS_DIFF: u64 = 3;
+
 pub fn are_equal(a: f64, b: f64) -> bool {
-    !a.is_nan() && !b.is_nan() && (a - b).abs() < f64::EPSILON
+    if a.is_nan() || b.is_nan() {
+        false
+    } else {
+        let a_u = a.to_bits();
+        let b_u = b.to_bits();
+
+        let ulps_diff = a_u.abs_diff(b_u);
+
+        ulps_diff <= MAX_ULPS_DIFF
+    }
 }
