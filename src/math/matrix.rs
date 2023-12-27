@@ -10,6 +10,16 @@ impl<const N: usize> Matrix<N> {
         Matrix(data)
     }
 
+    pub fn identity() -> Self {
+        let mut data = [[0.0; N]; N];
+
+        for i in 0..N {
+            data[i][i] = 1.0;
+        }
+
+        Matrix::new(data)
+    }
+
     pub fn at(&self, x: usize, y: usize) -> f64 {
         self.0[x][y]
     }
@@ -198,6 +208,20 @@ mod tests {
             let b = Tuple3::new(1.0, 2.0, 3.0, 1.0);
 
             assert_eq!(&a * &b, Tuple3::new(18.0, 24.0, 33.0, 1.0));
+        }
+
+        #[test]
+        fn multiply_matrix_by_identity() {
+            let a = Matrix::new([
+                [0.0, 1.0, 2.0, 4.0],
+                [1.0, 2.0, 4.0, 8.0],
+                [2.0, 4.0, 8.0, 16.0],
+                [4.0, 8.0, 16.0, 32.0]
+            ]);
+
+            let b = Matrix::identity();
+
+            assert_eq!(&a * &b, a);
         }
     }
 }
