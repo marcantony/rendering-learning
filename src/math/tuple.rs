@@ -1,5 +1,7 @@
 use std::{ops::{Add, Sub, Neg, Mul, Div}, fmt::Display};
 
+use super::util;
+
 #[derive(Debug, Clone)]
 pub struct Tuple3((f64, f64, f64, f64));
 
@@ -64,16 +66,12 @@ impl Tuple3 {
     }
 }
 
-fn are_equal(a: f64, b: f64) -> bool {
-    !a.is_nan() && !b.is_nan() && (a - b).abs() < f64::EPSILON
-}
-
 impl PartialEq for Tuple3 {
     fn eq(&self, other: &Self) -> bool {
-        are_equal(self.x(), other.x()) &&
-        are_equal(self.y(), other.y()) &&
-        are_equal(self.z(), other.z()) &&
-        are_equal(self.w(), other.w())
+        util::are_equal(self.x(), other.x()) &&
+        util::are_equal(self.y(), other.y()) &&
+        util::are_equal(self.z(), other.z()) &&
+        util::are_equal(self.w(), other.w())
     }
 }
 
