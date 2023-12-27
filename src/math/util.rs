@@ -1,7 +1,7 @@
 const MAX_ULPS_DIFF: u64 = 3;
 
 pub fn are_equal(a: f64, b: f64) -> bool {
-    if a.is_nan() || b.is_nan() {
+    if !a.is_finite() || !b.is_finite() {
         false
     } else {
         let a_u = a.to_bits();
