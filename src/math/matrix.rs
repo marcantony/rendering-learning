@@ -37,6 +37,116 @@ impl<const N: usize> Matrix<N> {
     }
 }
 
+trait Determinant {
+    fn determinant(&self) -> f64;
+}
+trait Submatrix {
+    type Output;
+
+    fn submatrix(&self, n: usize, m: usize) -> Self::Output;
+}
+trait Cofactor: Submatrix where Self::Output: Determinant {
+    fn minor(&self, n: usize, m: usize) -> f64 {
+        self.submatrix(n, m).determinant()
+    }
+
+    fn cofactor(&self, n: usize, m: usize) -> f64 {
+        let minor = self.minor(n, m);
+        if (n + m) % 2 == 0 {
+            minor
+        } else {
+            -minor
+        }
+    }
+}
+
+impl<const N: usize> Cofactor for Matrix<N> where Self: Submatrix, Self::Output: Determinant {}
+impl<const N: usize> Determinant for Matrix<N> where Self: Cofactor, <Self as Submatrix>::Output: Determinant {
+    fn determinant(&self) -> f64 {
+        let mut sum = 0.0;
+
+        for i in 0..N {
+            sum += self.0[0][i] * self.cofactor(0, i);
+        }
+
+        sum
+    }
+}
+
+impl Determinant for Matrix<2> {
+    fn determinant(&self) -> f64 {
+        self.0[0][0] * self.0[1][1] - self.0[0][1] * self.0[1][0]
+    }
+}
+
+impl Submatrix for Matrix<3> {
+    type Output = Matrix<2>;
+
+    fn submatrix(&self, n: usize, m: usize) -> Self::Output {
+        let mut data = [[0.0; 2]; 2];
+
+        for i in 0..3 {
+            if i == n {
+                continue;
+            }
+            for j in 0..3 {
+                if j == m {
+                    continue;
+                }
+
+                let new_i = if i >= n {
+                    i - 1
+                } else {
+                    i
+                };
+                let new_j = if j >= m {
+                    j - 1
+                } else {
+                    j
+                };
+
+                data[new_i][new_j] = self.0[i][j];
+            }
+        }
+
+        Matrix::new(data)
+    }
+}
+
+impl Submatrix for Matrix<4> {
+    type Output = Matrix<3>;
+
+    fn submatrix(&self, n: usize, m: usize) -> Self::Output {
+        let mut data = [[0.0; 3]; 3];
+
+        for i in 0..4 {
+            if i == n {
+                continue;
+            }
+            for j in 0..4 {
+                if j == m {
+                    continue;
+                }
+
+                let new_i = if i >= n {
+                    i - 1
+                } else {
+                    i
+                };
+                let new_j = if j >= m {
+                    j - 1
+                } else {
+                    j
+                };
+
+                data[new_i][new_j] = self.0[i][j];
+            }
+        }
+
+        Matrix::new(data)
+    }
+}
+
 impl<const N: usize> PartialEq for Matrix<N> {
     fn eq(&self, other: &Self) -> bool {
         let vals = |m: [[f64; N]; N]| m.into_iter().flat_map(|row| row.into_iter()).collect();
@@ -262,6 +372,124 @@ mod tests {
             let a = Matrix::<4>::identity();
 
             assert_eq!(a.transpose(), a);
+        }
+    }
+
+    mod inversion_ops {
+        use super::*;
+
+        mod determinant {
+            use super::*;
+
+            #[test]
+            fn calculate_determinant_of_2x2_matrix() {
+                let a = Matrix::new([
+                    [1.0, 5.0],
+                    [-3.0, 2.0]
+                ]);
+
+                assert_eq!(a.determinant(), 17.0);
+            }
+
+            #[test]
+            fn calculate_determinant_of_3x3_matrix() {
+                let a = Matrix::new([
+                    [1.0, 2.0, 6.0],
+                    [-5.0, 8.0, -4.0],
+                    [2.0, 6.0, 4.0]
+                ]);
+
+                assert_eq!(a.cofactor(0, 0), 56.0);
+                assert_eq!(a.cofactor(0, 1), 12.0);
+                assert_eq!(a.cofactor(0, 2), -46.0);
+                assert_eq!(a.determinant(), -196.0);
+            }
+
+            #[test]
+            fn calculate_determinant_of_4x4_matrix() {
+                let a = Matrix::new([
+                    [-2.0, -8.0, 3.0, 5.0],
+                    [-3.0, 1.0, 7.0, 3.0],
+                    [1.0, 2.0, -9.0, 6.0],
+                    [-6.0, 7.0, 7.0, -9.0]
+                ]);
+
+                assert_eq!(a.cofactor(0, 0), 690.0);
+                assert_eq!(a.cofactor(0, 1), 447.0);
+                assert_eq!(a.cofactor(0, 2), 210.0);
+                assert_eq!(a.cofactor(0, 3), 51.0);
+                assert_eq!(a.determinant(), -4071.0);
+            }
+        }
+
+        mod submatrix {
+            use super::*;
+
+            #[test]
+            fn submatrix_of_3x3_is_2x2() {
+                let a = Matrix::new([
+                    [1.0, 5.0, 0.0],
+                    [-3.0, 2.0, 7.0],
+                    [0.0, 6.0, -3.0]
+                ]);
+
+                assert_eq!(a.submatrix(0, 2), Matrix::new([
+                    [-3.0, 2.0],
+                    [0.0, 6.0]
+                ]));
+            }
+
+            #[test]
+            fn submatrix_of_4x4_is_3x3() {
+                let a = Matrix::new([
+                    [-6.0, 1.0, 1.0, 6.0],
+                    [-8.0, 5.0, 8.0, 6.0],
+                    [-1.0, 0.0, 8.0, 2.0],
+                    [-7.0, 1.0, -1.0, 1.0]
+                ]);
+
+                assert_eq!(a.submatrix(2, 1), Matrix::new([
+                    [-6.0, 1.0, 6.0],
+                    [-8.0, 8.0, 6.0],
+                    [-7.0, -1.0, 1.0]
+                ]));
+            }
+        }
+
+        mod minors {
+            use super::*;
+
+            #[test]
+            fn calculate_minor_of_3x3_matrix() {
+                let a = Matrix::new([
+                    [3.0, 5.0, 0.0],
+                    [2.0, -1.0, -7.0],
+                    [6.0, -1.0, 5.0]
+                ]);
+
+                let b = a.submatrix(1, 0);
+
+                assert_eq!(b.determinant(), 25.0);
+                assert_eq!(a.minor(1, 0), 25.0);
+            }
+        }
+
+        mod cofactors {
+            use super::*;
+
+            #[test]
+            fn calculate_cofactor_of_3x3_matrix() {
+                let a = Matrix::new([
+                    [3.0, 5.0, 0.0],
+                    [2.0, -1.0, -7.0],
+                    [6.0, -1.0, 5.0]
+                ]);
+
+                assert_eq!(a.minor(0, 0), -12.0);
+                assert_eq!(a.cofactor(0, 0), -12.0);
+                assert_eq!(a.minor(1, 0), 25.0);
+                assert_eq!(a.cofactor(1, 0), -25.0);
+            }
         }
     }
 }
