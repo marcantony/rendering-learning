@@ -59,6 +59,10 @@ trait Cofactor: Submatrix where Self::Output: Determinant {
         }
     }
 }
+trait Invertible where Self: Sized {
+    fn is_invertible(&self) -> bool;
+    fn invert(&self) -> Option<Self>;
+}
 
 impl<const N: usize> Cofactor for Matrix<N> where Self: Submatrix, Self::Output: Determinant {}
 impl<const N: usize> Determinant for Matrix<N> where Self: Cofactor, <Self as Submatrix>::Output: Determinant {
@@ -70,6 +74,30 @@ impl<const N: usize> Determinant for Matrix<N> where Self: Cofactor, <Self as Su
         }
 
         sum
+    }
+}
+impl<const N: usize> Invertible for Matrix<N> where Self: Determinant + Cofactor, <Self as Submatrix>::Output: Determinant {
+    fn is_invertible(&self) -> bool {
+        self.determinant() != 0.0
+    }
+
+    fn invert(&self) -> Option<Self> {
+        let det = self.determinant();
+
+        if det == 0.0 {
+            None
+        } else {
+            let mut data = [[0.0; N]; N];
+
+            for n in 0..N {
+                for m in 0..N {
+                    let c = self.cofactor(n, m);
+                    data[m][n] = c / det;
+                }
+            }
+
+            Some(Matrix::new(data))
+        }
     }
 }
 
@@ -456,7 +484,7 @@ mod tests {
             }
         }
 
-        mod minors {
+        mod minor {
             use super::*;
 
             #[test]
@@ -474,7 +502,7 @@ mod tests {
             }
         }
 
-        mod cofactors {
+        mod cofactor {
             use super::*;
 
             #[test]
@@ -489,6 +517,123 @@ mod tests {
                 assert_eq!(a.cofactor(0, 0), -12.0);
                 assert_eq!(a.minor(1, 0), 25.0);
                 assert_eq!(a.cofactor(1, 0), -25.0);
+            }
+        }
+
+        mod invert {
+            use super::*;
+
+            #[test]
+            fn test_invertible_matrix_for_invertibility() {
+                let a = Matrix::new([
+                    [6.0, 4.0, 4.0, 4.0],
+                    [5.0, 5.0, 7.0, 6.0],
+                    [4.0, -9.0, 3.0, -7.0],
+                    [9.0, 1.0, 7.0, -6.0]
+                ]);
+
+                assert_eq!(a.determinant(), -2120.0);
+                assert_eq!(a.is_invertible(), true);
+            }
+
+            #[test]
+            fn test_noninvertible_matrix_for_invertibility() {
+                let a = Matrix::new([
+                    [-4.0, 2.0, -2.0, -3.0],
+                    [9.0, 6.0, 2.0, 6.0],
+                    [0.0, -5.0, 1.0, -5.0],
+                    [0.0, 0.0, 0.0, 0.0]
+                ]);
+
+                assert_eq!(a.determinant(), 0.0);
+                assert_eq!(a.is_invertible(), false);
+            }
+
+            #[test]
+            fn calculate_inverse_of_a_matrix() {
+                let a = Matrix::new([
+                    [-5.0, 2.0, 6.0, -8.0],
+                    [1.0, -5.0, 1.0, 8.0],
+                    [7.0, 7.0, -6.0, -7.0],
+                    [1.0, -3.0, 7.0, 4.0]
+                ]);
+
+                let b = a.invert().unwrap();
+
+                assert_eq!(a.determinant(), 532.0);
+                assert_eq!(a.cofactor(2, 3), -160.0);
+                assert_eq!(b.at(3, 2), -160.0 / 532.0);
+                assert_eq!(a.cofactor(3, 2), 105.0);
+                assert_eq!(b.at(2, 3), 105.0 / 532.0);
+                matrix_approx_equals(b, Matrix::new([
+                    [0.21805, 0.45113, 0.24060, -0.04511],
+                    [-0.80827, -1.45677, -0.44361, 0.52068],
+                    [-0.07895, -0.22368, -0.05263, 0.19737],
+                    [-0.52256, -0.81391, -0.30075, 0.30639]
+                ]));
+            }
+
+            #[test]
+            fn calculate_inverse_of_another_matrix() {
+                let a = Matrix::new([
+                    [8.0, -5.0, 9.0, 2.0],
+                    [7.0, 5.0, 6.0, 1.0],
+                    [-6.0, 0.0, 9.0, 6.0],
+                    [-3.0, 0.0, -9.0, -4.0]
+                ]);
+
+                matrix_approx_equals(a.invert().unwrap(), Matrix::new([
+                    [-0.15385, -0.15385, -0.28205, -0.53846],
+                    [-0.07692, 0.12308, 0.02564, 0.03077],
+                    [0.35897, 0.35897, 0.43590, 0.92308],
+                    [-0.69231, -0.69231, -0.76923, -1.92308]
+                ]));
+            }
+
+            #[test]
+            fn calculate_inverse_of_a_third_matrix() {
+                let a = Matrix::new([
+                    [9.0, 3.0, 0.0, 9.0],
+                    [-5.0, -2.0, -6.0, -3.0],
+                    [-4.0, 9.0, 6.0, 4.0],
+                    [-7.0, 6.0, 6.0, 2.0]
+                ]);
+
+                matrix_approx_equals(a.invert().unwrap(), Matrix::new([
+                    [-0.04074, -0.07778, 0.14444, -0.22222],
+                    [-0.07778, 0.03333, 0.36667, -0.33333],
+                    [-0.02901, -0.14630, -0.10926, 0.12963],
+                    [0.17778, 0.06667, -0.26667, 0.33333]
+                ]));
+            }
+
+            #[test]
+            fn multiply_a_product_by_its_inverse() {
+                let a = Matrix::new([
+                    [3.0, -9.0, 7.0, 3.0],
+                    [3.0, -8.0, 2.0, -9.0],
+                    [-4.0, 4.0, 4.0, 1.0],
+                    [-6.0, 5.0, -1.0, 1.0]
+                ]);
+
+                let b = Matrix::new([
+                    [8.0, 2.0, 2.0, 2.0],
+                    [3.0, -1.0, 7.0, 0.0],
+                    [7.0, 0.0, 5.0, 4.0],
+                    [6.0, -2.0, 0.0, 5.0]
+                ]);
+
+                let c = &a * &b;
+
+                assert_eq!(&c * &b.invert().unwrap(), a);
+            }
+
+            fn matrix_approx_equals<const N: usize>(a: Matrix<N>, b: Matrix<N>) {
+                for n in 0..N {
+                    for m in 0..N {
+                        assert!(f64::abs(a.at(n, m) - b.at(n, m)) < 0.00001)
+                    }
+                }
             }
         }
     }

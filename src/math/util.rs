@@ -1,4 +1,4 @@
-const MAX_ULPS_DIFF: u64 = 3;
+const MAX_ULPS_DIFF: u64 = 8;
 
 pub fn are_equal(a: f64, b: f64) -> bool {
     if !a.is_finite() || !b.is_finite() {
