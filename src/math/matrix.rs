@@ -37,15 +37,15 @@ impl<const N: usize> Matrix<N> {
     }
 }
 
-trait Determinant {
+pub trait Determinant {
     fn determinant(&self) -> f64;
 }
-trait Submatrix {
+pub trait Submatrix {
     type Output;
 
     fn submatrix(&self, n: usize, m: usize) -> Self::Output;
 }
-trait Cofactor: Submatrix where Self::Output: Determinant {
+pub trait Cofactor: Submatrix where Self::Output: Determinant {
     fn minor(&self, n: usize, m: usize) -> f64 {
         self.submatrix(n, m).determinant()
     }
@@ -59,7 +59,7 @@ trait Cofactor: Submatrix where Self::Output: Determinant {
         }
     }
 }
-trait Invertible where Self: Sized {
+pub trait Invertible where Self: Sized {
     fn is_invertible(&self) -> bool;
     fn invert(&self) -> Option<Self>;
 }
