@@ -59,6 +59,10 @@ pub fn shearing(x_y: f64, x_z: f64, y_x: f64, y_z: f64, z_x: f64, z_y: f64) -> M
     ])
 }
 
+pub fn sequence(transformations: &[Matrix<4>]) -> Matrix<4> {
+    transformations.iter().fold(Matrix::<4>::identity(), |acc, t| t * &acc)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -253,6 +257,18 @@ mod tests {
         let c = translation(10.0, 5.0, 7.0);
 
         let t = &(&c * &b) * &a;
+
+        assert_eq!(&t * &p, Tuple3::point(15.0, 0.0, 7.0));
+    }
+
+    #[test]
+    fn sequencing_transformations_applies_in_the_correct_order() {
+        let p = Tuple3::point(1.0, 0.0, 1.0);
+        let a = rotation_x(f64::consts::FRAC_PI_2);
+        let b = scaling(5.0, 5.0, 5.0);
+        let c = translation(10.0, 5.0, 7.0);
+
+        let t = sequence(&[a, b, c]);
 
         assert_eq!(&t * &p, Tuple3::point(15.0, 0.0, 7.0));
     }
