@@ -1,3 +1,5 @@
+use core::f64;
+
 use super::matrix::Matrix;
 
 pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4> {
@@ -44,6 +46,15 @@ pub fn rotation_z(radians: f64) -> Matrix<4> {
         [c, -s, 0.0, 0.0],
         [s, c, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0]
+    ])
+}
+
+pub fn shearing(x_y: f64, x_z: f64, y_x: f64, y_z: f64, z_x: f64, z_y: f64) -> Matrix<4> {
+    Matrix::new([
+        [1.0, x_y, x_z, 0.0],
+        [y_x, 1.0, y_z, 0.0],
+        [z_x, z_y, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
 }
@@ -162,6 +173,58 @@ mod tests {
 
             assert_eq!(&half_quarter * &p, Tuple3::point(-f64::consts::SQRT_2 / 2.0, f64::consts::SQRT_2 / 2.0, 0.0));
             assert_eq!(&full_quarter * &p, Tuple3::point(-1.0, 0.0, 0.0));
+        }
+    }
+
+    mod shearing {
+        use super::*;
+
+        #[test]
+        fn shearing_transformation_moves_x_in_proportion_to_y() {
+            let transform = shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            let p = Tuple3::point(2.0, 3.0, 4.0);
+
+            assert_eq!(&transform * &p, Tuple3::point(5.0, 3.0, 4.0));
+        }
+
+        #[test]
+        fn shearing_transformation_moves_x_in_proportion_to_z() {
+            let transform = shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+            let p = Tuple3::point(2.0, 3.0, 4.0);
+
+            assert_eq!(&transform * &p, Tuple3::point(6.0, 3.0, 4.0));
+        }
+
+        #[test]
+        fn shearing_transformation_moves_y_in_proportion_to_x() {
+            let transform = shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
+            let p = Tuple3::point(2.0, 3.0, 4.0);
+
+            assert_eq!(&transform * &p, Tuple3::point(2.0, 5.0, 4.0));
+        }
+
+        #[test]
+        fn shearing_transformation_moves_y_in_proportion_to_z() {
+            let transform = shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+            let p = Tuple3::point(2.0, 3.0, 4.0);
+
+            assert_eq!(&transform * &p, Tuple3::point(2.0, 7.0, 4.0));
+        }
+
+        #[test]
+        fn shearing_transformation_moves_z_in_proportion_to_x() {
+            let transform = shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+            let p = Tuple3::point(2.0, 3.0, 4.0);
+
+            assert_eq!(&transform * &p, Tuple3::point(2.0, 3.0, 6.0));
+        }
+
+        #[test]
+        fn shearing_transformation_moves_z_in_proportion_to_y() {
+            let transform = shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+            let p = Tuple3::point(2.0, 3.0, 4.0);
+
+            assert_eq!(&transform * &p, Tuple3::point(2.0, 3.0, 7.0));
         }
     }
 }
