@@ -35,53 +35,28 @@ impl<const N: usize> Matrix<N> {
 
         Matrix::new(data)
     }
-}
 
-pub trait Determinant {
-    fn determinant(&self) -> f64;
-}
-pub trait Submatrix {
-    type Output;
-
-    fn submatrix(&self, n: usize, m: usize) -> Self::Output;
-}
-pub trait Cofactor: Submatrix where Self::Output: Determinant {
-    fn minor(&self, n: usize, m: usize) -> f64 {
-        self.submatrix(n, m).determinant()
+    fn get_slices(&self) -> Vec<&[f64]> {
+        self.0.iter().map(|col| col.as_slice()).collect::<Vec<_>>()
     }
 
-    fn cofactor(&self, n: usize, m: usize) -> f64 {
-        let minor = self.minor(n, m);
-        if (n + m) % 2 == 0 {
-            minor
-        } else {
-            -minor
-        }
+    pub fn determinant(&self) -> f64 {
+        determinant(&self.get_slices())
     }
-}
-pub trait Invertible where Self: Sized {
-    fn is_invertible(&self) -> bool;
-    fn invert(&self) -> Option<Self>;
-}
 
-impl<const N: usize> Cofactor for Matrix<N> where Self: Submatrix, Self::Output: Determinant {}
-impl<const N: usize> Determinant for Matrix<N> where Self: Cofactor, <Self as Submatrix>::Output: Determinant {
-    fn determinant(&self) -> f64 {
-        let mut sum = 0.0;
-
-        for i in 0..N {
-            sum += self.0[0][i] * self.cofactor(0, i);
-        }
-
-        sum
+    pub fn minor(&self, n: usize, m: usize) -> f64 {
+        minor(&self.get_slices(), n, m)
     }
-}
-impl<const N: usize> Invertible for Matrix<N> where Self: Determinant + Cofactor, <Self as Submatrix>::Output: Determinant {
-    fn is_invertible(&self) -> bool {
+
+    pub fn cofactor(&self, n: usize, m: usize) -> f64 {
+        cofactor(&self.get_slices(), n, m)
+    }
+
+    pub fn is_invertible(&self) -> bool {
         self.determinant() != 0.0
     }
 
-    fn invert(&self) -> Option<Self> {
+    pub fn invert(&self) -> Option<Self> {
         let det = self.determinant();
 
         if det == 0.0 {
@@ -101,10 +76,53 @@ impl<const N: usize> Invertible for Matrix<N> where Self: Determinant + Cofactor
     }
 }
 
-impl Determinant for Matrix<2> {
-    fn determinant(&self) -> f64 {
-        self.0[0][0] * self.0[1][1] - self.0[0][1] * self.0[1][0]
+fn determinant(data: &[&[f64]]) -> f64 {
+    if data.len() == 2 {
+        data[0][0] * data[1][1] - data[0][1] * data[1][0]
+    } else {
+        let mut sum = 0.0;
+
+        for i in 0..data.len() {
+            sum += data[0][i] * cofactor(data, 0, i);
+        }
+
+        sum
     }
+}
+
+fn cofactor(data: &[&[f64]], n: usize, m: usize) -> f64 {
+    let minor = minor(data, n, m);
+    if (n + m) % 2 == 0 {
+        minor
+    } else {
+        -minor
+    }
+}
+
+fn minor(data: &[&[f64]], n: usize, m: usize) -> f64 {
+    let raw_submatrix_data = submatrix(data, n, m);
+    let submatrix_data = raw_submatrix_data.iter()
+        .map(|row| row.as_slice())
+        .collect::<Vec<_>>();
+    determinant(submatrix_data.as_slice())
+}
+
+fn submatrix(data: &[&[f64]], n: usize, m: usize) -> Vec<Vec<f64>> {
+    data.iter().enumerate()
+        .filter(|&(i, _)| i != n)
+        .map(|(_, row)| {
+            row.iter().enumerate()
+                .filter(|&(j, _)| j != m)
+                .map(|(_, &col)| col)
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
+}
+
+pub trait Submatrix {
+    type Output;
+
+    fn submatrix(&self, n: usize, m: usize) -> Self::Output;
 }
 
 impl Submatrix for Matrix<3> {
