@@ -2,7 +2,7 @@ use std::ops::Mul;
 
 use super::{util, tuple::Tuple3};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Matrix<const N: usize>([[f64; N]; N]);
 
 impl<const N: usize> Matrix<N> {

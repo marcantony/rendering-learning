@@ -1,16 +1,28 @@
-use crate::math::tuple::Tuple3;
+use crate::math::{tuple::Tuple3, matrix::Matrix};
 
 use super::{ray::Ray, intersect::Intersection};
 
 #[derive(Debug)]
-pub struct Sphere();
+pub struct Sphere {
+    transform: Matrix<4>
+}
 
 impl Sphere {
-    pub fn new() -> Self {
-        Sphere()
+    pub fn new(transform: Matrix<4>) -> Self {
+        Sphere { transform }
     }
 
-    pub fn intersect(&self, r: &Ray) -> Option<[Intersection; 2]> {
+    pub fn unit() -> Self {
+        Sphere::new(Matrix::identity())
+    }
+
+    pub fn transform(&self) -> &Matrix<4> {
+        &self.transform
+    }
+
+    pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
+        let r = worldspace_ray.transform(
+            &self.transform().invert().expect("Sphere transform is uninvertible!"));
         let sphere_to_ray = r.origin() - &Tuple3::point(0.0, 0.0, 0.0);
 
         let a = r.direction().dot(r.direction());
@@ -39,57 +51,98 @@ impl PartialEq for Sphere {
 
 #[cfg(test)]
 mod tests {
-    use crate::{math::tuple::Tuple3, geo::ray::Ray};
+    use crate::{math::{transformation, tuple::Tuple3}, geo::ray::Ray};
 
     use super::*;
 
-    #[test]
-    fn a_ray_intersects_a_sphere_at_two_points() {
-        let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+    mod intersection {
+        use super::*;
 
-        let xs = s.intersect(&r);
+        #[test]
+        fn a_ray_intersects_a_sphere_at_two_points() {
+            let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let s = Sphere::unit();
 
-        assert_eq!(xs, Some([Intersection::new(4.0, &s), Intersection::new(6.0, &s)]));
+            let xs = s.intersect(&r);
+
+            assert_eq!(xs, Some([Intersection::new(4.0, &s), Intersection::new(6.0, &s)]));
+        }
+
+        #[test]
+        fn a_ray_intersects_a_sphere_at_a_tangent() {
+            let r = Ray::new(Tuple3::point(0.0, 1.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let s = Sphere::unit();
+
+            let xs = s.intersect(&r);
+
+            assert_eq!(xs, Some([Intersection::new(5.0, &s), Intersection::new(5.0, &s)]));
+        }
+
+        #[test]
+        fn a_ray_misses_a_sphere() {
+            let r = Ray::new(Tuple3::point(0.0, 2.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let s = Sphere::unit();
+
+            let xs = s.intersect(&r);
+
+            assert_eq!(xs, None);
+        }
+
+        #[test]
+        fn a_ray_originates_inside_a_sphere() {
+            let r = Ray::new(Tuple3::point(0.0, 0.0, 0.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let s = Sphere::unit();
+
+            let xs = s.intersect(&r);
+
+            assert_eq!(xs, Some([Intersection::new(-1.0, &s), Intersection::new(1.0, &s)]));
+        }
+
+        #[test]
+        fn a_sphere_is_behind_a_ray() {
+            let r = Ray::new(Tuple3::point(0.0, 0.0, 5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let s = Sphere::unit();
+
+            let xs = s.intersect(&r);
+
+            assert_eq!(xs, Some([Intersection::new(-6.0, &s), Intersection::new(-4.0, &s)]));
+        }
+
+        #[test]
+        fn intersecting_scaled_sphere_with_ray() {
+            let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let s = Sphere::new(transformation::scaling(2.0, 2.0, 2.0));
+
+            let xs = s.intersect(&r);
+
+            assert_eq!(xs, Some([Intersection::new(3.0, &s), Intersection::new(7.0, &s)]));
+        }
+
+        #[test]
+        fn intersecting_translated_sphere_with_ray() {
+            let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let s = Sphere::new(transformation::translation(5.0, 0.0, 0.0));
+
+            let xs = s.intersect(&r);
+
+            assert_eq!(xs, None);
+        }
     }
 
-    #[test]
-    fn a_ray_intersects_a_sphere_at_a_tangent() {
-        let r = Ray::new(Tuple3::point(0.0, 1.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+    mod transform {
+        use super::*;
 
-        let xs = s.intersect(&r);
+        #[test]
+        fn a_spheres_default_transformation() {
+            let s = Sphere::unit();
+            assert_eq!(s.transform(), &Matrix::identity());
+        }
 
-        assert_eq!(xs, Some([Intersection::new(5.0, &s), Intersection::new(5.0, &s)]));
-    }
-
-    #[test]
-    fn a_ray_misses_a_sphere() {
-        let r = Ray::new(Tuple3::point(0.0, 2.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-
-        let xs = s.intersect(&r);
-
-        assert_eq!(xs, None);
-    }
-
-    #[test]
-    fn a_ray_originates_inside_a_sphere() {
-        let r = Ray::new(Tuple3::point(0.0, 0.0, 0.0), Tuple3::vec(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-
-        let xs = s.intersect(&r);
-
-        assert_eq!(xs, Some([Intersection::new(-1.0, &s), Intersection::new(1.0, &s)]));
-    }
-
-    #[test]
-    fn a_sphere_is_behind_a_ray() {
-        let r = Ray::new(Tuple3::point(0.0, 0.0, 5.0), Tuple3::vec(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-
-        let xs = s.intersect(&r);
-
-        assert_eq!(xs, Some([Intersection::new(-6.0, &s), Intersection::new(-4.0, &s)]));
+        #[test]
+        fn using_a_different_transformation() {
+            let t = transformation::translation(2.0, 3.0, 4.0);
+            let s = Sphere::new(t.clone());
+            assert_eq!(s.transform(), &t);
+        }
     }
 }
