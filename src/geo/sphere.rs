@@ -1,7 +1,8 @@
 use crate::math::tuple::Tuple3;
 
-use super::ray::Ray;
+use super::{ray::Ray, intersect::Intersection};
 
+#[derive(Debug)]
 pub struct Sphere();
 
 impl Sphere {
@@ -9,7 +10,7 @@ impl Sphere {
         Sphere()
     }
 
-    pub fn intersect(&self, r: &Ray) -> Option<[f64; 2]> {
+    pub fn intersect(&self, r: &Ray) -> Option<[Intersection; 2]> {
         let sphere_to_ray = r.origin() - &Tuple3::point(0.0, 0.0, 0.0);
 
         let a = r.direction().dot(r.direction());
@@ -25,8 +26,14 @@ impl Sphere {
             let t1 = (-b - disc_sqrt) / (2.0 * a);
             let t2 = (-b + disc_sqrt) / (2.0 * a);
 
-            Some([t1, t2])
+            Some([Intersection::new(t1, self), Intersection::new(t2, self)])
         }
+    }
+}
+
+impl PartialEq for Sphere {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self, other)
     }
 }
 
@@ -43,7 +50,7 @@ mod tests {
 
         let xs = s.intersect(&r);
 
-        assert_eq!(xs, Some([4.0, 6.0]));
+        assert_eq!(xs, Some([Intersection::new(4.0, &s), Intersection::new(6.0, &s)]));
     }
 
     #[test]
@@ -53,7 +60,7 @@ mod tests {
 
         let xs = s.intersect(&r);
 
-        assert_eq!(xs, Some([5.0, 5.0]));
+        assert_eq!(xs, Some([Intersection::new(5.0, &s), Intersection::new(5.0, &s)]));
     }
 
     #[test]
@@ -73,7 +80,7 @@ mod tests {
 
         let xs = s.intersect(&r);
 
-        assert_eq!(xs, Some([-1.0, 1.0]));
+        assert_eq!(xs, Some([Intersection::new(-1.0, &s), Intersection::new(1.0, &s)]));
     }
 
     #[test]
@@ -83,6 +90,6 @@ mod tests {
 
         let xs = s.intersect(&r);
 
-        assert_eq!(xs, Some([-6.0, -4.0]));
+        assert_eq!(xs, Some([Intersection::new(-6.0, &s), Intersection::new(-4.0, &s)]));
     }
 }

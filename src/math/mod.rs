@@ -2,4 +2,4 @@ pub mod tuple;
 pub mod matrix;
 pub mod transformation;
 
-mod util;
+pub mod util;
