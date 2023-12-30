@@ -1,5 +1,5 @@
 const MAX_ULPS_DIFF: u64 = 8;
-const MAX_ABS_DIFF: f64 = f64::EPSILON;
+const MAX_ABS_DIFF: f64 = f64::EPSILON * 2.0;
 
 pub fn are_equal(a: f64, b: f64) -> bool {
     if !a.is_finite() || !b.is_finite() {
