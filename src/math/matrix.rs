@@ -127,22 +127,11 @@ fn submatrix(data: &[&[f64]], n: usize, m: usize) -> Vec<Vec<f64>> {
 
 impl<const N: usize, const M: usize> PartialEq for Matrix<N, M> {
     fn eq(&self, other: &Self) -> bool {
-        let vals = |m: [[f64; M]; N]| m.into_iter().flat_map(|row| row.into_iter()).collect();
-        let lhs_vals: Vec<f64> = vals(self.0);
-        let rhs_vals: Vec<f64> = vals(other.0);
-
-        assert_eq!(
-            lhs_vals.len(),
-            rhs_vals.len(),
-            "Both matrices of size ({}, {}) don't have the same number of elements.",
-            N,
-            M
-        );
-
-        lhs_vals
-            .into_iter()
-            .zip(rhs_vals.into_iter())
-            .all(|(x, y)| util::are_equal(x, y))
+        self.0
+            .iter()
+            .zip(other.0.iter())
+            .flat_map(|(rhs_rows, lhs_rows)| lhs_rows.iter().zip(rhs_rows))
+            .all(|(&lhs, &rhs)| util::are_equal(lhs, rhs))
     }
 }
 
