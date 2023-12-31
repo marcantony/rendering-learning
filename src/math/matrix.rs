@@ -125,64 +125,6 @@ fn submatrix(data: &[&[f64]], n: usize, m: usize) -> Vec<Vec<f64>> {
         .collect::<Vec<_>>()
 }
 
-pub trait Submatrix {
-    type Output;
-
-    fn submatrix(&self, n: usize, m: usize) -> Self::Output;
-}
-
-impl Submatrix for SquareMatrix<3> {
-    type Output = SquareMatrix<2>;
-
-    fn submatrix(&self, n: usize, m: usize) -> Self::Output {
-        let mut data = [[0.0; 2]; 2];
-
-        for i in 0..3 {
-            if i == n {
-                continue;
-            }
-            for j in 0..3 {
-                if j == m {
-                    continue;
-                }
-
-                let new_i = if i >= n { i - 1 } else { i };
-                let new_j = if j >= m { j - 1 } else { j };
-
-                data[new_i][new_j] = self.0[i][j];
-            }
-        }
-
-        Matrix::new(data)
-    }
-}
-
-impl Submatrix for SquareMatrix<4> {
-    type Output = SquareMatrix<3>;
-
-    fn submatrix(&self, n: usize, m: usize) -> Self::Output {
-        let mut data = [[0.0; 3]; 3];
-
-        for i in 0..4 {
-            if i == n {
-                continue;
-            }
-            for j in 0..4 {
-                if j == m {
-                    continue;
-                }
-
-                let new_i = if i >= n { i - 1 } else { i };
-                let new_j = if j >= m { j - 1 } else { j };
-
-                data[new_i][new_j] = self.0[i][j];
-            }
-        }
-
-        Matrix::new(data)
-    }
-}
-
 impl<const N: usize, const M: usize> PartialEq for Matrix<N, M> {
     fn eq(&self, other: &Self) -> bool {
         let vals = |m: [[f64; M]; N]| m.into_iter().flat_map(|row| row.into_iter()).collect();
@@ -495,32 +437,6 @@ mod tests {
             }
         }
 
-        mod submatrix {
-            use super::*;
-
-            #[test]
-            fn submatrix_of_3x3_is_2x2() {
-                let a = Matrix::new([[1.0, 5.0, 0.0], [-3.0, 2.0, 7.0], [0.0, 6.0, -3.0]]);
-
-                assert_eq!(a.submatrix(0, 2), Matrix::new([[-3.0, 2.0], [0.0, 6.0]]));
-            }
-
-            #[test]
-            fn submatrix_of_4x4_is_3x3() {
-                let a = Matrix::new([
-                    [-6.0, 1.0, 1.0, 6.0],
-                    [-8.0, 5.0, 8.0, 6.0],
-                    [-1.0, 0.0, 8.0, 2.0],
-                    [-7.0, 1.0, -1.0, 1.0],
-                ]);
-
-                assert_eq!(
-                    a.submatrix(2, 1),
-                    Matrix::new([[-6.0, 1.0, 6.0], [-8.0, 8.0, 6.0], [-7.0, -1.0, 1.0]])
-                );
-            }
-        }
-
         mod minor {
             use super::*;
 
@@ -528,9 +444,6 @@ mod tests {
             fn calculate_minor_of_3x3_matrix() {
                 let a = Matrix::new([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
 
-                let b = a.submatrix(1, 0);
-
-                assert_eq!(b.determinant(), 25.0);
                 assert_eq!(a.minor(1, 0), 25.0);
             }
         }
