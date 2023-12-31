@@ -1,4 +1,7 @@
-use std::{ops::{Add, Sub, Neg, Mul, Div}, fmt::Display};
+use std::{
+    fmt::Display,
+    ops::{Add, Div, Mul, Neg, Sub},
+};
 
 use super::util;
 
@@ -19,19 +22,19 @@ impl Tuple3 {
     }
 
     pub fn x(&self) -> f64 {
-        self.0.0
+        self.0 .0
     }
 
     pub fn y(&self) -> f64 {
-        self.0.1
+        self.0 .1
     }
 
     pub fn z(&self) -> f64 {
-        self.0.2
+        self.0 .2
     }
 
     pub fn w(&self) -> f64 {
-        self.0.3
+        self.0 .3
     }
 
     pub fn is_point(&self) -> bool {
@@ -43,7 +46,9 @@ impl Tuple3 {
     }
 
     pub fn mag(&self) -> f64 {
-        f64::sqrt(self.x() * self.x() + self.y() * self.y() + self.z() * self.z() + self.w() * self.w())
+        f64::sqrt(
+            self.x() * self.x() + self.y() * self.y() + self.z() * self.z() + self.w() * self.w(),
+        )
     }
 
     pub fn norm(&self) -> Self {
@@ -52,26 +57,24 @@ impl Tuple3 {
     }
 
     pub fn dot(&self, rhs: &Self) -> f64 {
-        self.x() * rhs.x() +
-        self.y() * rhs.y() +
-        self.z() * rhs.z() +
-        self.w() * rhs.w()
+        self.x() * rhs.x() + self.y() * rhs.y() + self.z() * rhs.z() + self.w() * rhs.w()
     }
 
     pub fn cross(&self, rhs: &Self) -> Self {
         Tuple3::vec(
             self.y() * rhs.z() - self.z() * rhs.y(),
             self.z() * rhs.x() - self.x() * rhs.z(),
-            self.x() * rhs.y() - self.y() * rhs.x())
+            self.x() * rhs.y() - self.y() * rhs.x(),
+        )
     }
 }
 
 impl PartialEq for Tuple3 {
     fn eq(&self, other: &Self) -> bool {
-        util::are_equal(self.x(), other.x()) &&
-        util::are_equal(self.y(), other.y()) &&
-        util::are_equal(self.z(), other.z()) &&
-        util::are_equal(self.w(), other.w())
+        util::are_equal(self.x(), other.x())
+            && util::are_equal(self.y(), other.y())
+            && util::are_equal(self.z(), other.z())
+            && util::are_equal(self.w(), other.w())
     }
 }
 
@@ -79,7 +82,12 @@ impl Add for &Tuple3 {
     type Output = Tuple3;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Tuple3::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z(), self.w() + rhs.w())
+        Tuple3::new(
+            self.x() + rhs.x(),
+            self.y() + rhs.y(),
+            self.z() + rhs.z(),
+            self.w() + rhs.w(),
+        )
     }
 }
 
@@ -87,7 +95,12 @@ impl Sub for &Tuple3 {
     type Output = Tuple3;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Tuple3::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z(), self.w() - rhs.w())
+        Tuple3::new(
+            self.x() - rhs.x(),
+            self.y() - rhs.y(),
+            self.z() - rhs.z(),
+            self.w() - rhs.w(),
+        )
     }
 }
 
@@ -103,7 +116,12 @@ impl Mul<f64> for &Tuple3 {
     type Output = Tuple3;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Tuple3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs, self.w() * rhs)
+        Tuple3::new(
+            self.x() * rhs,
+            self.y() * rhs,
+            self.z() * rhs,
+            self.w() * rhs,
+        )
     }
 }
 
@@ -111,13 +129,25 @@ impl Div<f64> for &Tuple3 {
     type Output = Tuple3;
 
     fn div(self, rhs: f64) -> Self::Output {
-        Tuple3::new(self.x() / rhs, self.y() / rhs, self.z() / rhs, self.w() / rhs)
+        Tuple3::new(
+            self.x() / rhs,
+            self.y() / rhs,
+            self.z() / rhs,
+            self.w() / rhs,
+        )
     }
 }
 
 impl Display for Tuple3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {}, {}, {})", self.x(), self.y(), self.z(), self.w())
+        write!(
+            f,
+            "({}, {}, {}, {})",
+            self.x(),
+            self.y(),
+            self.z(),
+            self.w()
+        )
     }
 }
 
@@ -151,7 +181,10 @@ mod tests {
 
     #[test]
     fn tuples_with_same_vals_are_equal() {
-        assert_eq!(Tuple3::new(1.0, 2.0, 3.0, 4.0), Tuple3::new(1.0, 2.0, 3.0, 4.0));
+        assert_eq!(
+            Tuple3::new(1.0, 2.0, 3.0, 4.0),
+            Tuple3::new(1.0, 2.0, 3.0, 4.0)
+        );
     }
 
     #[test]
@@ -165,7 +198,10 @@ mod tests {
 
     #[test]
     fn tuples_with_nan_vals_are_not_equal() {
-        assert_ne!(Tuple3::new(f64::NAN, 2.0, 3.0, 4.0), Tuple3::new(f64::NAN, 2.0, 3.0, 4.0));
+        assert_ne!(
+            Tuple3::new(f64::NAN, 2.0, 3.0, 4.0),
+            Tuple3::new(f64::NAN, 2.0, 3.0, 4.0)
+        );
     }
 
     #[test]
@@ -260,8 +296,18 @@ mod tests {
 
             #[test]
             fn normalize_vector() {
-                assert_eq!(Tuple3::vec(4.0, 0.0, 0.0).norm(), Tuple3::vec(1.0, 0.0, 0.0));
-                assert_eq!(Tuple3::vec(1.0, 2.0, 3.0).norm(), Tuple3::vec(1.0 / f64::sqrt(14.0), 2.0 / f64::sqrt(14.0), 3.0 / f64::sqrt(14.0)));
+                assert_eq!(
+                    Tuple3::vec(4.0, 0.0, 0.0).norm(),
+                    Tuple3::vec(1.0, 0.0, 0.0)
+                );
+                assert_eq!(
+                    Tuple3::vec(1.0, 2.0, 3.0).norm(),
+                    Tuple3::vec(
+                        1.0 / f64::sqrt(14.0),
+                        2.0 / f64::sqrt(14.0),
+                        3.0 / f64::sqrt(14.0)
+                    )
+                );
             }
 
             #[test]

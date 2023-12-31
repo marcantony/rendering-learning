@@ -3,7 +3,7 @@ use super::color::Color;
 pub struct Canvas {
     width: usize,
     height: usize,
-    data: Vec<Color>
+    data: Vec<Color>,
 }
 
 impl Canvas {
@@ -15,7 +15,7 @@ impl Canvas {
         Canvas {
             width: width,
             height: height,
-            data: vec![color.clone(); width * height]
+            data: vec![color.clone(); width * height],
         }
     }
 
@@ -56,7 +56,7 @@ impl Canvas {
             let val = (color * MAX_COLOR_VAL as f64).round() as i32;
             val.clamp(0, MAX_COLOR_VAL)
         }
-        
+
         // header
         let mut s = String::from("P3\n");
         s.push_str(&format!("{} {}\n", self.width, self.height));
@@ -64,24 +64,31 @@ impl Canvas {
         s.push('\n');
 
         // pixel data
-        let pixel_data = self.data.chunks(self.width)
+        let pixel_data = self
+            .data
+            .chunks(self.width)
             .map(|row| {
-                row.iter().flat_map(|color| {
-                    let r = translate(color.r());
-                    let g = translate(color.g());
-                    let b = translate(color.b());
+                row.iter()
+                    .flat_map(|color| {
+                        let r = translate(color.r());
+                        let g = translate(color.g());
+                        let b = translate(color.b());
 
-                    [r, g, b].into_iter().map(|v| v.to_string())
-                })
-                .reduce(|acc, i| {
-                    let length_after_last_newline = acc.rfind('\n').map(|i| acc.len() - i - 1).unwrap_or(acc.len());
-                    if length_after_last_newline + i.len() + 1 > 70 { // +1 for the space before the color data
-                        acc + "\n" + &i
-                    } else {
-                        acc + " " + &i
-                    }
-                })
-                .unwrap()
+                        [r, g, b].into_iter().map(|v| v.to_string())
+                    })
+                    .reduce(|acc, i| {
+                        let length_after_last_newline = acc
+                            .rfind('\n')
+                            .map(|i| acc.len() - i - 1)
+                            .unwrap_or(acc.len());
+                        if length_after_last_newline + i.len() + 1 > 70 {
+                            // +1 for the space before the color data
+                            acc + "\n" + &i
+                        } else {
+                            acc + " " + &i
+                        }
+                    })
+                    .unwrap()
             })
             .collect::<Vec<String>>()
             .join("\n");
@@ -131,8 +138,9 @@ mod tests {
 
             let first3 = lines.take(3).collect::<Vec<_>>().join("\n");
 
-            assert_eq!(first3,
-"P3
+            assert_eq!(
+                first3,
+                "P3
 5 3
 255"
             );
@@ -150,11 +158,12 @@ mod tests {
 
             let lines4to6 = lines.skip(3).take(3).collect::<Vec<_>>().join("\n");
 
-            assert_eq!(lines4to6,
-"255 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+            assert_eq!(
+                lines4to6,
+                "255 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 0 0 0 0 0 0 0 128 0 0 0 0 0 0 0
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 255"
-            );  
+            );
         }
 
         #[test]
@@ -166,12 +175,13 @@ mod tests {
 
             let lines4to7 = lines.skip(3).take(4).collect::<Vec<_>>().join("\n");
 
-            assert_eq!(lines4to7,
-"255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204
+            assert_eq!(
+                lines4to7,
+                "255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204
 153 255 204 153 255 204 153 255 204 153 255 204 153
 255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204
 153 255 204 153 255 204 153 255 204 153 255 204 153"
-            );  
+            );
         }
 
         #[test]

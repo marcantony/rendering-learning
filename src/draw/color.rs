@@ -1,7 +1,6 @@
-use std::ops::{Add, Sub, Mul};
+use std::ops::{Add, Mul, Sub};
 
 use crate::math::tuple::Tuple3;
-
 
 #[derive(Debug, Clone)]
 pub struct Color(Tuple3);

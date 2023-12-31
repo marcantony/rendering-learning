@@ -1,6 +1,6 @@
 use std::ops::Mul;
 
-use super::{util, tuple::Tuple3};
+use super::{tuple::Tuple3, util};
 
 #[derive(Debug, Clone)]
 pub struct Matrix<const N: usize>([[f64; N]; N]);
@@ -101,17 +101,20 @@ fn cofactor(data: &[&[f64]], n: usize, m: usize) -> f64 {
 
 fn minor(data: &[&[f64]], n: usize, m: usize) -> f64 {
     let raw_submatrix_data = submatrix(data, n, m);
-    let submatrix_data = raw_submatrix_data.iter()
+    let submatrix_data = raw_submatrix_data
+        .iter()
         .map(|row| row.as_slice())
         .collect::<Vec<_>>();
     determinant(submatrix_data.as_slice())
 }
 
 fn submatrix(data: &[&[f64]], n: usize, m: usize) -> Vec<Vec<f64>> {
-    data.iter().enumerate()
+    data.iter()
+        .enumerate()
         .filter(|&(i, _)| i != n)
         .map(|(_, row)| {
-            row.iter().enumerate()
+            row.iter()
+                .enumerate()
                 .filter(|&(j, _)| j != m)
                 .map(|(_, &col)| col)
                 .collect::<Vec<_>>()
@@ -140,16 +143,8 @@ impl Submatrix for Matrix<3> {
                     continue;
                 }
 
-                let new_i = if i >= n {
-                    i - 1
-                } else {
-                    i
-                };
-                let new_j = if j >= m {
-                    j - 1
-                } else {
-                    j
-                };
+                let new_i = if i >= n { i - 1 } else { i };
+                let new_j = if j >= m { j - 1 } else { j };
 
                 data[new_i][new_j] = self.0[i][j];
             }
@@ -174,16 +169,8 @@ impl Submatrix for Matrix<4> {
                     continue;
                 }
 
-                let new_i = if i >= n {
-                    i - 1
-                } else {
-                    i
-                };
-                let new_j = if j >= m {
-                    j - 1
-                } else {
-                    j
-                };
+                let new_i = if i >= n { i - 1 } else { i };
+                let new_j = if j >= m { j - 1 } else { j };
 
                 data[new_i][new_j] = self.0[i][j];
             }
@@ -199,9 +186,17 @@ impl<const N: usize> PartialEq for Matrix<N> {
         let lhs_vals: Vec<f64> = vals(self.0);
         let rhs_vals: Vec<f64> = vals(other.0);
 
-        assert_eq!(lhs_vals.len(), rhs_vals.len(), "Both matrices of size {} don't have the same number of elements.", N);
+        assert_eq!(
+            lhs_vals.len(),
+            rhs_vals.len(),
+            "Both matrices of size {} don't have the same number of elements.",
+            N
+        );
 
-        lhs_vals.into_iter().zip(rhs_vals.into_iter()).all(|(x, y)| util::are_equal(x, y))
+        lhs_vals
+            .into_iter()
+            .zip(rhs_vals.into_iter())
+            .all(|(x, y)| util::are_equal(x, y))
     }
 }
 
@@ -234,11 +229,10 @@ impl Mul<&Tuple3> for &Matrix<4> {
         let mut output = [0.0; N];
 
         for n in 0..N {
-            output[n] =
-                self.0[n][0] * rhs.x() +
-                self.0[n][1] * rhs.y() +
-                self.0[n][2] * rhs.z() +
-                self.0[n][3] * rhs.w();
+            output[n] = self.0[n][0] * rhs.x()
+                + self.0[n][1] * rhs.y()
+                + self.0[n][2] * rhs.z()
+                + self.0[n][3] * rhs.w();
         }
 
         Tuple3::new(output[0], output[1], output[2], output[3])
@@ -255,7 +249,7 @@ mod tests {
             [1.0, 2.0, 3.0, 4.0],
             [5.5, 6.5, 7.5, 8.5],
             [9.0, 10.0, 11.0, 12.0],
-            [13.5, 14.5, 15.5, 16.5]
+            [13.5, 14.5, 15.5, 16.5],
         ]);
 
         assert_eq!(m.at(0, 0), 1.0);
@@ -269,10 +263,7 @@ mod tests {
 
     #[test]
     fn a_2x2_matrix_is_representable() {
-        let m = Matrix::new([
-            [-3.0, 5.0],
-            [1.0, -2.0]
-        ]);
+        let m = Matrix::new([[-3.0, 5.0], [1.0, -2.0]]);
 
         assert_eq!(m.at(0, 0), -3.0);
         assert_eq!(m.at(0, 1), 5.0);
@@ -282,11 +273,7 @@ mod tests {
 
     #[test]
     fn a_3x3_matrix_is_representable() {
-        let m = Matrix::new([
-            [-3.0, 5.0, 0.0],
-            [1.0, -2.0, -7.0],
-            [0.0, 1.0, 1.0]
-        ]);
+        let m = Matrix::new([[-3.0, 5.0, 0.0], [1.0, -2.0, -7.0], [0.0, 1.0, 1.0]]);
 
         assert_eq!(m.at(0, 0), -3.0);
         assert_eq!(m.at(1, 1), -2.0);
@@ -302,14 +289,14 @@ mod tests {
                 [1.0, 2.0, 3.0, 4.0],
                 [5.0, 6.0, 7.0, 8.0],
                 [9.0, 8.0, 7.0, 6.0],
-                [5.0, 4.0, 3.0, 2.0]
+                [5.0, 4.0, 3.0, 2.0],
             ]);
 
             let b = Matrix::new([
                 [1.0, 2.0, 3.0, 4.0],
                 [5.0, 6.0, 7.0, 8.0],
                 [9.0, 8.0, 7.0, 6.0],
-                [5.0, 4.0, 3.0, 2.0]
+                [5.0, 4.0, 3.0, 2.0],
             ]);
 
             assert_eq!(a, b);
@@ -321,14 +308,14 @@ mod tests {
                 [1.0, 2.0, 3.0, 4.0],
                 [5.0, 6.0, 7.0, 8.0],
                 [9.0, 8.0, 7.0, 6.0],
-                [5.0, 4.0, 3.0, 2.0]
+                [5.0, 4.0, 3.0, 2.0],
             ]);
 
             let b = Matrix::new([
                 [2.0, 3.0, 4.0, 5.0],
                 [6.0, 7.0, 8.0, 9.0],
                 [8.0, 7.0, 6.0, 5.0],
-                [4.0, 3.0, 2.0, 1.0]
+                [4.0, 3.0, 2.0, 1.0],
             ]);
 
             assert_ne!(a, b);
@@ -346,22 +333,25 @@ mod tests {
                 [1.0, 2.0, 3.0, 4.0],
                 [5.0, 6.0, 7.0, 8.0],
                 [9.0, 8.0, 7.0, 6.0],
-                [5.0, 4.0, 3.0, 2.0]
+                [5.0, 4.0, 3.0, 2.0],
             ]);
 
             let b = Matrix::new([
                 [-2.0, 1.0, 2.0, 3.0],
                 [3.0, 2.0, 1.0, -1.0],
                 [4.0, 3.0, 6.0, 5.0],
-                [1.0, 2.0, 7.0, 8.0]
+                [1.0, 2.0, 7.0, 8.0],
             ]);
 
-            assert_eq!(&a * &b, Matrix::new([
-                [20.0, 22.0, 50.0, 48.0],
-                [44.0, 54.0, 114.0, 108.0],
-                [40.0, 58.0, 110.0, 102.0],
-                [16.0, 26.0, 46.0, 42.0]
-            ]));
+            assert_eq!(
+                &a * &b,
+                Matrix::new([
+                    [20.0, 22.0, 50.0, 48.0],
+                    [44.0, 54.0, 114.0, 108.0],
+                    [40.0, 58.0, 110.0, 102.0],
+                    [16.0, 26.0, 46.0, 42.0]
+                ])
+            );
         }
 
         #[test]
@@ -370,7 +360,7 @@ mod tests {
                 [1.0, 2.0, 3.0, 4.0],
                 [2.0, 4.0, 4.0, 2.0],
                 [8.0, 6.0, 4.0, 1.0],
-                [0.0, 0.0, 0.0, 1.0]
+                [0.0, 0.0, 0.0, 1.0],
             ]);
 
             let b = Tuple3::new(1.0, 2.0, 3.0, 1.0);
@@ -384,7 +374,7 @@ mod tests {
                 [0.0, 1.0, 2.0, 4.0],
                 [1.0, 2.0, 4.0, 8.0],
                 [2.0, 4.0, 8.0, 16.0],
-                [4.0, 8.0, 16.0, 32.0]
+                [4.0, 8.0, 16.0, 32.0],
             ]);
 
             let b = Matrix::identity();
@@ -402,15 +392,18 @@ mod tests {
                 [0.0, 9.0, 3.0, 0.0],
                 [9.0, 8.0, 0.0, 8.0],
                 [1.0, 8.0, 5.0, 3.0],
-                [0.0, 0.0, 5.0, 8.0]
+                [0.0, 0.0, 5.0, 8.0],
             ]);
 
-            assert_eq!(a.transpose(), Matrix::new([
-                [0.0, 9.0, 1.0, 0.0],
-                [9.0, 8.0, 8.0, 0.0],
-                [3.0, 0.0, 5.0, 5.0],
-                [0.0, 8.0, 3.0, 8.0]
-            ]))
+            assert_eq!(
+                a.transpose(),
+                Matrix::new([
+                    [0.0, 9.0, 1.0, 0.0],
+                    [9.0, 8.0, 8.0, 0.0],
+                    [3.0, 0.0, 5.0, 5.0],
+                    [0.0, 8.0, 3.0, 8.0]
+                ])
+            )
         }
 
         #[test]
@@ -429,21 +422,14 @@ mod tests {
 
             #[test]
             fn calculate_determinant_of_2x2_matrix() {
-                let a = Matrix::new([
-                    [1.0, 5.0],
-                    [-3.0, 2.0]
-                ]);
+                let a = Matrix::new([[1.0, 5.0], [-3.0, 2.0]]);
 
                 assert_eq!(a.determinant(), 17.0);
             }
 
             #[test]
             fn calculate_determinant_of_3x3_matrix() {
-                let a = Matrix::new([
-                    [1.0, 2.0, 6.0],
-                    [-5.0, 8.0, -4.0],
-                    [2.0, 6.0, 4.0]
-                ]);
+                let a = Matrix::new([[1.0, 2.0, 6.0], [-5.0, 8.0, -4.0], [2.0, 6.0, 4.0]]);
 
                 assert_eq!(a.cofactor(0, 0), 56.0);
                 assert_eq!(a.cofactor(0, 1), 12.0);
@@ -457,7 +443,7 @@ mod tests {
                     [-2.0, -8.0, 3.0, 5.0],
                     [-3.0, 1.0, 7.0, 3.0],
                     [1.0, 2.0, -9.0, 6.0],
-                    [-6.0, 7.0, 7.0, -9.0]
+                    [-6.0, 7.0, 7.0, -9.0],
                 ]);
 
                 assert_eq!(a.cofactor(0, 0), 690.0);
@@ -473,16 +459,9 @@ mod tests {
 
             #[test]
             fn submatrix_of_3x3_is_2x2() {
-                let a = Matrix::new([
-                    [1.0, 5.0, 0.0],
-                    [-3.0, 2.0, 7.0],
-                    [0.0, 6.0, -3.0]
-                ]);
+                let a = Matrix::new([[1.0, 5.0, 0.0], [-3.0, 2.0, 7.0], [0.0, 6.0, -3.0]]);
 
-                assert_eq!(a.submatrix(0, 2), Matrix::new([
-                    [-3.0, 2.0],
-                    [0.0, 6.0]
-                ]));
+                assert_eq!(a.submatrix(0, 2), Matrix::new([[-3.0, 2.0], [0.0, 6.0]]));
             }
 
             #[test]
@@ -491,14 +470,13 @@ mod tests {
                     [-6.0, 1.0, 1.0, 6.0],
                     [-8.0, 5.0, 8.0, 6.0],
                     [-1.0, 0.0, 8.0, 2.0],
-                    [-7.0, 1.0, -1.0, 1.0]
+                    [-7.0, 1.0, -1.0, 1.0],
                 ]);
 
-                assert_eq!(a.submatrix(2, 1), Matrix::new([
-                    [-6.0, 1.0, 6.0],
-                    [-8.0, 8.0, 6.0],
-                    [-7.0, -1.0, 1.0]
-                ]));
+                assert_eq!(
+                    a.submatrix(2, 1),
+                    Matrix::new([[-6.0, 1.0, 6.0], [-8.0, 8.0, 6.0], [-7.0, -1.0, 1.0]])
+                );
             }
         }
 
@@ -507,11 +485,7 @@ mod tests {
 
             #[test]
             fn calculate_minor_of_3x3_matrix() {
-                let a = Matrix::new([
-                    [3.0, 5.0, 0.0],
-                    [2.0, -1.0, -7.0],
-                    [6.0, -1.0, 5.0]
-                ]);
+                let a = Matrix::new([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
 
                 let b = a.submatrix(1, 0);
 
@@ -525,11 +499,7 @@ mod tests {
 
             #[test]
             fn calculate_cofactor_of_3x3_matrix() {
-                let a = Matrix::new([
-                    [3.0, 5.0, 0.0],
-                    [2.0, -1.0, -7.0],
-                    [6.0, -1.0, 5.0]
-                ]);
+                let a = Matrix::new([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
 
                 assert_eq!(a.minor(0, 0), -12.0);
                 assert_eq!(a.cofactor(0, 0), -12.0);
@@ -547,7 +517,7 @@ mod tests {
                     [6.0, 4.0, 4.0, 4.0],
                     [5.0, 5.0, 7.0, 6.0],
                     [4.0, -9.0, 3.0, -7.0],
-                    [9.0, 1.0, 7.0, -6.0]
+                    [9.0, 1.0, 7.0, -6.0],
                 ]);
 
                 assert_eq!(a.determinant(), -2120.0);
@@ -560,7 +530,7 @@ mod tests {
                     [-4.0, 2.0, -2.0, -3.0],
                     [9.0, 6.0, 2.0, 6.0],
                     [0.0, -5.0, 1.0, -5.0],
-                    [0.0, 0.0, 0.0, 0.0]
+                    [0.0, 0.0, 0.0, 0.0],
                 ]);
 
                 assert_eq!(a.determinant(), 0.0);
@@ -573,7 +543,7 @@ mod tests {
                     [-5.0, 2.0, 6.0, -8.0],
                     [1.0, -5.0, 1.0, 8.0],
                     [7.0, 7.0, -6.0, -7.0],
-                    [1.0, -3.0, 7.0, 4.0]
+                    [1.0, -3.0, 7.0, 4.0],
                 ]);
 
                 let b = a.invert().unwrap();
@@ -583,12 +553,15 @@ mod tests {
                 assert_eq!(b.at(3, 2), -160.0 / 532.0);
                 assert_eq!(a.cofactor(3, 2), 105.0);
                 assert_eq!(b.at(2, 3), 105.0 / 532.0);
-                matrix_approx_equals(b, Matrix::new([
-                    [0.21805, 0.45113, 0.24060, -0.04511],
-                    [-0.80827, -1.45677, -0.44361, 0.52068],
-                    [-0.07895, -0.22368, -0.05263, 0.19737],
-                    [-0.52256, -0.81391, -0.30075, 0.30639]
-                ]));
+                matrix_approx_equals(
+                    b,
+                    Matrix::new([
+                        [0.21805, 0.45113, 0.24060, -0.04511],
+                        [-0.80827, -1.45677, -0.44361, 0.52068],
+                        [-0.07895, -0.22368, -0.05263, 0.19737],
+                        [-0.52256, -0.81391, -0.30075, 0.30639],
+                    ]),
+                );
             }
 
             #[test]
@@ -597,15 +570,18 @@ mod tests {
                     [8.0, -5.0, 9.0, 2.0],
                     [7.0, 5.0, 6.0, 1.0],
                     [-6.0, 0.0, 9.0, 6.0],
-                    [-3.0, 0.0, -9.0, -4.0]
+                    [-3.0, 0.0, -9.0, -4.0],
                 ]);
 
-                matrix_approx_equals(a.invert().unwrap(), Matrix::new([
-                    [-0.15385, -0.15385, -0.28205, -0.53846],
-                    [-0.07692, 0.12308, 0.02564, 0.03077],
-                    [0.35897, 0.35897, 0.43590, 0.92308],
-                    [-0.69231, -0.69231, -0.76923, -1.92308]
-                ]));
+                matrix_approx_equals(
+                    a.invert().unwrap(),
+                    Matrix::new([
+                        [-0.15385, -0.15385, -0.28205, -0.53846],
+                        [-0.07692, 0.12308, 0.02564, 0.03077],
+                        [0.35897, 0.35897, 0.43590, 0.92308],
+                        [-0.69231, -0.69231, -0.76923, -1.92308],
+                    ]),
+                );
             }
 
             #[test]
@@ -614,15 +590,18 @@ mod tests {
                     [9.0, 3.0, 0.0, 9.0],
                     [-5.0, -2.0, -6.0, -3.0],
                     [-4.0, 9.0, 6.0, 4.0],
-                    [-7.0, 6.0, 6.0, 2.0]
+                    [-7.0, 6.0, 6.0, 2.0],
                 ]);
 
-                matrix_approx_equals(a.invert().unwrap(), Matrix::new([
-                    [-0.04074, -0.07778, 0.14444, -0.22222],
-                    [-0.07778, 0.03333, 0.36667, -0.33333],
-                    [-0.02901, -0.14630, -0.10926, 0.12963],
-                    [0.17778, 0.06667, -0.26667, 0.33333]
-                ]));
+                matrix_approx_equals(
+                    a.invert().unwrap(),
+                    Matrix::new([
+                        [-0.04074, -0.07778, 0.14444, -0.22222],
+                        [-0.07778, 0.03333, 0.36667, -0.33333],
+                        [-0.02901, -0.14630, -0.10926, 0.12963],
+                        [0.17778, 0.06667, -0.26667, 0.33333],
+                    ]),
+                );
             }
 
             #[test]
@@ -631,14 +610,14 @@ mod tests {
                     [3.0, -9.0, 7.0, 3.0],
                     [3.0, -8.0, 2.0, -9.0],
                     [-4.0, 4.0, 4.0, 1.0],
-                    [-6.0, 5.0, -1.0, 1.0]
+                    [-6.0, 5.0, -1.0, 1.0],
                 ]);
 
                 let b = Matrix::new([
                     [8.0, 2.0, 2.0, 2.0],
                     [3.0, -1.0, 7.0, 0.0],
                     [7.0, 0.0, 5.0, 4.0],
-                    [6.0, -2.0, 0.0, 5.0]
+                    [6.0, -2.0, 0.0, 5.0],
                 ]);
 
                 let c = &a * &b;

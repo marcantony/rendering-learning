@@ -7,7 +7,7 @@ pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4> {
         [1.0, 0.0, 0.0, x],
         [0.0, 1.0, 0.0, y],
         [0.0, 0.0, 1.0, z],
-        [0.0, 0.0, 0.0, 1.0]
+        [0.0, 0.0, 0.0, 1.0],
     ])
 }
 
@@ -16,7 +16,7 @@ pub fn scaling(x: f64, y: f64, z: f64) -> Matrix<4> {
         [x, 0.0, 0.0, 0.0],
         [0.0, y, 0.0, 0.0],
         [0.0, 0.0, z, 0.0],
-        [0.0, 0.0, 0.0, 1.0]
+        [0.0, 0.0, 0.0, 1.0],
     ])
 }
 
@@ -26,7 +26,7 @@ pub fn rotation_x(radians: f64) -> Matrix<4> {
         [1.0, 0.0, 0.0, 0.0],
         [0.0, c, -s, 0.0],
         [0.0, s, c, 0.0],
-        [0.0, 0.0, 0.0, 1.0]
+        [0.0, 0.0, 0.0, 1.0],
     ])
 }
 
@@ -36,7 +36,7 @@ pub fn rotation_y(radians: f64) -> Matrix<4> {
         [c, 0.0, s, 0.0],
         [0.0, 1.0, 0.0, 0.0],
         [-s, 0.0, c, 0.0],
-        [0.0, 0.0, 0.0, 1.0]
+        [0.0, 0.0, 0.0, 1.0],
     ])
 }
 
@@ -46,7 +46,7 @@ pub fn rotation_z(radians: f64) -> Matrix<4> {
         [c, -s, 0.0, 0.0],
         [s, c, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0]
+        [0.0, 0.0, 0.0, 1.0],
     ])
 }
 
@@ -55,12 +55,14 @@ pub fn shearing(x_y: f64, x_z: f64, y_x: f64, y_z: f64, z_x: f64, z_y: f64) -> M
         [1.0, x_y, x_z, 0.0],
         [y_x, 1.0, y_z, 0.0],
         [z_x, z_y, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0]
+        [0.0, 0.0, 0.0, 1.0],
     ])
 }
 
 pub fn sequence(transformations: &[Matrix<4>]) -> Matrix<4> {
-    transformations.iter().fold(Matrix::<4>::identity(), |acc, t| t * &acc)
+    transformations
+        .iter()
+        .fold(Matrix::<4>::identity(), |acc, t| t * &acc)
 }
 
 #[cfg(test)]
@@ -146,7 +148,10 @@ mod tests {
             let half_quarter = rotation_x(f64::consts::FRAC_PI_4);
             let full_quarter = rotation_x(f64::consts::FRAC_PI_2);
 
-            assert_eq!(&half_quarter * &p, Tuple3::point(0.0, f64::consts::SQRT_2 / 2.0, f64::consts::SQRT_2 / 2.0));
+            assert_eq!(
+                &half_quarter * &p,
+                Tuple3::point(0.0, f64::consts::SQRT_2 / 2.0, f64::consts::SQRT_2 / 2.0)
+            );
             assert_eq!(&full_quarter * &p, Tuple3::point(0.0, 0.0, 1.0));
         }
 
@@ -156,7 +161,10 @@ mod tests {
             let half_quarter = rotation_x(f64::consts::FRAC_PI_4);
             let inv = half_quarter.invert().unwrap();
 
-            assert_eq!(&inv * &p, Tuple3::point(0.0, f64::consts::SQRT_2 / 2.0, -f64::consts::SQRT_2 / 2.0));
+            assert_eq!(
+                &inv * &p,
+                Tuple3::point(0.0, f64::consts::SQRT_2 / 2.0, -f64::consts::SQRT_2 / 2.0)
+            );
         }
 
         #[test]
@@ -165,7 +173,10 @@ mod tests {
             let half_quarter = rotation_y(f64::consts::FRAC_PI_4);
             let full_quarter = rotation_y(f64::consts::FRAC_PI_2);
 
-            assert_eq!(&half_quarter * &p, Tuple3::point(f64::consts::SQRT_2 / 2.0, 0.0, f64::consts::SQRT_2 / 2.0));
+            assert_eq!(
+                &half_quarter * &p,
+                Tuple3::point(f64::consts::SQRT_2 / 2.0, 0.0, f64::consts::SQRT_2 / 2.0)
+            );
             assert_eq!(&full_quarter * &p, Tuple3::point(1.0, 0.0, 0.0));
         }
 
@@ -175,7 +186,10 @@ mod tests {
             let half_quarter = rotation_z(f64::consts::FRAC_PI_4);
             let full_quarter = rotation_z(f64::consts::FRAC_PI_2);
 
-            assert_eq!(&half_quarter * &p, Tuple3::point(-f64::consts::SQRT_2 / 2.0, f64::consts::SQRT_2 / 2.0, 0.0));
+            assert_eq!(
+                &half_quarter * &p,
+                Tuple3::point(-f64::consts::SQRT_2 / 2.0, f64::consts::SQRT_2 / 2.0, 0.0)
+            );
             assert_eq!(&full_quarter * &p, Tuple3::point(-1.0, 0.0, 0.0));
         }
     }

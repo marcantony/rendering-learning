@@ -1,10 +1,10 @@
-use crate::math::{tuple::Tuple3, matrix::Matrix};
+use crate::math::{matrix::Matrix, tuple::Tuple3};
 
-use super::{ray::Ray, intersect::Intersection};
+use super::{intersect::Intersection, ray::Ray};
 
 #[derive(Debug)]
 pub struct Sphere {
-    transform: Matrix<4>
+    transform: Matrix<4>,
 }
 
 impl Sphere {
@@ -22,7 +22,11 @@ impl Sphere {
 
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
         let r = worldspace_ray.transform(
-            &self.transform().invert().expect("Sphere transform is uninvertible!"));
+            &self
+                .transform()
+                .invert()
+                .expect("Sphere transform is uninvertible!"),
+        );
         let sphere_to_ray = r.origin() - &Tuple3::point(0.0, 0.0, 0.0);
 
         let a = r.direction().dot(r.direction());
@@ -51,7 +55,10 @@ impl PartialEq for Sphere {
 
 #[cfg(test)]
 mod tests {
-    use crate::{math::{transformation, tuple::Tuple3}, geo::ray::Ray};
+    use crate::{
+        geo::ray::Ray,
+        math::{transformation, tuple::Tuple3},
+    };
 
     use super::*;
 
@@ -65,7 +72,10 @@ mod tests {
 
             let xs = s.intersect(&r);
 
-            assert_eq!(xs, Some([Intersection::new(4.0, &s), Intersection::new(6.0, &s)]));
+            assert_eq!(
+                xs,
+                Some([Intersection::new(4.0, &s), Intersection::new(6.0, &s)])
+            );
         }
 
         #[test]
@@ -75,7 +85,10 @@ mod tests {
 
             let xs = s.intersect(&r);
 
-            assert_eq!(xs, Some([Intersection::new(5.0, &s), Intersection::new(5.0, &s)]));
+            assert_eq!(
+                xs,
+                Some([Intersection::new(5.0, &s), Intersection::new(5.0, &s)])
+            );
         }
 
         #[test]
@@ -95,7 +108,10 @@ mod tests {
 
             let xs = s.intersect(&r);
 
-            assert_eq!(xs, Some([Intersection::new(-1.0, &s), Intersection::new(1.0, &s)]));
+            assert_eq!(
+                xs,
+                Some([Intersection::new(-1.0, &s), Intersection::new(1.0, &s)])
+            );
         }
 
         #[test]
@@ -105,7 +121,10 @@ mod tests {
 
             let xs = s.intersect(&r);
 
-            assert_eq!(xs, Some([Intersection::new(-6.0, &s), Intersection::new(-4.0, &s)]));
+            assert_eq!(
+                xs,
+                Some([Intersection::new(-6.0, &s), Intersection::new(-4.0, &s)])
+            );
         }
 
         #[test]
@@ -115,7 +134,10 @@ mod tests {
 
             let xs = s.intersect(&r);
 
-            assert_eq!(xs, Some([Intersection::new(3.0, &s), Intersection::new(7.0, &s)]));
+            assert_eq!(
+                xs,
+                Some([Intersection::new(3.0, &s), Intersection::new(7.0, &s)])
+            );
         }
 
         #[test]

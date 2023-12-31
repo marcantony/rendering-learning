@@ -1,6 +1,9 @@
-use std::{time::SystemTime, fs};
+use std::{fs, time::SystemTime};
 
-use ray_tracer_challenge::{math::{tuple::Tuple3, transformation}, draw::{canvas::Canvas, color::Color}};
+use ray_tracer_challenge::{
+    draw::{canvas::Canvas, color::Color},
+    math::{transformation, tuple::Tuple3},
+};
 
 fn main() {
     let hour_points: Vec<Tuple3> = vec![Tuple3::point(0.0, 1.0, 0.0); 12]
@@ -20,10 +23,19 @@ fn main() {
 
     hour_points.iter().for_each(|point| {
         let coords = &(&(point * CLOCK_CANVAS_RATIO) * CANVAS_SIZE as f64) + &translation;
-        c.write((coords.x().round() as usize, coords.y().round() as usize), Color::new(1.0, 1.0, 1.0));
+        c.write(
+            (coords.x().round() as usize, coords.y().round() as usize),
+            Color::new(1.0, 1.0, 1.0),
+        );
     });
 
     let ppm_data = c.ppm();
-    let filename = format!("clock-{}.ppm", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("time went backwards").as_secs());
+    let filename = format!(
+        "clock-{}.ppm",
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("time went backwards")
+            .as_secs()
+    );
     fs::write(&filename, ppm_data).expect("unable to write file")
 }

@@ -1,8 +1,8 @@
-use crate::math::{tuple::Tuple3, matrix::Matrix};
+use crate::math::{matrix::Matrix, tuple::Tuple3};
 
 pub struct Ray {
     origin: Tuple3,
-    direction: Tuple3
+    direction: Tuple3,
 }
 
 impl Ray {

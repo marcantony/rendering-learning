@@ -5,7 +5,7 @@ use super::sphere::Sphere;
 #[derive(Debug, Clone)]
 pub struct Intersection<'a> {
     t: f64,
-    object: &'a Sphere
+    object: &'a Sphere,
 }
 
 impl<'a> Intersection<'a> {
@@ -28,11 +28,10 @@ impl<'a> PartialEq for Intersection<'a> {
     }
 }
 
-pub fn hit<'a, 'b>(intersections: &'a[Intersection<'b>]) -> Option<&'a Intersection<'b>> {
+pub fn hit<'a, 'b>(intersections: &'a [Intersection<'b>]) -> Option<&'a Intersection<'b>> {
     intersections.iter().fold(None, |acc, i| {
         if i.t() >= 0.0 {
-            acc
-                .map(|lowest| if lowest.t() < i.t() { lowest } else { i })
+            acc.map(|lowest| if lowest.t() < i.t() { lowest } else { i })
                 .or(Some(i))
         } else {
             acc
