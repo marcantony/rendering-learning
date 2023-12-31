@@ -1,6 +1,6 @@
 use core::f64;
 
-use super::matrix::{Matrix, SquareMatrix};
+use crate::math::matrix::{Matrix, SquareMatrix};
 
 pub fn translation(x: f64, y: f64, z: f64) -> SquareMatrix<4> {
     Matrix::new([

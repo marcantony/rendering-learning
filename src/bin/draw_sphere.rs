@@ -1,7 +1,7 @@
 use ray_tracer_challenge::{
     draw::{canvas::Canvas, color::Color},
-    geo::{intersect, ray::Ray, sphere::Sphere},
-    math::{transformation, tuple::Tuple3},
+    geo::{intersect, ray::Ray, sphere::Sphere, transformation},
+    math::tuple::Tuple3,
     util,
 };
 
