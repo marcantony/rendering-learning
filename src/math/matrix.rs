@@ -6,30 +6,20 @@ use super::{tuple::Tuple3, util};
 pub struct Matrix<const N: usize, const M: usize>([[f64; M]; N]);
 pub type SquareMatrix<const N: usize> = Matrix<N, N>;
 
-impl<const N: usize> Matrix<N, N> {
-    pub fn new(data: [[f64; N]; N]) -> Self {
+impl<const N: usize, const M: usize> Matrix<N, M> {
+    pub fn new(data: [[f64; M]; N]) -> Self {
         Matrix(data)
-    }
-
-    pub fn identity() -> Self {
-        let mut data = [[0.0; N]; N];
-
-        for i in 0..N {
-            data[i][i] = 1.0;
-        }
-
-        Matrix::new(data)
     }
 
     pub fn at(&self, x: usize, y: usize) -> f64 {
         self.0[x][y]
     }
 
-    pub fn transpose(&self) -> Self {
-        let mut data = [[0.0; N]; N];
+    pub fn transpose(&self) -> Matrix<M, N> {
+        let mut data = [[0.0; N]; M];
 
         for n in 0..N {
-            for m in 0..N {
+            for m in 0..M {
                 data[m][n] = self.0[n][m];
             }
         }
@@ -39,6 +29,18 @@ impl<const N: usize> Matrix<N, N> {
 
     fn get_slices(&self) -> Vec<&[f64]> {
         self.0.iter().map(|col| col.as_slice()).collect::<Vec<_>>()
+    }
+}
+
+impl<const N: usize> SquareMatrix<N> {
+    pub fn identity() -> Self {
+        let mut data = [[0.0; N]; N];
+
+        for i in 0..N {
+            data[i][i] = 1.0;
+        }
+
+        Matrix::new(data)
     }
 
     pub fn determinant(&self) -> f64 {
@@ -181,17 +183,18 @@ impl Submatrix for SquareMatrix<4> {
     }
 }
 
-impl<const N: usize> PartialEq for SquareMatrix<N> {
+impl<const N: usize, const M: usize> PartialEq for Matrix<N, M> {
     fn eq(&self, other: &Self) -> bool {
-        let vals = |m: [[f64; N]; N]| m.into_iter().flat_map(|row| row.into_iter()).collect();
+        let vals = |m: [[f64; M]; N]| m.into_iter().flat_map(|row| row.into_iter()).collect();
         let lhs_vals: Vec<f64> = vals(self.0);
         let rhs_vals: Vec<f64> = vals(other.0);
 
         assert_eq!(
             lhs_vals.len(),
             rhs_vals.len(),
-            "Both matrices of size {} don't have the same number of elements.",
-            N
+            "Both matrices of size ({}, {}) don't have the same number of elements.",
+            N,
+            M
         );
 
         lhs_vals
@@ -201,16 +204,16 @@ impl<const N: usize> PartialEq for SquareMatrix<N> {
     }
 }
 
-impl<const N: usize> Mul for &SquareMatrix<N> {
-    type Output = SquareMatrix<N>;
+impl<const N1: usize, const N2: usize, const M: usize> Mul<&Matrix<M, N2>> for &Matrix<N1, M> {
+    type Output = Matrix<N1, N2>;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        let mut output = [[0.0; N]; N];
+    fn mul(self, rhs: &Matrix<M, N2>) -> Self::Output {
+        let mut output = [[0.0; N2]; N1];
 
-        for n in 0..N {
-            for m in 0..N {
+        for n in 0..N1 {
+            for m in 0..N2 {
                 let mut sum = 0.0;
-                for i in 0..N {
+                for i in 0..M {
                     sum += self.0[n][i] * rhs.0[i][m];
                 }
                 output[n][m] = sum;
@@ -281,6 +284,15 @@ mod tests {
         assert_eq!(m.at(2, 2), 1.0);
     }
 
+    #[test]
+    fn a_non_square_matrix_is_representable() {
+        let m = Matrix::new([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
+
+        assert_eq!(m.at(0, 0), 1.0);
+        assert_eq!(m.at(1, 1), 4.0);
+        assert_eq!(m.at(2, 1), 6.0);
+    }
+
     mod equality {
         use super::*;
 
@@ -320,6 +332,15 @@ mod tests {
             ]);
 
             assert_ne!(a, b);
+        }
+
+        #[test]
+        fn equality_of_identical_non_square_matrices() {
+            let a = Matrix::new([[1.0, 2.0]]);
+
+            let b = Matrix::new([[1.0, 2.0]]);
+
+            assert_eq!(a, b);
         }
     }
 
@@ -382,6 +403,15 @@ mod tests {
 
             assert_eq!(&a * &b, a);
         }
+
+        #[test]
+        fn multiply_non_square_matrices() {
+            let a = Matrix::new([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
+
+            let b = Matrix::new([[1.0], [2.0], [3.0]]);
+
+            assert_eq!(&a * &b, Matrix::new([[14.0], [32.0]]));
+        }
     }
 
     mod transpose {
@@ -412,6 +442,16 @@ mod tests {
             let a = SquareMatrix::<4>::identity();
 
             assert_eq!(a.transpose(), a);
+        }
+
+        #[test]
+        fn transpose_non_square_matrix() {
+            let a = Matrix::new([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
+
+            assert_eq!(
+                a.transpose(),
+                Matrix::new([[1.0, 3.0, 5.0], [2.0, 4.0, 6.0]])
+            );
         }
     }
 
