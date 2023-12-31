@@ -1,9 +1,8 @@
-use std::{fs, time::SystemTime};
-
 use ray_tracer_challenge::{
     draw::{canvas::Canvas, color::Color},
     geo::{intersect, ray::Ray, sphere::Sphere},
     math::{transformation, tuple::Tuple3},
+    util,
 };
 
 fn main() {
@@ -38,13 +37,5 @@ fn main() {
         }
     }
 
-    let ppm_data = canvas.ppm();
-    let filename = format!(
-        "sphere-{}.ppm",
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .expect("time went backwards")
-            .as_secs()
-    );
-    fs::write(&filename, ppm_data).expect("unable to write file")
+    util::write_to_file(&canvas, "sphere");
 }
