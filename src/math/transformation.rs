@@ -1,8 +1,8 @@
 use core::f64;
 
-use super::matrix::Matrix;
+use super::matrix::{Matrix, SquareMatrix};
 
-pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4> {
+pub fn translation(x: f64, y: f64, z: f64) -> SquareMatrix<4> {
     Matrix::new([
         [1.0, 0.0, 0.0, x],
         [0.0, 1.0, 0.0, y],
@@ -11,7 +11,7 @@ pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4> {
     ])
 }
 
-pub fn scaling(x: f64, y: f64, z: f64) -> Matrix<4> {
+pub fn scaling(x: f64, y: f64, z: f64) -> SquareMatrix<4> {
     Matrix::new([
         [x, 0.0, 0.0, 0.0],
         [0.0, y, 0.0, 0.0],
@@ -20,7 +20,7 @@ pub fn scaling(x: f64, y: f64, z: f64) -> Matrix<4> {
     ])
 }
 
-pub fn rotation_x(radians: f64) -> Matrix<4> {
+pub fn rotation_x(radians: f64) -> SquareMatrix<4> {
     let (s, c) = f64::sin_cos(radians);
     Matrix::new([
         [1.0, 0.0, 0.0, 0.0],
@@ -30,7 +30,7 @@ pub fn rotation_x(radians: f64) -> Matrix<4> {
     ])
 }
 
-pub fn rotation_y(radians: f64) -> Matrix<4> {
+pub fn rotation_y(radians: f64) -> SquareMatrix<4> {
     let (s, c) = f64::sin_cos(radians);
     Matrix::new([
         [c, 0.0, s, 0.0],
@@ -40,7 +40,7 @@ pub fn rotation_y(radians: f64) -> Matrix<4> {
     ])
 }
 
-pub fn rotation_z(radians: f64) -> Matrix<4> {
+pub fn rotation_z(radians: f64) -> SquareMatrix<4> {
     let (s, c) = f64::sin_cos(radians);
     Matrix::new([
         [c, -s, 0.0, 0.0],
@@ -50,7 +50,7 @@ pub fn rotation_z(radians: f64) -> Matrix<4> {
     ])
 }
 
-pub fn shearing(x_y: f64, x_z: f64, y_x: f64, y_z: f64, z_x: f64, z_y: f64) -> Matrix<4> {
+pub fn shearing(x_y: f64, x_z: f64, y_x: f64, y_z: f64, z_x: f64, z_y: f64) -> SquareMatrix<4> {
     Matrix::new([
         [1.0, x_y, x_z, 0.0],
         [y_x, 1.0, y_z, 0.0],
@@ -59,10 +59,10 @@ pub fn shearing(x_y: f64, x_z: f64, y_x: f64, y_z: f64, z_x: f64, z_y: f64) -> M
     ])
 }
 
-pub fn sequence(transformations: &[Matrix<4>]) -> Matrix<4> {
+pub fn sequence(transformations: &[SquareMatrix<4>]) -> SquareMatrix<4> {
     transformations
         .iter()
-        .fold(Matrix::<4>::identity(), |acc, t| t * &acc)
+        .fold(SquareMatrix::<4>::identity(), |acc, t| t * &acc)
 }
 
 #[cfg(test)]

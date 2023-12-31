@@ -3,9 +3,10 @@ use std::ops::Mul;
 use super::{tuple::Tuple3, util};
 
 #[derive(Debug, Clone)]
-pub struct Matrix<const N: usize>([[f64; N]; N]);
+pub struct Matrix<const N: usize, const M: usize>([[f64; M]; N]);
+pub type SquareMatrix<const N: usize> = Matrix<N, N>;
 
-impl<const N: usize> Matrix<N> {
+impl<const N: usize> Matrix<N, N> {
     pub fn new(data: [[f64; N]; N]) -> Self {
         Matrix(data)
     }
@@ -128,8 +129,8 @@ pub trait Submatrix {
     fn submatrix(&self, n: usize, m: usize) -> Self::Output;
 }
 
-impl Submatrix for Matrix<3> {
-    type Output = Matrix<2>;
+impl Submatrix for SquareMatrix<3> {
+    type Output = SquareMatrix<2>;
 
     fn submatrix(&self, n: usize, m: usize) -> Self::Output {
         let mut data = [[0.0; 2]; 2];
@@ -154,8 +155,8 @@ impl Submatrix for Matrix<3> {
     }
 }
 
-impl Submatrix for Matrix<4> {
-    type Output = Matrix<3>;
+impl Submatrix for SquareMatrix<4> {
+    type Output = SquareMatrix<3>;
 
     fn submatrix(&self, n: usize, m: usize) -> Self::Output {
         let mut data = [[0.0; 3]; 3];
@@ -180,7 +181,7 @@ impl Submatrix for Matrix<4> {
     }
 }
 
-impl<const N: usize> PartialEq for Matrix<N> {
+impl<const N: usize> PartialEq for SquareMatrix<N> {
     fn eq(&self, other: &Self) -> bool {
         let vals = |m: [[f64; N]; N]| m.into_iter().flat_map(|row| row.into_iter()).collect();
         let lhs_vals: Vec<f64> = vals(self.0);
@@ -200,8 +201,8 @@ impl<const N: usize> PartialEq for Matrix<N> {
     }
 }
 
-impl<const N: usize> Mul for &Matrix<N> {
-    type Output = Matrix<N>;
+impl<const N: usize> Mul for &SquareMatrix<N> {
+    type Output = SquareMatrix<N>;
 
     fn mul(self, rhs: Self) -> Self::Output {
         let mut output = [[0.0; N]; N];
@@ -220,7 +221,7 @@ impl<const N: usize> Mul for &Matrix<N> {
     }
 }
 
-impl Mul<&Tuple3> for &Matrix<4> {
+impl Mul<&Tuple3> for &SquareMatrix<4> {
     type Output = Tuple3;
 
     fn mul(self, rhs: &Tuple3) -> Self::Output {
@@ -408,7 +409,7 @@ mod tests {
 
         #[test]
         fn transpose_identity_matrix() {
-            let a = Matrix::<4>::identity();
+            let a = SquareMatrix::<4>::identity();
 
             assert_eq!(a.transpose(), a);
         }
@@ -625,7 +626,7 @@ mod tests {
                 assert_eq!(&c * &b.invert().unwrap(), a);
             }
 
-            fn matrix_approx_equals<const N: usize>(a: Matrix<N>, b: Matrix<N>) {
+            fn matrix_approx_equals<const N: usize>(a: SquareMatrix<N>, b: SquareMatrix<N>) {
                 for n in 0..N {
                     for m in 0..N {
                         assert!(f64::abs(a.at(n, m) - b.at(n, m)) < 0.00001)

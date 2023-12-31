@@ -1,4 +1,4 @@
-use crate::math::{matrix::Matrix, tuple::Tuple3};
+use crate::math::{matrix::SquareMatrix, tuple::Tuple3};
 
 pub struct Ray {
     origin: Tuple3,
@@ -22,7 +22,7 @@ impl Ray {
         &self.origin + &(&self.direction * t)
     }
 
-    pub fn transform(&self, transform: &Matrix<4>) -> Self {
+    pub fn transform(&self, transform: &SquareMatrix<4>) -> Self {
         Ray::new(transform * self.origin(), transform * self.direction())
     }
 }

@@ -1,14 +1,17 @@
-use crate::math::{matrix::Matrix, tuple::Tuple3};
+use crate::math::{
+    matrix::{Matrix, SquareMatrix},
+    tuple::Tuple3,
+};
 
 use super::{intersect::Intersection, ray::Ray};
 
 #[derive(Debug)]
 pub struct Sphere {
-    transform: Matrix<4>,
+    transform: SquareMatrix<4>,
 }
 
 impl Sphere {
-    pub fn new(transform: Matrix<4>) -> Self {
+    pub fn new(transform: SquareMatrix<4>) -> Self {
         Sphere { transform }
     }
 
@@ -16,7 +19,7 @@ impl Sphere {
         Sphere::new(Matrix::identity())
     }
 
-    pub fn transform(&self) -> &Matrix<4> {
+    pub fn transform(&self) -> &SquareMatrix<4> {
         &self.transform
     }
 
