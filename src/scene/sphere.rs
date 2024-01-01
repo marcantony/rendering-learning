@@ -3,20 +3,24 @@ use crate::math::{
     tuple::Tuple3,
 };
 
-use super::{intersect::Intersection, ray::Ray};
+use super::{intersect::Intersection, material::Material, ray::Ray};
 
 #[derive(Debug)]
 pub struct Sphere {
     transform: SquareMatrix<4>,
+    material: Material,
 }
 
 impl Sphere {
-    pub fn new(transform: SquareMatrix<4>) -> Self {
-        Sphere { transform }
+    pub fn new(transform: SquareMatrix<4>, material: Material) -> Self {
+        Sphere {
+            transform,
+            material,
+        }
     }
 
     pub fn unit() -> Self {
-        Sphere::new(Matrix::identity())
+        Sphere::new(Matrix::identity(), Default::default())
     }
 
     pub fn transform(&self) -> &SquareMatrix<4> {
@@ -58,6 +62,12 @@ impl Sphere {
     }
 }
 
+impl Default for Sphere {
+    fn default() -> Self {
+        Sphere::unit()
+    }
+}
+
 impl PartialEq for Sphere {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self, other)
@@ -67,8 +77,8 @@ impl PartialEq for Sphere {
 #[cfg(test)]
 mod tests {
     use crate::{
-        scene::{ray::Ray, transformation},
         math::tuple::Tuple3,
+        scene::{ray::Ray, transformation},
     };
 
     use super::*;
@@ -141,7 +151,10 @@ mod tests {
         #[test]
         fn intersecting_scaled_sphere_with_ray() {
             let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
-            let s = Sphere::new(transformation::scaling(2.0, 2.0, 2.0));
+            let s = Sphere {
+                transform: transformation::scaling(2.0, 2.0, 2.0),
+                ..Default::default()
+            };
 
             let xs = s.intersect(&r);
 
@@ -154,7 +167,10 @@ mod tests {
         #[test]
         fn intersecting_translated_sphere_with_ray() {
             let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
-            let s = Sphere::new(transformation::translation(5.0, 0.0, 0.0));
+            let s = Sphere {
+                transform: transformation::translation(5.0, 0.0, 0.0),
+                ..Default::default()
+            };
 
             let xs = s.intersect(&r);
 
@@ -174,7 +190,10 @@ mod tests {
         #[test]
         fn using_a_different_transformation() {
             let t = transformation::translation(2.0, 3.0, 4.0);
-            let s = Sphere::new(t.clone());
+            let s = Sphere {
+                transform: t.clone(),
+                ..Default::default()
+            };
             assert_eq!(s.transform(), &t);
         }
     }
@@ -231,7 +250,10 @@ mod tests {
 
         #[test]
         fn computing_the_normal_on_a_translated_sphere() {
-            let s = Sphere::new(transformation::translation(0.0, 1.0, 0.0));
+            let s = Sphere {
+                transform: transformation::translation(0.0, 1.0, 0.0),
+                ..Default::default()
+            };
 
             let n = s.normal_at(&Tuple3::point(0.0, 1.70711, -0.70711));
 
@@ -240,15 +262,42 @@ mod tests {
 
         #[test]
         fn computing_the_normal_on_a_transformed_sphere() {
-            let s = Sphere::new(transformation::sequence(&[
-                transformation::rotation_z(std::f64::consts::PI / 5.0),
-                transformation::scaling(1.0, 0.5, 1.0),
-            ]));
+            let s = Sphere {
+                transform: transformation::sequence(&[
+                    transformation::rotation_z(std::f64::consts::PI / 5.0),
+                    transformation::scaling(1.0, 0.5, 1.0),
+                ]),
+                ..Default::default()
+            };
             let t = std::f64::consts::SQRT_2 / 2.0;
 
             let n = s.normal_at(&Tuple3::point(0.0, t, -t));
 
             assert_vec_approx_equals(&n, &Tuple3::vec(0.0, 0.97014, -0.24254));
+        }
+    }
+
+    mod material {
+        use super::*;
+
+        #[test]
+        fn a_sphere_has_a_default_material() {
+            let s: Sphere = Default::default();
+            assert_eq!(s.material, Default::default());
+        }
+
+        #[test]
+        fn a_sphere_may_be_assigned_a_material() {
+            let m = Material {
+                ambient: 1.0,
+                ..Default::default()
+            };
+            let s = Sphere {
+                material: m.clone(),
+                ..Default::default()
+            };
+
+            assert_eq!(s.material, m);
         }
     }
 

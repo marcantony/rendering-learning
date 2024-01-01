@@ -1,7 +1,7 @@
 use ray_tracer_challenge::{
     draw::{canvas::Canvas, color::Color},
-    scene::{intersect, ray::Ray, sphere::Sphere, transformation},
     math::tuple::Tuple3,
+    scene::{intersect, ray::Ray, sphere::Sphere, transformation},
     util,
 };
 
@@ -19,7 +19,7 @@ fn main() {
         transformation::scaling(0.5, 1.0, 1.0),
         transformation::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     ]);
-    let object = Sphere::new(object_transform);
+    let object = Sphere::new(object_transform, Default::default());
 
     for y in 0..canvas_pixels {
         let world_y = half_wall - pixel_size * y as f64;
