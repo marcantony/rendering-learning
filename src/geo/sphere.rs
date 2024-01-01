@@ -25,10 +25,7 @@ impl Sphere {
 
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
         let r = worldspace_ray.transform(
-            &self
-                .transform()
-                .invert()
-                .expect("Sphere transform is uninvertible!"),
+            &self.inverse_transform_unchecked(),
         );
         let sphere_to_ray = r.origin() - &Tuple3::point(0.0, 0.0, 0.0);
 
@@ -47,6 +44,17 @@ impl Sphere {
 
             Some([Intersection::new(t1, self), Intersection::new(t2, self)])
         }
+    }
+
+    pub fn normal_at(&self, world_point: &Tuple3) -> Tuple3 {
+        let object_point = &self.inverse_transform_unchecked() * world_point;
+        let object_normal = (&object_point - &Tuple3::point(0.0, 0.0, 0.0)).norm();
+        let world_normal = &self.inverse_transform_unchecked().transpose() * &object_normal;
+        Tuple3::vec(world_normal.x(), world_normal.y(), world_normal.z()).norm()
+    }
+
+    fn inverse_transform_unchecked(&self) -> SquareMatrix<4> {
+        self.transform.invert().expect("Sphere transform is uninvertible!")
     }
 }
 
@@ -169,5 +177,90 @@ mod tests {
             let s = Sphere::new(t.clone());
             assert_eq!(s.transform(), &t);
         }
+    }
+
+    mod normal {
+        use super::*;
+
+        #[test]
+        fn normal_on_a_sphere_at_a_point_on_x_axis() {
+            let s = Sphere::unit();
+
+            let n = s.normal_at(&Tuple3::point(1.0, 0.0, 0.0));
+
+            assert_eq!(n, Tuple3::vec(1.0, 0.0, 0.0));
+        }
+
+        #[test]
+        fn normal_on_a_sphere_at_a_point_on_y_axis() {
+            let s = Sphere::unit();
+
+            let n = s.normal_at(&Tuple3::point(0.0, 1.0, 0.0));
+
+            assert_eq!(n, Tuple3::vec(0.0, 1.0, 0.0));
+        }
+
+        #[test]
+        fn normal_on_a_sphere_at_a_point_on_z_axis() {
+            let s = Sphere::unit();
+
+            let n = s.normal_at(&Tuple3::point(0.0, 0.0, 1.0));
+
+            assert_eq!(n, Tuple3::vec(0.0, 0.0, 1.0));
+        }
+
+        #[test]
+        fn normal_on_a_sphere_at_a_point_at_a_nonaxial_point() {
+            let s = Sphere::unit();
+            let t = f64::sqrt(3.0) / 3.0;
+
+            let n = s.normal_at(&Tuple3::point(t, t, t));
+
+            assert_eq!(n, Tuple3::vec(t, t, t));
+        }
+
+        #[test]
+        fn the_normal_is_a_normalized_vector() {
+            let s = Sphere::unit();
+            let t = f64::sqrt(3.0) / 3.0;
+
+            let n = s.normal_at(&Tuple3::point(t, t, t));
+
+            assert_eq!(n, n.norm());
+        }
+
+        #[test]
+        fn computing_the_normal_on_a_translated_sphere() {
+            let s = Sphere::new(transformation::translation(0.0, 1.0, 0.0));
+
+            let n = s.normal_at(&Tuple3::point(0.0, 1.70711, -0.70711));
+
+            assert_vec_approx_equals(&n, &Tuple3::vec(0.0, 0.70711, -0.70711));
+        }
+
+        #[test]
+        fn computing_the_normal_on_a_transformed_sphere() {
+            let s = Sphere::new(transformation::sequence(&[
+                transformation::rotation_z(std::f64::consts::PI / 5.0),
+                transformation::scaling(1.0, 0.5, 1.0)
+            ]));
+            let t = std::f64::consts::SQRT_2 / 2.0;
+
+            let n = s.normal_at(&Tuple3::point(0.0, t, -t));
+
+            assert_vec_approx_equals(&n, &Tuple3::vec(0.0, 0.97014, -0.24254));
+        }
+    }
+
+    fn assert_vec_approx_equals(a: &Tuple3, b: &Tuple3) {
+        let tolerance = 1e-5;
+        assert!(equal_with_tolerance(a.x(), b.x(), tolerance));
+        assert!(equal_with_tolerance(a.y(), b.y(), tolerance));
+        assert!(equal_with_tolerance(a.z(), b.z(), tolerance));
+        assert!(equal_with_tolerance(a.w(), b.w(), tolerance));
+    }
+
+    fn equal_with_tolerance(a: f64, b: f64, tolerance: f64) -> bool {
+        f64::abs(a - b) <= tolerance
     }
 }
