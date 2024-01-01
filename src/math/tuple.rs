@@ -67,6 +67,10 @@ impl Tuple3 {
             self.x() * rhs.y() - self.y() * rhs.x(),
         )
     }
+
+    pub fn reflect(&self, normal: &Tuple3) -> Self {
+        self - &(&(normal * 2.0) * self.dot(normal))
+    }
 }
 
 impl PartialEq for Tuple3 {
@@ -330,6 +334,27 @@ mod tests {
 
                 assert_eq!(a.cross(&b), Tuple3::vec(-1.0, 2.0, -1.0));
                 assert_eq!(b.cross(&a), Tuple3::vec(1.0, -2.0, 1.0));
+            }
+
+            #[test]
+            fn reflect_vector_approaching_at_45_degrees() {
+                let v = Tuple3::vec(1.0, -1.0, 0.0);
+                let n = Tuple3::vec(0.0, 1.0, 0.0);
+
+                let r = v.reflect(&n);
+
+                assert_eq!(r, Tuple3::vec(1.0, 1.0, 0.0));
+            }
+
+            #[test]
+            fn reflect_vector_off_slanted_surface() {
+                let v = Tuple3::vec(0.0, -1.0, 0.0);
+                let t = std::f64::consts::SQRT_2 / 2.0;
+                let n = Tuple3::vec(t, t, 0.0);
+
+                let r = v.reflect(&n);
+
+                assert_eq!(r, Tuple3::vec(1.0, 0.0, 0.0));
             }
         }
     }
