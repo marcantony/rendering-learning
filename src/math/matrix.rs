@@ -1,4 +1,4 @@
-use std::ops::{Mul, Add, Sub};
+use std::ops::{Add, Mul, Sub};
 
 use super::{tuple::Tuple3, util};
 
@@ -328,48 +328,27 @@ mod tests {
 
         #[test]
         fn add_matrix_to_another() {
-            let a = Matrix::new([
-                [1.0, 2.0],
-                [3.0, 4.0],
-                [5.0, 6.0]
-            ]);
+            let a = Matrix::new([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
 
             let b = a.clone();
 
-            assert_eq!(&a + &b, Matrix::new([
-                [2.0, 4.0],
-                [6.0, 8.0],
-                [10.0, 12.0]
-            ]))
+            assert_eq!(&a + &b, Matrix::new([[2.0, 4.0], [6.0, 8.0], [10.0, 12.0]]))
         }
 
         #[test]
         fn subtract_matrix_from_another() {
-            let a = Matrix::new([
-                [3.0, 3.0, 3.0],
-                [3.0, 3.0, 3.0]
-            ]);
+            let a = Matrix::new([[3.0, 3.0, 3.0], [3.0, 3.0, 3.0]]);
 
-            let b = Matrix::new([
-                [2.0, 2.0, 2.0],
-                [2.0, 2.0, 2.0]
-            ]);
+            let b = Matrix::new([[2.0, 2.0, 2.0], [2.0, 2.0, 2.0]]);
 
-            assert_eq!(&a - &b, Matrix::new([
-                [1.0, 1.0, 1.0],
-                [1.0, 1.0, 1.0]
-            ]));
+            assert_eq!(&a - &b, Matrix::new([[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]));
         }
 
         #[test]
         fn multiply_matrix_by_scalar() {
-            let a = Matrix::new([
-                [1.0, 2.0, 3.0]
-            ]);
+            let a = Matrix::new([[1.0, 2.0, 3.0]]);
 
-            assert_eq!(&a * 2.0, Matrix::new([
-                [2.0, 4.0, 6.0]
-            ]));
+            assert_eq!(&a * 2.0, Matrix::new([[2.0, 4.0, 6.0]]));
         }
     }
 

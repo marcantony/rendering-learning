@@ -24,9 +24,7 @@ impl Sphere {
     }
 
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
-        let r = worldspace_ray.transform(
-            &self.inverse_transform_unchecked(),
-        );
+        let r = worldspace_ray.transform(&self.inverse_transform_unchecked());
         let sphere_to_ray = r.origin() - &Tuple3::point(0.0, 0.0, 0.0);
 
         let a = r.direction().dot(r.direction());
@@ -54,7 +52,9 @@ impl Sphere {
     }
 
     fn inverse_transform_unchecked(&self) -> SquareMatrix<4> {
-        self.transform.invert().expect("Sphere transform is uninvertible!")
+        self.transform
+            .invert()
+            .expect("Sphere transform is uninvertible!")
     }
 }
 
@@ -242,7 +242,7 @@ mod tests {
         fn computing_the_normal_on_a_transformed_sphere() {
             let s = Sphere::new(transformation::sequence(&[
                 transformation::rotation_z(std::f64::consts::PI / 5.0),
-                transformation::scaling(1.0, 0.5, 1.0)
+                transformation::scaling(1.0, 0.5, 1.0),
             ]));
             let t = std::f64::consts::SQRT_2 / 2.0;
 
