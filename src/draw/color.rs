@@ -1,25 +1,25 @@
 use std::ops::{Add, Mul, Sub};
 
-use crate::math::tuple::Tuple3;
+use crate::math::matrix::Matrix;
 
 #[derive(Debug, Clone)]
-pub struct Color(Tuple3);
+pub struct Color(Matrix<3, 1>);
 
 impl Color {
     pub fn new(r: f64, g: f64, b: f64) -> Color {
-        Color(Tuple3::new(r, g, b, 0.0))
+        Color(Matrix::new([[r], [g], [b]]))
     }
 
     pub fn r(&self) -> f64 {
-        self.0.x()
+        self.0.at(0, 0)
     }
 
     pub fn g(&self) -> f64 {
-        self.0.y()
+        self.0.at(1, 0)
     }
 
     pub fn b(&self) -> f64 {
-        self.0.z()
+        self.0.at(2, 0)
     }
 }
 
