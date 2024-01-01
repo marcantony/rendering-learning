@@ -1,7 +1,17 @@
 use ray_tracer_challenge::{
-    draw::{canvas::Canvas, color::Color},
-    math::tuple::Tuple3,
-    scene::{intersect, ray::Ray, sphere::Sphere, transformation},
+    draw::{
+        canvas::Canvas,
+        color::{self, Color},
+    },
+    math::{matrix::Matrix, tuple::Tuple3},
+    scene::{
+        intersect,
+        light::PointLight,
+        material::{self, Material},
+        ray::Ray,
+        sphere::Sphere,
+        transformation,
+    },
     util,
 };
 
@@ -14,13 +24,23 @@ fn main() {
     let half_wall = wall_size / 2.0;
 
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
-    let color = Color::new(1.0, 0.0, 0.0);
     let object_transform = transformation::sequence(&vec![
-        transformation::scaling(0.5, 1.0, 1.0),
-        transformation::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+        transformation::scaling(1.0, 1.0, 1.0),
+        transformation::shearing(0.5, 0.0, 0.0, 0.0, 0.0, 0.0),
     ]);
-    let object = Sphere::new(object_transform, Default::default());
+    let object = Sphere::new(
+        object_transform,
+        Material {
+            color: Color::new(1.0, 0.2, 1.0),
+            ..Default::default()
+        },
+    );
+    let light = PointLight {
+        position: Tuple3::point(10.0, -10.0, -10.0),
+        intensity: color::white(),
+    };
 
+    println!("Rendering scene...");
     for y in 0..canvas_pixels {
         let world_y = half_wall - pixel_size * y as f64;
         for x in 0..canvas_pixels {
@@ -31,11 +51,22 @@ fn main() {
             let xs = object.intersect(&r);
             let hit = xs.as_ref().and_then(|x| intersect::hit(x));
 
-            if hit.is_some() {
-                canvas.write((x, y), color.clone());
+            if let Some(intersect) = hit {
+                let point = r.position(intersect.t());
+                let normalv = intersect.object().normal_at(&point);
+                let eyev = -r.direction();
+                let color = material::lighting(
+                    intersect.object().material(),
+                    &point,
+                    &light,
+                    &eyev,
+                    &normalv,
+                );
+                canvas.write((x, y), color);
             }
         }
     }
+    println!("Scene rendered.");
 
     util::write_to_file(&canvas, "sphere");
 }

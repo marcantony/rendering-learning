@@ -27,6 +27,10 @@ impl Sphere {
         &self.transform
     }
 
+    pub fn material(&self) -> &Material {
+        &self.material
+    }
+
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
         let r = worldspace_ray.transform(&self.inverse_transform_unchecked());
         let sphere_to_ray = r.origin() - &Tuple3::point(0.0, 0.0, 0.0);
@@ -283,7 +287,7 @@ mod tests {
         #[test]
         fn a_sphere_has_a_default_material() {
             let s: Sphere = Default::default();
-            assert_eq!(s.material, Default::default());
+            assert_eq!(s.material(), &Default::default());
         }
 
         #[test]
@@ -297,7 +301,7 @@ mod tests {
                 ..Default::default()
             };
 
-            assert_eq!(s.material, m);
+            assert_eq!(s.material(), &m);
         }
     }
 
