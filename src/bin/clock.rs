@@ -2,7 +2,7 @@ use std::{fs, time::SystemTime};
 
 use ray_tracer_challenge::{
     draw::{canvas::Canvas, color::Color},
-    geo::transformation,
+    scene::transformation,
     math::tuple::Tuple3,
 };
 

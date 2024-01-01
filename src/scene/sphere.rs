@@ -67,7 +67,7 @@ impl PartialEq for Sphere {
 #[cfg(test)]
 mod tests {
     use crate::{
-        geo::{ray::Ray, transformation},
+        scene::{ray::Ray, transformation},
         math::tuple::Tuple3,
     };
 

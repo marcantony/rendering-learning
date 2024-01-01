@@ -56,7 +56,7 @@ mod tests {
 
     mod transform {
 
-        use crate::geo::transformation;
+        use crate::scene::transformation;
 
         use super::*;
 

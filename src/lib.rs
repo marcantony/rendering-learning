@@ -1,4 +1,4 @@
 pub mod draw;
-pub mod geo;
+pub mod scene;
 pub mod math;
 pub mod util;
