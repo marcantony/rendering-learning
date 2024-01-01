@@ -11,8 +11,8 @@ impl<const N: usize, const M: usize> Matrix<N, M> {
         Matrix(data)
     }
 
-    pub fn at(&self, x: usize, y: usize) -> f64 {
-        self.0[x][y]
+    pub fn at(&self, n: usize, m: usize) -> f64 {
+        self.0[n][m]
     }
 
     pub fn transpose(&self) -> Matrix<M, N> {
