@@ -1,6 +1,6 @@
 use crate::{
     draw::color::{self, Color},
-    math::{point::Point3d, vector::Vec3d},
+    math::{point::Point3d, vector::NormalizedVec3d},
 };
 
 use super::light::PointLight;
@@ -30,23 +30,23 @@ pub fn lighting(
     material: &Material,
     point: &Point3d,
     light: &PointLight,
-    eyev: &Vec3d,
-    normalv: &Vec3d,
+    eyev: &NormalizedVec3d,
+    normalv: &NormalizedVec3d,
 ) -> Color {
     let effective_color = &material.color * &light.intensity;
     let lightv = (&light.position - point).norm().unwrap();
 
     let ambient = &effective_color * material.ambient;
 
-    let light_dot_normal = lightv.dot(normalv);
+    let light_dot_normal = lightv.dot(normalv.as_ref());
 
     let (diffuse, specular) = if light_dot_normal < 0.0 {
         (color::black(), color::black())
     } else {
         let diff = &(&effective_color * material.diffuse) * light_dot_normal;
 
-        let reflectv = -&lightv.reflect(&normalv);
-        let reflect_dot_eye = reflectv.dot(&eyev);
+        let reflectv = -&lightv.reflect(normalv.as_ref());
+        let reflect_dot_eye = reflectv.dot(eyev.as_ref());
 
         (
             diff,
@@ -78,7 +78,7 @@ mod tests {
     }
 
     mod lighting {
-        use crate::scene::light::PointLight;
+        use crate::{math::vector::Vec3d, scene::light::PointLight};
 
         use super::*;
 
@@ -89,8 +89,8 @@ mod tests {
         #[test]
         fn lighting_with_eye_between_light_and_surface() {
             let (m, position) = setup();
-            let eyev = Vec3d::new(0.0, 0.0, -1.0);
-            let normalv = Vec3d::new(0.0, 0.0, -1.0);
+            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -104,8 +104,8 @@ mod tests {
         fn lighting_with_eye_between_light_and_surface_eye_offset_45_degrees() {
             let (m, position) = setup();
             let t = std::f64::consts::SQRT_2 / 2.0;
-            let eyev = Vec3d::new(0.0, t, -t);
-            let normalv = Vec3d::new(0.0, 0.0, -1.0);
+            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, t, -t)).unwrap();
+            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -118,8 +118,8 @@ mod tests {
         #[test]
         fn lighting_with_eye_opposite_surface_light_offset_45_degrees() {
             let (m, position) = setup();
-            let eyev = Vec3d::new(0.0, 0.0, -1.0);
-            let normalv = Vec3d::new(0.0, 0.0, -1.0);
+            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 10.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -133,8 +133,8 @@ mod tests {
         fn lighting_with_eye_in_path_of_reflection_vector() {
             let (m, position) = setup();
             let t = std::f64::consts::SQRT_2 / 2.0;
-            let eyev = Vec3d::new(0.0, -t, -t);
-            let normalv = Vec3d::new(0.0, 0.0, -1.0);
+            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, -t, -t)).unwrap();
+            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 10.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -147,8 +147,8 @@ mod tests {
         #[test]
         fn lighting_with_light_behind_surface() {
             let (m, position) = setup();
-            let eyev = Vec3d::new(0.0, 0.0, -1.0);
-            let normalv = Vec3d::new(0.0, 0.0, -1.0);
+            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 0.0, 10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),

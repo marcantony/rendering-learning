@@ -3,7 +3,7 @@ use ray_tracer_challenge::{
         canvas::Canvas,
         color::{self, Color},
     },
-    math::point::Point3d,
+    math::{point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect,
         light::PointLight,
@@ -54,13 +54,13 @@ fn main() {
             if let Some(intersect) = hit {
                 let point = r.position(intersect.t());
                 let normalv = intersect.object().normal_at(&point);
-                let eyev = -r.direction();
+                let eyev = NormalizedVec3d::try_from(&-r.direction()).unwrap();
                 let color = material::lighting(
                     intersect.object().material(),
                     &point,
                     &light,
                     &eyev,
-                    normalv.as_ref(),
+                    &normalv,
                 );
                 canvas.write((x, y), color);
             }
