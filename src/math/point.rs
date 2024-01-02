@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Mul, Sub},
+    ops::{Add, Div, Mul, Sub},
 };
 
 use super::{
@@ -88,6 +88,22 @@ impl Sub<&Vec3d> for &Point3d {
     }
 }
 
+impl Mul<f64> for &Point3d {
+    type Output = Point3d;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Point3d::new(self.x() * rhs, self.y() * rhs, self.z() * rhs)
+    }
+}
+
+impl Div<f64> for &Point3d {
+    type Output = Point3d;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Point3d::new(self.x() / rhs, self.y() / rhs, self.z() / rhs)
+    }
+}
+
 impl Mul<&Point3d> for &SquareMatrix<4> {
     type Output = Result<Point3d, String>;
 
@@ -163,6 +179,24 @@ mod tests {
                 let p = Point3d::new(3.0, 2.0, 1.0);
                 let v = Vec3d::new(5.0, 6.0, 7.0);
                 assert_eq!(&p - &v, Point3d::new(-2.0, -4.0, -6.0));
+            }
+
+            #[test]
+            fn multiply_point_by_scalar() {
+                let a = Point3d::new(1.0, -2.0, 3.0);
+                assert_eq!(&a * 3.5, Point3d::new(3.5, -7.0, 10.5));
+            }
+
+            #[test]
+            fn multiply_point_by_fraction() {
+                let a = Point3d::new(1.0, -2.0, 3.0);
+                assert_eq!(&a * 0.5, Point3d::new(0.5, -1.0, 1.5));
+            }
+
+            #[test]
+            fn divide_point_by_scalar() {
+                let a = Point3d::new(1.0, -2.0, 3.0);
+                assert_eq!(&a / 2.0, Point3d::new(0.5, -1.0, 1.5));
             }
         }
     }
