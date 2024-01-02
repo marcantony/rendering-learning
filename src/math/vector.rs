@@ -33,9 +33,13 @@ impl Vec3d {
         f64::sqrt(self.x() * self.x() + self.y() * self.y() + self.z() * self.z())
     }
 
-    pub fn norm(&self) -> Self {
+    pub fn norm(&self) -> Option<Self> {
         let m = self.mag();
-        Vec3d::new(self.x() / m, self.y() / m, self.z() / m)
+        if m == 0.0 {
+            None
+        } else {
+            Some(Vec3d::new(self.x() / m, self.y() / m, self.z() / m))
+        }
     }
 
     pub fn dot(&self, rhs: &Self) -> f64 {
@@ -120,6 +124,26 @@ impl Mul<&Vec3d> for &SquareMatrix<4> {
 impl Display for Vec3d {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Vec3d({}, {}, {})", self.x(), self.y(), self.z())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NormalizedVec3d(Vec3d);
+
+impl TryFrom<&Vec3d> for NormalizedVec3d {
+    type Error = String;
+
+    fn try_from(value: &Vec3d) -> Result<Self, Self::Error> {
+        value
+            .norm()
+            .map(|n| NormalizedVec3d(n))
+            .ok_or(format!("{} cannot be normalized.", value))
+    }
+}
+
+impl AsRef<Vec3d> for NormalizedVec3d {
+    fn as_ref(&self) -> &Vec3d {
+        &self.0
     }
 }
 
@@ -223,21 +247,25 @@ mod tests {
 
             #[test]
             fn normalize_vector() {
-                assert_eq!(Vec3d::new(4.0, 0.0, 0.0).norm(), Vec3d::new(1.0, 0.0, 0.0));
+                assert_eq!(
+                    Vec3d::new(4.0, 0.0, 0.0).norm(),
+                    Some(Vec3d::new(1.0, 0.0, 0.0))
+                );
                 assert_eq!(
                     Vec3d::new(1.0, 2.0, 3.0).norm(),
-                    Vec3d::new(
+                    Some(Vec3d::new(
                         1.0 / f64::sqrt(14.0),
                         2.0 / f64::sqrt(14.0),
                         3.0 / f64::sqrt(14.0)
-                    )
+                    ))
                 );
+                assert_eq!(Vec3d::new(0.0, 0.0, 0.0).norm(), None)
             }
 
             #[test]
             fn normalized_vector_magnitude() {
                 let v = Vec3d::new(1.0, 2.0, 3.0);
-                assert_eq!(v.norm().mag(), 1.0);
+                assert_eq!(v.norm().unwrap().mag(), 1.0);
             }
 
             #[test]
@@ -294,6 +322,26 @@ mod tests {
             let b = Vec3d::new(1.0, 2.0, 3.0);
 
             assert_eq!(&a * &b, Vec3d::new(14.0, 22.0, 32.0));
+        }
+    }
+
+    mod normalized_vector {
+        use super::*;
+
+        #[test]
+        fn create_normalized_vector() {
+            let v = Vec3d::new(1.0, 2.0, 3.0);
+            let n = NormalizedVec3d::try_from(&v).unwrap();
+
+            assert_eq!(n.as_ref(), &v.norm().unwrap())
+        }
+
+        #[test]
+        fn cannot_create_normalized_vector() {
+            let v = Vec3d::new(0.0, 0.0, 0.0);
+            let n = NormalizedVec3d::try_from(&v);
+
+            assert!(n.is_err())
         }
     }
 }

@@ -34,7 +34,7 @@ pub fn lighting(
     normalv: &Vec3d,
 ) -> Color {
     let effective_color = &material.color * &light.intensity;
-    let lightv = (&light.position - point).norm();
+    let lightv = (&light.position - point).norm().unwrap();
 
     let ambient = &effective_color * material.ambient;
 

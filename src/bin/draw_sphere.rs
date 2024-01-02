@@ -46,7 +46,7 @@ fn main() {
         for x in 0..canvas_pixels {
             let world_x = -half_wall + pixel_size * x as f64;
             let target = Point3d::new(world_x, world_y, wall_z);
-            let r = Ray::new(ray_origin.clone(), (&target - &ray_origin).norm());
+            let r = Ray::new(ray_origin.clone(), (&target - &ray_origin).norm().unwrap());
 
             let xs = object.intersect(&r);
             let hit = xs.as_ref().and_then(|x| intersect::hit(x));

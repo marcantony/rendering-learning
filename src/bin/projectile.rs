@@ -23,7 +23,7 @@ fn main() {
 
     let mut p = Projectile {
         position: Point3d::new(0.0, 1.0, 0.0),
-        velocity: &Vec3d::new(1.0, 1.8, 0.0).norm() * 11.25,
+        velocity: &Vec3d::new(1.0, 1.8, 0.0).norm().unwrap() * 11.25,
     };
 
     let e = Environment {

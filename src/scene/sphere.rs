@@ -55,9 +55,13 @@ impl Sphere {
 
     pub fn normal_at(&self, world_point: &Point3d) -> Vec3d {
         let object_point = &self.inverse_transform_unchecked() * world_point;
-        let object_normal = (&object_point - &Point3d::new(0.0, 0.0, 0.0)).norm();
+        let object_normal = (&object_point - &Point3d::new(0.0, 0.0, 0.0))
+            .norm()
+            .unwrap();
         let world_normal = &self.inverse_transform_unchecked().transpose() * &object_normal;
-        Vec3d::new(world_normal.x(), world_normal.y(), world_normal.z()).norm()
+        Vec3d::new(world_normal.x(), world_normal.y(), world_normal.z())
+            .norm()
+            .unwrap()
     }
 
     fn inverse_transform_unchecked(&self) -> SquareMatrix<4> {
@@ -247,7 +251,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(t, t, t));
 
-            assert_eq!(n, n.norm());
+            assert_eq!(n, n.norm().unwrap());
         }
 
         #[test]
