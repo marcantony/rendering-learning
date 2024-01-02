@@ -1,4 +1,7 @@
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, Div, Mul, Neg, Sub},
+};
 
 use super::matrix::{Matrix, SquareMatrix};
 
@@ -120,6 +123,12 @@ impl Mul<&Vec3d> for &SquareMatrix<4> {
     fn mul(self, rhs: &Vec3d) -> Self::Output {
         let output_data = self * &rhs.0;
         Vec3d::try_from(output_data)
+    }
+}
+
+impl Display for Vec3d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Vec3d({}, {}, {})", self.x(), self.y(), self.z())
     }
 }
 

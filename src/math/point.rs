@@ -1,4 +1,7 @@
-use std::ops::{Add, Mul, Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, Mul, Sub},
+};
 
 use super::{
     matrix::{Matrix, SquareMatrix},
@@ -91,6 +94,12 @@ impl Mul<&Point3d> for &SquareMatrix<4> {
     fn mul(self, rhs: &Point3d) -> Self::Output {
         let output_data = self * &rhs.0;
         Point3d::try_from(output_data)
+    }
+}
+
+impl Display for Point3d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Point3d({}, {}, {})", self.x(), self.y(), self.z())
     }
 }
 
