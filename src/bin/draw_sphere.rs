@@ -3,7 +3,7 @@ use ray_tracer_challenge::{
         canvas::Canvas,
         color::{self, Color},
     },
-    math::{matrix::Matrix, tuple::Tuple3},
+    math::tuple::Tuple3,
     scene::{
         intersect,
         light::PointLight,
