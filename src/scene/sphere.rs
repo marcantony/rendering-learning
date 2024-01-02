@@ -1,7 +1,7 @@
 use crate::math::{
     matrix::{Matrix, SquareMatrix},
     point::Point3d,
-    vector::Vec3d,
+    vector::{NormalizedVec3d, Vec3d},
 };
 
 use super::{intersect::Intersection, material::Material, ray::Ray};
@@ -53,15 +53,18 @@ impl Sphere {
         }
     }
 
-    pub fn normal_at(&self, world_point: &Point3d) -> Vec3d {
+    pub fn normal_at(&self, world_point: &Point3d) -> NormalizedVec3d {
         let object_point = &self.inverse_transform_unchecked() * world_point;
         let object_normal = (&object_point - &Point3d::new(0.0, 0.0, 0.0))
             .norm()
             .unwrap();
         let world_normal = &self.inverse_transform_unchecked().transpose() * &object_normal;
-        Vec3d::new(world_normal.x(), world_normal.y(), world_normal.z())
-            .norm()
-            .unwrap()
+        NormalizedVec3d::try_from(&Vec3d::new(
+            world_normal.x(),
+            world_normal.y(),
+            world_normal.z(),
+        ))
+        .unwrap()
     }
 
     fn inverse_transform_unchecked(&self) -> SquareMatrix<4> {
@@ -213,7 +216,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(1.0, 0.0, 0.0));
 
-            assert_eq!(n, Vec3d::new(1.0, 0.0, 0.0));
+            assert_eq!(n.as_ref(), &Vec3d::new(1.0, 0.0, 0.0));
         }
 
         #[test]
@@ -222,7 +225,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, 1.0, 0.0));
 
-            assert_eq!(n, Vec3d::new(0.0, 1.0, 0.0));
+            assert_eq!(n.as_ref(), &Vec3d::new(0.0, 1.0, 0.0));
         }
 
         #[test]
@@ -231,7 +234,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, 0.0, 1.0));
 
-            assert_eq!(n, Vec3d::new(0.0, 0.0, 1.0));
+            assert_eq!(n.as_ref(), &Vec3d::new(0.0, 0.0, 1.0));
         }
 
         #[test]
@@ -241,7 +244,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(t, t, t));
 
-            assert_eq!(n, Vec3d::new(t, t, t));
+            assert_eq!(n.as_ref(), &Vec3d::new(t, t, t));
         }
 
         #[test]
@@ -251,7 +254,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(t, t, t));
 
-            assert_eq!(n, n.norm().unwrap());
+            assert_eq!(n.as_ref(), &n.as_ref().norm().unwrap());
         }
 
         #[test]
@@ -263,7 +266,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, 1.70711, -0.70711));
 
-            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.70711, -0.70711));
+            assert_vec_approx_equals(n.as_ref(), &Vec3d::new(0.0, 0.70711, -0.70711));
         }
 
         #[test]
@@ -279,7 +282,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, t, -t));
 
-            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.97014, -0.24254));
+            assert_vec_approx_equals(n.as_ref(), &Vec3d::new(0.0, 0.97014, -0.24254));
         }
     }
 

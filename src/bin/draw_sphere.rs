@@ -60,7 +60,7 @@ fn main() {
                     &point,
                     &light,
                     &eyev,
-                    &normalv,
+                    normalv.as_ref(),
                 );
                 canvas.write((x, y), color);
             }
