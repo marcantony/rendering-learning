@@ -1,6 +1,9 @@
-use std::ops::{Add, Sub};
+use std::ops::{Add, Mul, Sub};
 
-use super::{matrix::Matrix, vector::Vec3d};
+use super::{
+    matrix::{Matrix, SquareMatrix},
+    vector::Vec3d,
+};
 
 #[derive(Debug, Clone)]
 pub struct Point3d(Matrix<4, 1>);
@@ -24,6 +27,19 @@ impl Point3d {
 
     pub fn w(&self) -> f64 {
         self.0.at(3, 0)
+    }
+}
+
+impl TryFrom<Matrix<4, 1>> for Point3d {
+    type Error = String;
+
+    fn try_from(value: Matrix<4, 1>) -> Result<Self, Self::Error> {
+        let w = value.at(3, 0);
+        if w != 1.0 {
+            Err(format!("A point should have w=1.0. Found w={} instead!", w))
+        } else {
+            Ok(Point3d(value))
+        }
     }
 }
 
@@ -66,6 +82,15 @@ impl Sub<&Vec3d> for &Point3d {
             &self.y() - &rhs.y(),
             &self.z() - &rhs.z(),
         )
+    }
+}
+
+impl Mul<&Point3d> for &SquareMatrix<4> {
+    type Output = Result<Point3d, String>;
+
+    fn mul(self, rhs: &Point3d) -> Self::Output {
+        let output_data = self * &rhs.0;
+        Point3d::try_from(output_data)
     }
 }
 
@@ -130,6 +155,24 @@ mod tests {
                 let v = Vec3d::new(5.0, 6.0, 7.0);
                 assert_eq!(&p - &v, Point3d::new(-2.0, -4.0, -6.0));
             }
+        }
+    }
+
+    mod matrix {
+        use super::*;
+
+        #[test]
+        fn multiply_matrix_by_point() {
+            let a = Matrix::new([
+                [1.0, 2.0, 3.0, 4.0],
+                [2.0, 4.0, 4.0, 2.0],
+                [8.0, 6.0, 4.0, 1.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]);
+
+            let b = Point3d::new(1.0, 2.0, 3.0);
+
+            assert_eq!(&a * &b, Ok(Point3d::new(18.0, 24.0, 33.0)));
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-use super::matrix::Matrix;
+use super::matrix::{Matrix, SquareMatrix};
 
 #[derive(Debug, Clone)]
 pub struct Vec3d(Matrix<4, 1>);
@@ -52,6 +52,22 @@ impl Vec3d {
     }
 }
 
+impl TryFrom<Matrix<4, 1>> for Vec3d {
+    type Error = String;
+
+    fn try_from(value: Matrix<4, 1>) -> Result<Self, Self::Error> {
+        let w = value.at(3, 0);
+        if w != 0.0 {
+            Err(format!(
+                "A vector should have w=0.0. Found w={} instead!",
+                w
+            ))
+        } else {
+            Ok(Vec3d(value))
+        }
+    }
+}
+
 impl PartialEq for Vec3d {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
@@ -95,6 +111,15 @@ impl Div<f64> for &Vec3d {
 
     fn div(self, rhs: f64) -> Self::Output {
         Vec3d::new(self.x() / rhs, self.y() / rhs, self.z() / rhs)
+    }
+}
+
+impl Mul<&Vec3d> for &SquareMatrix<4> {
+    type Output = Result<Vec3d, String>;
+
+    fn mul(self, rhs: &Vec3d) -> Self::Output {
+        let output_data = self * &rhs.0;
+        Vec3d::try_from(output_data)
     }
 }
 
@@ -251,6 +276,24 @@ mod tests {
 
                 assert_eq!(r, Vec3d::new(1.0, 0.0, 0.0));
             }
+        }
+    }
+
+    mod matrix {
+        use super::*;
+
+        #[test]
+        fn multiply_matrix_by_vector() {
+            let a = Matrix::new([
+                [1.0, 2.0, 3.0, 4.0],
+                [2.0, 4.0, 4.0, 2.0],
+                [8.0, 6.0, 4.0, 1.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]);
+
+            let b = Vec3d::new(1.0, 2.0, 3.0);
+
+            assert_eq!(&a * &b, Ok(Vec3d::new(14.0, 22.0, 32.0)));
         }
     }
 }
