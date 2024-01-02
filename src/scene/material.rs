@@ -1,6 +1,6 @@
 use crate::{
     draw::color::{self, Color},
-    math::tuple::Tuple3,
+    math::{point::Point3d, vector::Vec3d},
 };
 
 use super::light::PointLight;
@@ -28,13 +28,13 @@ impl Default for Material {
 
 pub fn lighting(
     material: &Material,
-    point: &Tuple3,
+    point: &Point3d,
     light: &PointLight,
-    eyev: &Tuple3,
-    normalv: &Tuple3,
+    eyev: &Vec3d,
+    normalv: &Vec3d,
 ) -> Color {
     let effective_color = &material.color * &light.intensity;
-    let lightv = (&light.position - &point).norm();
+    let lightv = (&light.position - point).norm();
 
     let ambient = &effective_color * material.ambient;
 
@@ -78,21 +78,21 @@ mod tests {
     }
 
     mod lighting {
-        use crate::{math::tuple::Tuple3, scene::light::PointLight};
+        use crate::scene::light::PointLight;
 
         use super::*;
 
-        fn setup() -> (Material, Tuple3) {
-            (Default::default(), Tuple3::point(0.0, 0.0, 0.0))
+        fn setup() -> (Material, Point3d) {
+            (Default::default(), Point3d::new(0.0, 0.0, 0.0))
         }
 
         #[test]
         fn lighting_with_eye_between_light_and_surface() {
             let (m, position) = setup();
-            let eyev = Tuple3::vec(0.0, 0.0, -1.0);
-            let normalv = Tuple3::vec(0.0, 0.0, -1.0);
+            let eyev = Vec3d::new(0.0, 0.0, -1.0);
+            let normalv = Vec3d::new(0.0, 0.0, -1.0);
             let light = PointLight {
-                position: Tuple3::point(0.0, 0.0, -10.0),
+                position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
@@ -104,10 +104,10 @@ mod tests {
         fn lighting_with_eye_between_light_and_surface_eye_offset_45_degrees() {
             let (m, position) = setup();
             let t = std::f64::consts::SQRT_2 / 2.0;
-            let eyev = Tuple3::vec(0.0, t, -t);
-            let normalv = Tuple3::vec(0.0, 0.0, -1.0);
+            let eyev = Vec3d::new(0.0, t, -t);
+            let normalv = Vec3d::new(0.0, 0.0, -1.0);
             let light = PointLight {
-                position: Tuple3::point(0.0, 0.0, -10.0),
+                position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
@@ -118,10 +118,10 @@ mod tests {
         #[test]
         fn lighting_with_eye_opposite_surface_light_offset_45_degrees() {
             let (m, position) = setup();
-            let eyev = Tuple3::vec(0.0, 0.0, -1.0);
-            let normalv = Tuple3::vec(0.0, 0.0, -1.0);
+            let eyev = Vec3d::new(0.0, 0.0, -1.0);
+            let normalv = Vec3d::new(0.0, 0.0, -1.0);
             let light = PointLight {
-                position: Tuple3::point(0.0, 10.0, -10.0),
+                position: Point3d::new(0.0, 10.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
@@ -133,10 +133,10 @@ mod tests {
         fn lighting_with_eye_in_path_of_reflection_vector() {
             let (m, position) = setup();
             let t = std::f64::consts::SQRT_2 / 2.0;
-            let eyev = Tuple3::vec(0.0, -t, -t);
-            let normalv = Tuple3::vec(0.0, 0.0, -1.0);
+            let eyev = Vec3d::new(0.0, -t, -t);
+            let normalv = Vec3d::new(0.0, 0.0, -1.0);
             let light = PointLight {
-                position: Tuple3::point(0.0, 10.0, -10.0),
+                position: Point3d::new(0.0, 10.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
@@ -147,10 +147,10 @@ mod tests {
         #[test]
         fn lighting_with_light_behind_surface() {
             let (m, position) = setup();
-            let eyev = Tuple3::vec(0.0, 0.0, -1.0);
-            let normalv = Tuple3::vec(0.0, 0.0, -1.0);
+            let eyev = Vec3d::new(0.0, 0.0, -1.0);
+            let normalv = Vec3d::new(0.0, 0.0, -1.0);
             let light = PointLight {
-                position: Tuple3::point(0.0, 0.0, 10.0),
+                position: Point3d::new(0.0, 0.0, 10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 

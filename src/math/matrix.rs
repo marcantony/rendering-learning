@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 
-use super::{tuple::Tuple3, util};
+use super::util;
 
 #[derive(Debug, Clone)]
 pub struct Matrix<const N: usize, const M: usize>([[f64; M]; N]);
@@ -13,6 +13,10 @@ impl<const N: usize, const M: usize> Matrix<N, M> {
 
     pub fn at(&self, n: usize, m: usize) -> f64 {
         self.0[n][m]
+    }
+
+    pub fn put(&mut self, n: usize, m: usize, val: f64) {
+        self.0[n][m] = val;
     }
 
     pub fn transpose(&self) -> Matrix<M, N> {
@@ -203,25 +207,6 @@ impl<const N1: usize, const N2: usize, const M: usize> Mul<&Matrix<M, N2>> for &
     }
 }
 
-impl Mul<&Tuple3> for &SquareMatrix<4> {
-    type Output = Tuple3;
-
-    fn mul(self, rhs: &Tuple3) -> Self::Output {
-        const N: usize = 4;
-
-        let mut output = [0.0; N];
-
-        for n in 0..N {
-            output[n] = self.0[n][0] * rhs.x()
-                + self.0[n][1] * rhs.y()
-                + self.0[n][2] * rhs.z()
-                + self.0[n][3] * rhs.w();
-        }
-
-        Tuple3::new(output[0], output[1], output[2], output[3])
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -353,8 +338,6 @@ mod tests {
     }
 
     mod multiply {
-        use crate::math::tuple::Tuple3;
-
         use super::*;
 
         #[test]
@@ -382,20 +365,6 @@ mod tests {
                     [16.0, 26.0, 46.0, 42.0]
                 ])
             );
-        }
-
-        #[test]
-        fn multiply_matrix_by_tuple() {
-            let a = Matrix::new([
-                [1.0, 2.0, 3.0, 4.0],
-                [2.0, 4.0, 4.0, 2.0],
-                [8.0, 6.0, 4.0, 1.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ]);
-
-            let b = Tuple3::new(1.0, 2.0, 3.0, 1.0);
-
-            assert_eq!(&a * &b, Tuple3::new(18.0, 24.0, 33.0, 1.0));
         }
 
         #[test]

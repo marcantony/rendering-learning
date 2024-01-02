@@ -5,30 +5,30 @@ use std::{
 
 use ray_tracer_challenge::{
     draw::{canvas::Canvas, color::Color},
-    math::tuple::Tuple3,
+    math::{point::Point3d, vector::Vec3d},
 };
 
 struct Projectile {
-    position: Tuple3,
-    velocity: Tuple3,
+    position: Point3d,
+    velocity: Vec3d,
 }
 
 struct Environment {
-    gravity: Tuple3,
-    wind: Tuple3,
+    gravity: Vec3d,
+    wind: Vec3d,
 }
 
 fn main() {
     println!("Projectile simulation!");
 
     let mut p = Projectile {
-        position: Tuple3::point(0.0, 1.0, 0.0),
-        velocity: &Tuple3::vec(1.0, 1.8, 0.0).norm() * 11.25,
+        position: Point3d::new(0.0, 1.0, 0.0),
+        velocity: &Vec3d::new(1.0, 1.8, 0.0).norm() * 11.25,
     };
 
     let e = Environment {
-        gravity: Tuple3::vec(0.0, -0.1, 0.0),
-        wind: Tuple3::vec(-0.01, 0.0, 0.0),
+        gravity: Vec3d::new(0.0, -0.1, 0.0),
+        wind: Vec3d::new(-0.01, 0.0, 0.0),
     };
 
     let mut c = Canvas::new(900, 550);

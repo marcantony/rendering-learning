@@ -2,12 +2,12 @@ use std::{fs, time::SystemTime};
 
 use ray_tracer_challenge::{
     draw::{canvas::Canvas, color::Color},
-    math::tuple::Tuple3,
+    math::{point::Point3d, vector::Vec3d},
     scene::transformation,
 };
 
 fn main() {
-    let hour_points: Vec<Tuple3> = vec![Tuple3::point(0.0, 1.0, 0.0); 12]
+    let hour_points: Vec<_> = vec![Point3d::new(0.0, 1.0, 0.0); 12]
         .into_iter()
         .enumerate()
         .map(|(i, p)| {
@@ -19,7 +19,7 @@ fn main() {
     const CLOCK_CANVAS_RATIO: f64 = 3.0 / 8.0;
     const CANVAS_SIZE: usize = 400;
     const CENTER: usize = CANVAS_SIZE / 2;
-    let translation = Tuple3::vec(CENTER as f64, CENTER as f64, 0.0);
+    let translation = Vec3d::new(CENTER as f64, CENTER as f64, 0.0);
     let mut c = Canvas::new(CANVAS_SIZE, CANVAS_SIZE);
 
     hour_points.iter().for_each(|point| {

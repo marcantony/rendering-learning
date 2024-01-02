@@ -1,6 +1,7 @@
 use crate::math::{
     matrix::{Matrix, SquareMatrix},
-    tuple::Tuple3,
+    point::Point3d,
+    vector::Vec3d,
 };
 
 use super::{intersect::Intersection, material::Material, ray::Ray};
@@ -33,7 +34,7 @@ impl Sphere {
 
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
         let r = worldspace_ray.transform(&self.inverse_transform_unchecked());
-        let sphere_to_ray = r.origin() - &Tuple3::point(0.0, 0.0, 0.0);
+        let sphere_to_ray = r.origin() - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = r.direction().dot(r.direction());
         let b = 2.0 * r.direction().dot(&sphere_to_ray);
@@ -52,11 +53,11 @@ impl Sphere {
         }
     }
 
-    pub fn normal_at(&self, world_point: &Tuple3) -> Tuple3 {
+    pub fn normal_at(&self, world_point: &Point3d) -> Vec3d {
         let object_point = &self.inverse_transform_unchecked() * world_point;
-        let object_normal = (&object_point - &Tuple3::point(0.0, 0.0, 0.0)).norm();
+        let object_normal = (&object_point - &Point3d::new(0.0, 0.0, 0.0)).norm();
         let world_normal = &self.inverse_transform_unchecked().transpose() * &object_normal;
-        Tuple3::vec(world_normal.x(), world_normal.y(), world_normal.z()).norm()
+        Vec3d::new(world_normal.x(), world_normal.y(), world_normal.z()).norm()
     }
 
     fn inverse_transform_unchecked(&self) -> SquareMatrix<4> {
@@ -80,10 +81,7 @@ impl PartialEq for Sphere {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        math::tuple::Tuple3,
-        scene::{ray::Ray, transformation},
-    };
+    use crate::scene::{ray::Ray, transformation};
 
     use super::*;
 
@@ -92,7 +90,7 @@ mod tests {
 
         #[test]
         fn a_ray_intersects_a_sphere_at_two_points() {
-            let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
             let xs = s.intersect(&r);
@@ -105,7 +103,7 @@ mod tests {
 
         #[test]
         fn a_ray_intersects_a_sphere_at_a_tangent() {
-            let r = Ray::new(Tuple3::point(0.0, 1.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let r = Ray::new(Point3d::new(0.0, 1.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
             let xs = s.intersect(&r);
@@ -118,7 +116,7 @@ mod tests {
 
         #[test]
         fn a_ray_misses_a_sphere() {
-            let r = Ray::new(Tuple3::point(0.0, 2.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let r = Ray::new(Point3d::new(0.0, 2.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
             let xs = s.intersect(&r);
@@ -128,7 +126,7 @@ mod tests {
 
         #[test]
         fn a_ray_originates_inside_a_sphere() {
-            let r = Ray::new(Tuple3::point(0.0, 0.0, 0.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
             let xs = s.intersect(&r);
@@ -141,7 +139,7 @@ mod tests {
 
         #[test]
         fn a_sphere_is_behind_a_ray() {
-            let r = Ray::new(Tuple3::point(0.0, 0.0, 5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let r = Ray::new(Point3d::new(0.0, 0.0, 5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
             let xs = s.intersect(&r);
@@ -154,7 +152,7 @@ mod tests {
 
         #[test]
         fn intersecting_scaled_sphere_with_ray() {
-            let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere {
                 transform: transformation::scaling(2.0, 2.0, 2.0),
                 ..Default::default()
@@ -170,7 +168,7 @@ mod tests {
 
         #[test]
         fn intersecting_translated_sphere_with_ray() {
-            let r = Ray::new(Tuple3::point(0.0, 0.0, -5.0), Tuple3::vec(0.0, 0.0, 1.0));
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere {
                 transform: transformation::translation(5.0, 0.0, 0.0),
                 ..Default::default()
@@ -209,27 +207,27 @@ mod tests {
         fn normal_on_a_sphere_at_a_point_on_x_axis() {
             let s = Sphere::unit();
 
-            let n = s.normal_at(&Tuple3::point(1.0, 0.0, 0.0));
+            let n = s.normal_at(&Point3d::new(1.0, 0.0, 0.0));
 
-            assert_eq!(n, Tuple3::vec(1.0, 0.0, 0.0));
+            assert_eq!(n, Vec3d::new(1.0, 0.0, 0.0));
         }
 
         #[test]
         fn normal_on_a_sphere_at_a_point_on_y_axis() {
             let s = Sphere::unit();
 
-            let n = s.normal_at(&Tuple3::point(0.0, 1.0, 0.0));
+            let n = s.normal_at(&Point3d::new(0.0, 1.0, 0.0));
 
-            assert_eq!(n, Tuple3::vec(0.0, 1.0, 0.0));
+            assert_eq!(n, Vec3d::new(0.0, 1.0, 0.0));
         }
 
         #[test]
         fn normal_on_a_sphere_at_a_point_on_z_axis() {
             let s = Sphere::unit();
 
-            let n = s.normal_at(&Tuple3::point(0.0, 0.0, 1.0));
+            let n = s.normal_at(&Point3d::new(0.0, 0.0, 1.0));
 
-            assert_eq!(n, Tuple3::vec(0.0, 0.0, 1.0));
+            assert_eq!(n, Vec3d::new(0.0, 0.0, 1.0));
         }
 
         #[test]
@@ -237,9 +235,9 @@ mod tests {
             let s = Sphere::unit();
             let t = f64::sqrt(3.0) / 3.0;
 
-            let n = s.normal_at(&Tuple3::point(t, t, t));
+            let n = s.normal_at(&Point3d::new(t, t, t));
 
-            assert_eq!(n, Tuple3::vec(t, t, t));
+            assert_eq!(n, Vec3d::new(t, t, t));
         }
 
         #[test]
@@ -247,7 +245,7 @@ mod tests {
             let s = Sphere::unit();
             let t = f64::sqrt(3.0) / 3.0;
 
-            let n = s.normal_at(&Tuple3::point(t, t, t));
+            let n = s.normal_at(&Point3d::new(t, t, t));
 
             assert_eq!(n, n.norm());
         }
@@ -259,9 +257,9 @@ mod tests {
                 ..Default::default()
             };
 
-            let n = s.normal_at(&Tuple3::point(0.0, 1.70711, -0.70711));
+            let n = s.normal_at(&Point3d::new(0.0, 1.70711, -0.70711));
 
-            assert_vec_approx_equals(&n, &Tuple3::vec(0.0, 0.70711, -0.70711));
+            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.70711, -0.70711));
         }
 
         #[test]
@@ -275,9 +273,9 @@ mod tests {
             };
             let t = std::f64::consts::SQRT_2 / 2.0;
 
-            let n = s.normal_at(&Tuple3::point(0.0, t, -t));
+            let n = s.normal_at(&Point3d::new(0.0, t, -t));
 
-            assert_vec_approx_equals(&n, &Tuple3::vec(0.0, 0.97014, -0.24254));
+            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.97014, -0.24254));
         }
     }
 
@@ -305,7 +303,7 @@ mod tests {
         }
     }
 
-    fn assert_vec_approx_equals(a: &Tuple3, b: &Tuple3) {
+    fn assert_vec_approx_equals(a: &Vec3d, b: &Vec3d) {
         let tolerance = 1e-5;
         assert!(equal_with_tolerance(a.x(), b.x(), tolerance));
         assert!(equal_with_tolerance(a.y(), b.y(), tolerance));

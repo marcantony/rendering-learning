@@ -3,7 +3,7 @@ use ray_tracer_challenge::{
         canvas::Canvas,
         color::{self, Color},
     },
-    math::tuple::Tuple3,
+    math::point::Point3d,
     scene::{
         intersect,
         light::PointLight,
@@ -16,7 +16,7 @@ use ray_tracer_challenge::{
 };
 
 fn main() {
-    let ray_origin = Tuple3::point(0.0, 0.0, -5.0);
+    let ray_origin = Point3d::new(0.0, 0.0, -5.0);
     let wall_z = 10.0;
     let wall_size = 7.0;
     let canvas_pixels = 100;
@@ -36,7 +36,7 @@ fn main() {
         },
     );
     let light = PointLight {
-        position: Tuple3::point(10.0, -10.0, -10.0),
+        position: Point3d::new(10.0, -10.0, -10.0),
         intensity: color::white(),
     };
 
@@ -45,7 +45,7 @@ fn main() {
         let world_y = half_wall - pixel_size * y as f64;
         for x in 0..canvas_pixels {
             let world_x = -half_wall + pixel_size * x as f64;
-            let target = Tuple3::point(world_x, world_y, wall_z);
+            let target = Point3d::new(world_x, world_y, wall_z);
             let r = Ray::new(ray_origin.clone(), (&target - &ray_origin).norm());
 
             let xs = object.intersect(&r);

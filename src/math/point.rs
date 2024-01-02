@@ -33,16 +33,10 @@ impl Point3d {
     }
 }
 
-impl TryFrom<Matrix<4, 1>> for Point3d {
-    type Error = String;
-
-    fn try_from(value: Matrix<4, 1>) -> Result<Self, Self::Error> {
-        let w = value.at(3, 0);
-        if w != 1.0 {
-            Err(format!("A point should have w=1.0. Found w={} instead!", w))
-        } else {
-            Ok(Point3d(value))
-        }
+impl From<Matrix<4, 1>> for Point3d {
+    fn from(mut value: Matrix<4, 1>) -> Self {
+        value.put(3, 0, 1.0);
+        Point3d(value)
     }
 }
 
@@ -105,11 +99,11 @@ impl Div<f64> for &Point3d {
 }
 
 impl Mul<&Point3d> for &SquareMatrix<4> {
-    type Output = Result<Point3d, String>;
+    type Output = Point3d;
 
     fn mul(self, rhs: &Point3d) -> Self::Output {
         let output_data = self * &rhs.0;
-        Point3d::try_from(output_data)
+        Point3d::from(output_data)
     }
 }
 
@@ -215,7 +209,7 @@ mod tests {
 
             let b = Point3d::new(1.0, 2.0, 3.0);
 
-            assert_eq!(&a * &b, Ok(Point3d::new(18.0, 24.0, 33.0)));
+            assert_eq!(&a * &b, Point3d::new(18.0, 24.0, 33.0));
         }
     }
 }

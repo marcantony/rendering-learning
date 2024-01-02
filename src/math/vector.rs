@@ -55,19 +55,10 @@ impl Vec3d {
     }
 }
 
-impl TryFrom<Matrix<4, 1>> for Vec3d {
-    type Error = String;
-
-    fn try_from(value: Matrix<4, 1>) -> Result<Self, Self::Error> {
-        let w = value.at(3, 0);
-        if w != 0.0 {
-            Err(format!(
-                "A vector should have w=0.0. Found w={} instead!",
-                w
-            ))
-        } else {
-            Ok(Vec3d(value))
-        }
+impl From<Matrix<4, 1>> for Vec3d {
+    fn from(mut value: Matrix<4, 1>) -> Self {
+        value.put(3, 0, 0.0);
+        Vec3d(value)
     }
 }
 
@@ -118,11 +109,11 @@ impl Div<f64> for &Vec3d {
 }
 
 impl Mul<&Vec3d> for &SquareMatrix<4> {
-    type Output = Result<Vec3d, String>;
+    type Output = Vec3d;
 
     fn mul(self, rhs: &Vec3d) -> Self::Output {
         let output_data = self * &rhs.0;
-        Vec3d::try_from(output_data)
+        Vec3d::from(output_data)
     }
 }
 
@@ -302,7 +293,7 @@ mod tests {
 
             let b = Vec3d::new(1.0, 2.0, 3.0);
 
-            assert_eq!(&a * &b, Ok(Vec3d::new(14.0, 22.0, 32.0)));
+            assert_eq!(&a * &b, Vec3d::new(14.0, 22.0, 32.0));
         }
     }
 }
