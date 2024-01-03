@@ -1,6 +1,10 @@
 use core::f64;
 
-use crate::math::matrix::{Matrix, SquareMatrix};
+use crate::math::{
+    matrix::{Matrix, SquareMatrix},
+    point::Point3d,
+    vector::Vec3d,
+};
 
 pub fn translation(x: f64, y: f64, z: f64) -> SquareMatrix<4> {
     Matrix::new([
@@ -63,6 +67,22 @@ pub fn sequence(transformations: &[SquareMatrix<4>]) -> SquareMatrix<4> {
     transformations
         .iter()
         .fold(SquareMatrix::<4>::identity(), |acc, t| t * &acc)
+}
+
+pub fn view_transform(from: &Point3d, to: &Point3d, up: &Vec3d) -> SquareMatrix<4> {
+    let forward = (to - from).norm().unwrap();
+    let upn = up.norm().unwrap();
+    let left = forward.cross(&upn);
+    let true_up = left.cross(&forward);
+
+    let orientation = Matrix::new([
+        [left.x(), left.y(), left.z(), 0.0],
+        [true_up.x(), true_up.y(), true_up.z(), 0.0],
+        [-forward.x(), -forward.y(), -forward.z(), 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]);
+
+    &orientation * &translation(-from.x(), -from.y(), -from.z())
 }
 
 #[cfg(test)]
@@ -285,5 +305,79 @@ mod tests {
         let t = sequence(&[a, b, c]);
 
         assert_eq!(&t * &p, Point3d::new(15.0, 0.0, 7.0));
+    }
+
+    mod view_transform {
+        use super::*;
+
+        #[test]
+        fn view_transformation_matrix_for_default_orientation() {
+            let from = Point3d::new(0.0, 0.0, 0.0);
+            let to = Point3d::new(0.0, 0.0, -1.0);
+            let up = Vec3d::new(0.0, 1.0, 0.0);
+
+            let t = view_transform(&from, &to, &up);
+
+            assert_eq!(t, Matrix::identity());
+        }
+
+        #[test]
+        fn view_transformation_matrix_looking_in_positive_z_direction() {
+            let from = Point3d::new(0.0, 0.0, 0.0);
+            let to = Point3d::new(0.0, 0.0, 1.0);
+            let up = Vec3d::new(0.0, 1.0, 0.0);
+
+            let t = view_transform(&from, &to, &up);
+
+            assert_eq!(t, scaling(-1.0, 1.0, -1.0));
+        }
+
+        #[test]
+        fn view_transformation_moves_the_world() {
+            let from = Point3d::new(0.0, 0.0, 8.0);
+            let to = Point3d::new(0.0, 0.0, 0.0);
+            let up = Vec3d::new(0.0, 1.0, 0.0);
+
+            let t = view_transform(&from, &to, &up);
+
+            assert_eq!(t, translation(0.0, 0.0, -8.0));
+        }
+
+        #[test]
+        fn arbitrary_view_transformation() {
+            let from = Point3d::new(1.0, 3.0, 2.0);
+            let to = Point3d::new(4.0, -2.0, 8.0);
+            let up = Vec3d::new(1.0, 1.0, 0.0);
+
+            let t = view_transform(&from, &to, &up);
+
+            let expected = Matrix::new([
+                [-0.50709, 0.50709, 0.67612, -2.36643],
+                [0.76772, 0.60609, 0.12122, -2.82843],
+                [-0.35857, 0.59761, -0.71714, 0.00000],
+                [0.00000, 0.00000, 0.00000, 1.00000],
+            ]);
+
+            matrix_approx_equals(&t, &expected);
+        }
+
+        fn matrix_approx_equals<const N: usize>(a: &SquareMatrix<N>, b: &SquareMatrix<N>) {
+            for n in 0..N {
+                for m in 0..N {
+                    let lhs = a.at(n, m);
+                    let rhs = b.at(n, m);
+                    assert!(
+                        f64::abs(lhs - rhs) < 1e-5,
+                        "a[{}][{}]={}, b[{}][{}]={}",
+                        n,
+                        m,
+                        lhs,
+                        n,
+                        m,
+                        rhs
+                    );
+                }
+            }
+        }
     }
 }
