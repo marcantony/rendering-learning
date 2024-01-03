@@ -38,7 +38,7 @@ impl<'a> Intersection<'a> {
         let eye_v = NormalizedVec3d::try_from(-ray.direction()).unwrap();
         let normal_v = object.normal_at(&point);
 
-        let normal_dot_eye = normal_v.as_ref().dot(eye_v.as_ref());
+        let normal_dot_eye = normal_v.dot(&eye_v);
         let (adjusted_normal_v, inside) = if normal_dot_eye < 0.0 {
             (-normal_v, true)
         } else {

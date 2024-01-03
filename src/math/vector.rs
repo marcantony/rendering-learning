@@ -153,12 +153,6 @@ impl TryFrom<Vec3d> for NormalizedVec3d {
     }
 }
 
-impl AsRef<Vec3d> for NormalizedVec3d {
-    fn as_ref(&self) -> &Vec3d {
-        &self.0
-    }
-}
-
 impl Deref for NormalizedVec3d {
     type Target = Vec3d;
 
@@ -365,7 +359,7 @@ mod tests {
             let v = Vec3d::new(1.0, 2.0, 3.0);
             let n = NormalizedVec3d::try_from(v.clone()).unwrap();
 
-            assert_eq!(n.as_ref(), &v.norm().unwrap())
+            assert_eq!(*n, v.norm().unwrap())
         }
 
         #[test]

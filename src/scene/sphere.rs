@@ -210,7 +210,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(1.0, 0.0, 0.0));
 
-            assert_eq!(n.as_ref(), &Vec3d::new(1.0, 0.0, 0.0));
+            assert_eq!(*n, Vec3d::new(1.0, 0.0, 0.0));
         }
 
         #[test]
@@ -219,7 +219,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, 1.0, 0.0));
 
-            assert_eq!(n.as_ref(), &Vec3d::new(0.0, 1.0, 0.0));
+            assert_eq!(*n, Vec3d::new(0.0, 1.0, 0.0));
         }
 
         #[test]
@@ -228,7 +228,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, 0.0, 1.0));
 
-            assert_eq!(n.as_ref(), &Vec3d::new(0.0, 0.0, 1.0));
+            assert_eq!(*n, Vec3d::new(0.0, 0.0, 1.0));
         }
 
         #[test]
@@ -238,7 +238,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(t, t, t));
 
-            assert_eq!(n.as_ref(), &Vec3d::new(t, t, t));
+            assert_eq!(*n, Vec3d::new(t, t, t));
         }
 
         #[test]
@@ -248,7 +248,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(t, t, t));
 
-            assert_eq!(n.as_ref(), &n.as_ref().norm().unwrap());
+            assert_eq!(*n, n.norm().unwrap());
         }
 
         #[test]
@@ -260,7 +260,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, 1.70711, -0.70711));
 
-            assert_vec_approx_equals(n.as_ref(), &Vec3d::new(0.0, 0.70711, -0.70711));
+            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.70711, -0.70711));
         }
 
         #[test]
@@ -276,7 +276,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, t, -t));
 
-            assert_vec_approx_equals(n.as_ref(), &Vec3d::new(0.0, 0.97014, -0.24254));
+            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.97014, -0.24254));
         }
     }
 

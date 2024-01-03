@@ -38,15 +38,15 @@ pub fn lighting(
 
     let ambient = &effective_color * material.ambient;
 
-    let light_dot_normal = lightv.dot(normalv.as_ref());
+    let light_dot_normal = lightv.dot(normalv);
 
     let (diffuse, specular) = if light_dot_normal < 0.0 {
         (color::black(), color::black())
     } else {
         let diff = &(&effective_color * material.diffuse) * light_dot_normal;
 
-        let reflectv = -&lightv.reflect(normalv.as_ref());
-        let reflect_dot_eye = reflectv.dot(eyev.as_ref());
+        let reflectv = -&lightv.reflect(normalv);
+        let reflect_dot_eye = reflectv.dot(eyev);
 
         (
             diff,
