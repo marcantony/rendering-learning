@@ -1,6 +1,9 @@
 use crate::{
     draw::color::{self, Color},
-    math::{matrix::SquareMatrix, point::Point3d},
+    math::{
+        matrix::{InvertibleMatrix, SquareMatrix},
+        point::Point3d,
+    },
     scene::{material::Material, transformation},
 };
 
@@ -77,7 +80,7 @@ fn basic_light() -> PointLight {
 
 fn basic_spheres() -> Vec<Sphere> {
     let s1 = Sphere::new(
-        SquareMatrix::<4>::identity(),
+        InvertibleMatrix::try_from(SquareMatrix::<4>::identity()).unwrap(),
         Material {
             color: Color::new(0.8, 1.0, 0.6),
             diffuse: 0.7,
@@ -85,7 +88,10 @@ fn basic_spheres() -> Vec<Sphere> {
             ..Default::default()
         },
     );
-    let s2 = Sphere::new(transformation::scaling(0.5, 0.5, 0.5), Default::default());
+    let s2 = Sphere::new(
+        InvertibleMatrix::try_from(transformation::scaling(0.5, 0.5, 0.5)).unwrap(),
+        Default::default(),
+    );
 
     vec![s1, s2]
 }

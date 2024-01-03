@@ -3,7 +3,7 @@ use ray_tracer_challenge::{
         canvas::Canvas,
         color::{self, Color},
     },
-    math::{point::Point3d, vector::NormalizedVec3d},
+    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect,
         light::PointLight,
@@ -24,10 +24,11 @@ fn main() {
     let half_wall = wall_size / 2.0;
 
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
-    let object_transform = transformation::sequence(&vec![
+    let object_transform = InvertibleMatrix::try_from(transformation::sequence(&vec![
         transformation::scaling(1.0, 1.0, 1.0),
         transformation::shearing(0.5, 0.0, 0.0, 0.0, 0.0, 0.0),
-    ]);
+    ]))
+    .unwrap();
     let object = Sphere::new(
         object_transform,
         Material {

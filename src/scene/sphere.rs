@@ -1,5 +1,5 @@
 use crate::math::{
-    matrix::{Matrix, SquareMatrix},
+    matrix::{InvertibleMatrix, Matrix, SquareMatrix},
     point::Point3d,
     vector::{NormalizedVec3d, Vec3d},
 };
@@ -8,12 +8,12 @@ use super::{intersect::Intersection, material::Material, ray::Ray};
 
 #[derive(Debug, PartialEq)]
 pub struct Sphere {
-    transform: SquareMatrix<4>,
+    transform: InvertibleMatrix<4>,
     pub material: Material,
 }
 
 impl Sphere {
-    pub fn new(transform: SquareMatrix<4>, material: Material) -> Self {
+    pub fn new(transform: InvertibleMatrix<4>, material: Material) -> Self {
         Sphere {
             transform,
             material,
@@ -21,7 +21,10 @@ impl Sphere {
     }
 
     pub fn unit() -> Self {
-        Sphere::new(Matrix::identity(), Default::default())
+        Sphere::new(
+            InvertibleMatrix::try_from(Matrix::identity()).unwrap(),
+            Default::default(),
+        )
     }
 
     pub fn transform(&self) -> &SquareMatrix<4> {
@@ -33,7 +36,7 @@ impl Sphere {
     }
 
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
-        let r = worldspace_ray.transform(&self.inverse_transform_unchecked());
+        let r = worldspace_ray.transform(&self.transform.inverse());
         let sphere_to_ray = r.origin() - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = r.direction().dot(r.direction());
@@ -54,23 +57,17 @@ impl Sphere {
     }
 
     pub fn normal_at(&self, world_point: &Point3d) -> NormalizedVec3d {
-        let object_point = &self.inverse_transform_unchecked() * world_point;
+        let object_point = self.transform.inverse() * world_point;
         let object_normal = (&object_point - &Point3d::new(0.0, 0.0, 0.0))
             .norm()
             .unwrap();
-        let world_normal = &self.inverse_transform_unchecked().transpose() * &object_normal;
+        let world_normal = &self.transform.inverse().transpose() * &object_normal;
         NormalizedVec3d::try_from(Vec3d::new(
             world_normal.x(),
             world_normal.y(),
             world_normal.z(),
         ))
         .unwrap()
-    }
-
-    fn inverse_transform_unchecked(&self) -> SquareMatrix<4> {
-        self.transform
-            .invert()
-            .expect("Sphere transform is uninvertible!")
     }
 }
 
@@ -155,7 +152,8 @@ mod tests {
         fn intersecting_scaled_sphere_with_ray() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere {
-                transform: transformation::scaling(2.0, 2.0, 2.0),
+                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
+                    .unwrap(),
                 ..Default::default()
             };
 
@@ -171,7 +169,8 @@ mod tests {
         fn intersecting_translated_sphere_with_ray() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere {
-                transform: transformation::translation(5.0, 0.0, 0.0),
+                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
+                    .unwrap(),
                 ..Default::default()
             };
 
@@ -194,7 +193,7 @@ mod tests {
         fn using_a_different_transformation() {
             let t = transformation::translation(2.0, 3.0, 4.0);
             let s = Sphere {
-                transform: t.clone(),
+                transform: InvertibleMatrix::try_from(t.clone()).unwrap(),
                 ..Default::default()
             };
             assert_eq!(s.transform(), &t);
@@ -254,7 +253,8 @@ mod tests {
         #[test]
         fn computing_the_normal_on_a_translated_sphere() {
             let s = Sphere {
-                transform: transformation::translation(0.0, 1.0, 0.0),
+                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 1.0, 0.0))
+                    .unwrap(),
                 ..Default::default()
             };
 
@@ -266,10 +266,11 @@ mod tests {
         #[test]
         fn computing_the_normal_on_a_transformed_sphere() {
             let s = Sphere {
-                transform: transformation::sequence(&[
+                transform: InvertibleMatrix::try_from(transformation::sequence(&[
                     transformation::rotation_z(std::f64::consts::PI / 5.0),
                     transformation::scaling(1.0, 0.5, 1.0),
-                ]),
+                ]))
+                .unwrap(),
                 ..Default::default()
             };
             let t = std::f64::consts::SQRT_2 / 2.0;

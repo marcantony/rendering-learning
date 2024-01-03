@@ -221,6 +221,7 @@ impl<const N: usize, const M: usize> IndexMut<(usize, usize)> for Matrix<N, M> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct InvertibleMatrix<const N: usize> {
     matrix: SquareMatrix<N>,
     inverse: SquareMatrix<N>,
