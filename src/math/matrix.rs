@@ -1,4 +1,4 @@
-use std::ops::{Add, Index, IndexMut, Mul, Sub};
+use std::ops::{Add, Deref, Index, IndexMut, Mul, Sub};
 
 use super::util;
 
@@ -218,6 +218,39 @@ impl<const N: usize, const M: usize> Index<(usize, usize)> for Matrix<N, M> {
 impl<const N: usize, const M: usize> IndexMut<(usize, usize)> for Matrix<N, M> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.0[index.0][index.1]
+    }
+}
+
+pub struct InvertibleMatrix<const N: usize> {
+    matrix: SquareMatrix<N>,
+    inverse: SquareMatrix<N>,
+}
+
+impl<const N: usize> InvertibleMatrix<N> {
+    pub fn inverse(&self) -> &SquareMatrix<N> {
+        &self.inverse
+    }
+}
+
+impl<const N: usize> TryFrom<SquareMatrix<N>> for InvertibleMatrix<N> {
+    type Error = String;
+
+    fn try_from(value: SquareMatrix<N>) -> Result<Self, Self::Error> {
+        match value.invert() {
+            Some(inverse) => Ok(InvertibleMatrix {
+                matrix: value,
+                inverse,
+            }),
+            None => Err("Matrix is not invertible.".to_string()),
+        }
+    }
+}
+
+impl<const N: usize> Deref for InvertibleMatrix<N> {
+    type Target = SquareMatrix<N>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.matrix
     }
 }
 
@@ -557,8 +590,8 @@ mod tests {
                 assert_eq!(a.cofactor(3, 2), 105.0);
                 assert_eq!(b.at(2, 3), 105.0 / 532.0);
                 matrix_approx_equals(
-                    b,
-                    Matrix::new([
+                    &b,
+                    &Matrix::new([
                         [0.21805, 0.45113, 0.24060, -0.04511],
                         [-0.80827, -1.45677, -0.44361, 0.52068],
                         [-0.07895, -0.22368, -0.05263, 0.19737],
@@ -577,8 +610,8 @@ mod tests {
                 ]);
 
                 matrix_approx_equals(
-                    a.invert().unwrap(),
-                    Matrix::new([
+                    a.invert().as_ref().unwrap(),
+                    &Matrix::new([
                         [-0.15385, -0.15385, -0.28205, -0.53846],
                         [-0.07692, 0.12308, 0.02564, 0.03077],
                         [0.35897, 0.35897, 0.43590, 0.92308],
@@ -597,8 +630,8 @@ mod tests {
                 ]);
 
                 matrix_approx_equals(
-                    a.invert().unwrap(),
-                    Matrix::new([
+                    a.invert().as_ref().unwrap(),
+                    &Matrix::new([
                         [-0.04074, -0.07778, 0.14444, -0.22222],
                         [-0.07778, 0.03333, 0.36667, -0.33333],
                         [-0.02901, -0.14630, -0.10926, 0.12963],
@@ -627,13 +660,59 @@ mod tests {
 
                 assert_eq!(&c * &b.invert().unwrap(), a);
             }
+        }
+    }
 
-            fn matrix_approx_equals<const N: usize>(a: SquareMatrix<N>, b: SquareMatrix<N>) {
-                for n in 0..N {
-                    for m in 0..N {
-                        assert!(f64::abs(a.at(n, m) - b.at(n, m)) < 0.00001)
-                    }
-                }
+    mod invertible_matrix {
+        use super::*;
+
+        #[test]
+        fn construct_invertible_matrix() {
+            let a = InvertibleMatrix::try_from(Matrix::new([
+                [-5.0, 2.0, 6.0, -8.0],
+                [1.0, -5.0, 1.0, 8.0],
+                [7.0, 7.0, -6.0, -7.0],
+                [1.0, -3.0, 7.0, 4.0],
+            ]))
+            .unwrap();
+
+            let b = a.inverse();
+
+            assert_eq!(a.determinant(), 532.0);
+            assert_eq!(a.cofactor(2, 3), -160.0);
+            assert_eq!(b.at(3, 2), -160.0 / 532.0);
+            assert_eq!(a.cofactor(3, 2), 105.0);
+            assert_eq!(b.at(2, 3), 105.0 / 532.0);
+            matrix_approx_equals(
+                b,
+                &Matrix::new([
+                    [0.21805, 0.45113, 0.24060, -0.04511],
+                    [-0.80827, -1.45677, -0.44361, 0.52068],
+                    [-0.07895, -0.22368, -0.05263, 0.19737],
+                    [-0.52256, -0.81391, -0.30075, 0.30639],
+                ]),
+            );
+        }
+
+        #[test]
+        fn try_constructing_invertible_matrix_from_uninvertible() {
+            let a = Matrix::new([
+                [-4.0, 2.0, -2.0, -3.0],
+                [9.0, 6.0, 2.0, 6.0],
+                [0.0, -5.0, 1.0, -5.0],
+                [0.0, 0.0, 0.0, 0.0],
+            ]);
+
+            let b = InvertibleMatrix::try_from(a);
+
+            assert!(b.is_err());
+        }
+    }
+
+    fn matrix_approx_equals<const N: usize>(a: &SquareMatrix<N>, b: &SquareMatrix<N>) {
+        for n in 0..N {
+            for m in 0..N {
+                assert!(f64::abs(a.at(n, m) - b.at(n, m)) < 0.00001)
             }
         }
     }
