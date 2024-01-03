@@ -16,10 +16,13 @@ use ray_tracer_challenge::{
 };
 
 fn main() {
+    use std::time::Instant;
+    let now = Instant::now();
+
     let ray_origin = Point3d::new(0.0, 0.0, -5.0);
     let wall_z = 10.0;
     let wall_size = 7.0;
-    let canvas_pixels = 100;
+    let canvas_pixels = 400;
     let pixel_size = wall_size / canvas_pixels as f64;
     let half_wall = wall_size / 2.0;
 
@@ -68,6 +71,9 @@ fn main() {
         }
     }
     println!("Scene rendered.");
+
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
 
     util::write_to_file(&canvas, "sphere");
 }
