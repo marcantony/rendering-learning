@@ -1,8 +1,8 @@
 use crate::math::{matrix::SquareMatrix, point::Point3d, vector::Vec3d};
 
 pub struct Ray {
-    origin: Point3d,
-    direction: Vec3d,
+    pub origin: Point3d,
+    pub direction: Vec3d,
 }
 
 impl Ray {
