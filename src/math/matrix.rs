@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Index, IndexMut, Mul, Sub};
 
 use super::util;
 
@@ -204,6 +204,20 @@ impl<const N1: usize, const N2: usize, const M: usize> Mul<&Matrix<M, N2>> for &
         }
 
         Matrix::new(output)
+    }
+}
+
+impl<const N: usize, const M: usize> Index<(usize, usize)> for Matrix<N, M> {
+    type Output = f64;
+
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        &self.0[index.0][index.1]
+    }
+}
+
+impl<const N: usize, const M: usize> IndexMut<(usize, usize)> for Matrix<N, M> {
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
+        &mut self.0[index.0][index.1]
     }
 }
 

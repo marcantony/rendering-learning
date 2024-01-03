@@ -89,8 +89,8 @@ mod tests {
         #[test]
         fn lighting_with_eye_between_light_and_surface() {
             let (m, position) = setup();
-            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
-            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let eyev = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let normalv = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -104,8 +104,8 @@ mod tests {
         fn lighting_with_eye_between_light_and_surface_eye_offset_45_degrees() {
             let (m, position) = setup();
             let t = std::f64::consts::SQRT_2 / 2.0;
-            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, t, -t)).unwrap();
-            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let eyev = NormalizedVec3d::try_from(Vec3d::new(0.0, t, -t)).unwrap();
+            let normalv = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -118,8 +118,8 @@ mod tests {
         #[test]
         fn lighting_with_eye_opposite_surface_light_offset_45_degrees() {
             let (m, position) = setup();
-            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
-            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let eyev = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let normalv = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 10.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -133,8 +133,8 @@ mod tests {
         fn lighting_with_eye_in_path_of_reflection_vector() {
             let (m, position) = setup();
             let t = std::f64::consts::SQRT_2 / 2.0;
-            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, -t, -t)).unwrap();
-            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let eyev = NormalizedVec3d::try_from(Vec3d::new(0.0, -t, -t)).unwrap();
+            let normalv = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 10.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
@@ -147,8 +147,8 @@ mod tests {
         #[test]
         fn lighting_with_light_behind_surface() {
             let (m, position) = setup();
-            let eyev = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
-            let normalv = NormalizedVec3d::try_from(&Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let eyev = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
+            let normalv = NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap();
             let light = PointLight {
                 position: Point3d::new(0.0, 0.0, 10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),

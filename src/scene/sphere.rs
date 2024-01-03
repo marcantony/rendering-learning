@@ -59,7 +59,7 @@ impl Sphere {
             .norm()
             .unwrap();
         let world_normal = &self.inverse_transform_unchecked().transpose() * &object_normal;
-        NormalizedVec3d::try_from(&Vec3d::new(
+        NormalizedVec3d::try_from(Vec3d::new(
             world_normal.x(),
             world_normal.y(),
             world_normal.z(),

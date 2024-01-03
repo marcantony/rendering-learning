@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Div, Mul, Neg, Sub},
+    ops::{Add, Deref, Div, Mul, Neg, Sub},
 };
 
 use super::matrix::{Matrix, SquareMatrix};
@@ -130,14 +130,26 @@ impl Display for Vec3d {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NormalizedVec3d(Vec3d);
 
-impl TryFrom<&Vec3d> for NormalizedVec3d {
+impl NormalizedVec3d {
+    pub fn new(x: f64, y: f64, z: f64) -> Result<Self, String> {
+        NormalizedVec3d::try_from(Vec3d::new(x, y, z))
+    }
+}
+
+impl TryFrom<Vec3d> for NormalizedVec3d {
     type Error = String;
 
-    fn try_from(value: &Vec3d) -> Result<Self, Self::Error> {
-        value
-            .norm()
-            .map(|n| NormalizedVec3d(n))
-            .ok_or(format!("{} cannot be normalized.", value))
+    fn try_from(mut value: Vec3d) -> Result<Self, Self::Error> {
+        let m = value.mag();
+        if m == 0.0 {
+            Err(format!("{} cannot be normalized.", value))
+        } else {
+            value.0[(0, 0)] /= m;
+            value.0[(1, 0)] /= m;
+            value.0[(2, 0)] /= m;
+            value.0[(3, 0)] /= m;
+            Ok(NormalizedVec3d(value))
+        }
     }
 }
 
@@ -147,11 +159,23 @@ impl AsRef<Vec3d> for NormalizedVec3d {
     }
 }
 
-impl Neg for &NormalizedVec3d {
+impl Deref for NormalizedVec3d {
+    type Target = Vec3d;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Neg for NormalizedVec3d {
     type Output = NormalizedVec3d;
 
-    fn neg(self) -> Self::Output {
-        NormalizedVec3d::try_from(&-&self.0).unwrap()
+    fn neg(mut self) -> Self::Output {
+        self.0 .0[(0, 0)] = -self.0 .0[(0, 0)];
+        self.0 .0[(1, 0)] = -self.0 .0[(1, 0)];
+        self.0 .0[(2, 0)] = -self.0 .0[(2, 0)];
+        self.0 .0[(3, 0)] = -self.0 .0[(3, 0)];
+        self
     }
 }
 
@@ -339,7 +363,7 @@ mod tests {
         #[test]
         fn create_normalized_vector() {
             let v = Vec3d::new(1.0, 2.0, 3.0);
-            let n = NormalizedVec3d::try_from(&v).unwrap();
+            let n = NormalizedVec3d::try_from(v.clone()).unwrap();
 
             assert_eq!(n.as_ref(), &v.norm().unwrap())
         }
@@ -347,9 +371,24 @@ mod tests {
         #[test]
         fn cannot_create_normalized_vector() {
             let v = Vec3d::new(0.0, 0.0, 0.0);
-            let n = NormalizedVec3d::try_from(&v);
+            let n = NormalizedVec3d::try_from(v.clone());
 
             assert!(n.is_err())
+        }
+
+        #[test]
+        fn negate_normalized_vector() {
+            let v = Vec3d::new(1.0, 2.0, 3.0);
+            let n = NormalizedVec3d::try_from(v).unwrap();
+
+            assert_eq!(-n, NormalizedVec3d::new(-1.0, -2.0, -3.0).unwrap());
+        }
+
+        #[test]
+        fn dereference_vec3d_from_normalized() {
+            let n = NormalizedVec3d::new(-1.0, -2.0, -3.0).unwrap();
+
+            assert_eq!(n.mag(), 1.0);
         }
     }
 }

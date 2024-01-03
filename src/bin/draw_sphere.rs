@@ -54,7 +54,7 @@ fn main() {
             if let Some(intersect) = hit {
                 let point = r.position(intersect.t());
                 let normalv = intersect.object().normal_at(&point);
-                let eyev = NormalizedVec3d::try_from(&-r.direction()).unwrap();
+                let eyev = NormalizedVec3d::try_from(-r.direction()).unwrap();
                 let color = material::lighting(
                     intersect.object().material(),
                     &point,
