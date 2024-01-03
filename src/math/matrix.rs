@@ -256,6 +256,23 @@ impl<const N: usize> Deref for InvertibleMatrix<N> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use super::*;
+
+    pub fn assert_matrix_approx_equals<const N: usize>(a: &SquareMatrix<N>, b: &SquareMatrix<N>) {
+        for n in 0..N {
+            for m in 0..N {
+                assert!(util::test_utils::are_within_tolerance(
+                    a.at(n, m),
+                    b.at(n, m),
+                    1e-5
+                ));
+            }
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -590,7 +607,7 @@ mod tests {
                 assert_eq!(b.at(3, 2), -160.0 / 532.0);
                 assert_eq!(a.cofactor(3, 2), 105.0);
                 assert_eq!(b.at(2, 3), 105.0 / 532.0);
-                matrix_approx_equals(
+                test_utils::assert_matrix_approx_equals(
                     &b,
                     &Matrix::new([
                         [0.21805, 0.45113, 0.24060, -0.04511],
@@ -610,7 +627,7 @@ mod tests {
                     [-3.0, 0.0, -9.0, -4.0],
                 ]);
 
-                matrix_approx_equals(
+                test_utils::assert_matrix_approx_equals(
                     a.invert().as_ref().unwrap(),
                     &Matrix::new([
                         [-0.15385, -0.15385, -0.28205, -0.53846],
@@ -630,7 +647,7 @@ mod tests {
                     [-7.0, 6.0, 6.0, 2.0],
                 ]);
 
-                matrix_approx_equals(
+                test_utils::assert_matrix_approx_equals(
                     a.invert().as_ref().unwrap(),
                     &Matrix::new([
                         [-0.04074, -0.07778, 0.14444, -0.22222],
@@ -684,7 +701,7 @@ mod tests {
             assert_eq!(b.at(3, 2), -160.0 / 532.0);
             assert_eq!(a.cofactor(3, 2), 105.0);
             assert_eq!(b.at(2, 3), 105.0 / 532.0);
-            matrix_approx_equals(
+            test_utils::assert_matrix_approx_equals(
                 b,
                 &Matrix::new([
                     [0.21805, 0.45113, 0.24060, -0.04511],
@@ -707,14 +724,6 @@ mod tests {
             let b = InvertibleMatrix::try_from(a);
 
             assert!(b.is_err());
-        }
-    }
-
-    fn matrix_approx_equals<const N: usize>(a: &SquareMatrix<N>, b: &SquareMatrix<N>) {
-        for n in 0..N {
-            for m in 0..N {
-                assert!(f64::abs(a.at(n, m) - b.at(n, m)) < 0.00001)
-            }
         }
     }
 }

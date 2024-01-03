@@ -82,6 +82,19 @@ pub fn blue() -> Color {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::math::util;
+
+    use super::*;
+
+    pub fn assert_colors_approx_equal(a: &Color, b: &Color) {
+        assert!(util::test_utils::are_within_tolerance(a.r(), b.r(), 1e-5));
+        assert!(util::test_utils::are_within_tolerance(a.g(), b.g(), 1e-5));
+        assert!(util::test_utils::are_within_tolerance(a.b(), b.b(), 1e-5));
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

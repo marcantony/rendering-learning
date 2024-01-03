@@ -174,6 +174,37 @@ impl Neg for NormalizedVec3d {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::math::util;
+
+    use super::*;
+
+    pub fn assert_vec_approx_equals(a: &Vec3d, b: &Vec3d) {
+        let tolerance = 1e-5;
+        assert!(util::test_utils::are_within_tolerance(
+            a.x(),
+            b.x(),
+            tolerance
+        ));
+        assert!(util::test_utils::are_within_tolerance(
+            a.y(),
+            b.y(),
+            tolerance
+        ));
+        assert!(util::test_utils::are_within_tolerance(
+            a.z(),
+            b.z(),
+            tolerance
+        ));
+        assert!(util::test_utils::are_within_tolerance(
+            a.w(),
+            b.w(),
+            tolerance
+        ));
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

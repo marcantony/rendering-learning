@@ -201,6 +201,8 @@ mod tests {
     }
 
     mod normal {
+        use crate::math::vector;
+
         use super::*;
 
         #[test]
@@ -260,7 +262,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, 1.70711, -0.70711));
 
-            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.70711, -0.70711));
+            vector::test_utils::assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.70711, -0.70711));
         }
 
         #[test]
@@ -277,7 +279,7 @@ mod tests {
 
             let n = s.normal_at(&Point3d::new(0.0, t, -t));
 
-            assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.97014, -0.24254));
+            vector::test_utils::assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.97014, -0.24254));
         }
     }
 
@@ -303,17 +305,5 @@ mod tests {
 
             assert_eq!(s.material(), &m);
         }
-    }
-
-    fn assert_vec_approx_equals(a: &Vec3d, b: &Vec3d) {
-        let tolerance = 1e-5;
-        assert!(equal_with_tolerance(a.x(), b.x(), tolerance));
-        assert!(equal_with_tolerance(a.y(), b.y(), tolerance));
-        assert!(equal_with_tolerance(a.z(), b.z(), tolerance));
-        assert!(equal_with_tolerance(a.w(), b.w(), tolerance));
-    }
-
-    fn equal_with_tolerance(a: f64, b: f64, tolerance: f64) -> bool {
-        f64::abs(a - b) <= tolerance
     }
 }

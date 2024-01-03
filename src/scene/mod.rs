@@ -1,3 +1,4 @@
+pub mod camera;
 pub mod intersect;
 pub mod light;
 pub mod material;

@@ -126,7 +126,10 @@ mod tests {
             };
 
             let result = lighting(&m, &position, &light, &eyev, &normalv);
-            assert_color_approx_equals(&result, &Color::new(0.7364, 0.7364, 0.7364));
+            color::test_utils::assert_colors_approx_equal(
+                &result,
+                &Color::new(0.7364, 0.7364, 0.7364),
+            );
         }
 
         #[test]
@@ -141,7 +144,10 @@ mod tests {
             };
 
             let result = lighting(&m, &position, &light, &eyev, &normalv);
-            assert_color_approx_equals(&result, &Color::new(1.6364, 1.6364, 1.6364));
+            color::test_utils::assert_colors_approx_equal(
+                &result,
+                &Color::new(1.6364, 1.6364, 1.6364),
+            );
         }
 
         #[test]
@@ -157,16 +163,5 @@ mod tests {
             let result = lighting(&m, &position, &light, &eyev, &normalv);
             assert_eq!(result, Color::new(0.1, 0.1, 0.1));
         }
-    }
-
-    fn assert_color_approx_equals(a: &Color, b: &Color) {
-        let tolerance = 1e-4;
-        assert!(equal_with_tolerance(a.r(), b.r(), tolerance));
-        assert!(equal_with_tolerance(a.g(), b.g(), tolerance));
-        assert!(equal_with_tolerance(a.b(), b.b(), tolerance));
-    }
-
-    fn equal_with_tolerance(a: f64, b: f64, tolerance: f64) -> bool {
-        f64::abs(a - b) <= tolerance
     }
 }

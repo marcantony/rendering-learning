@@ -98,10 +98,7 @@ fn basic_spheres() -> Vec<Sphere> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        draw::color,
-        math::{util, vector::Vec3d},
-    };
+    use crate::{draw::color, math::vector::Vec3d};
 
     use super::*;
 
@@ -145,7 +142,7 @@ mod tests {
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);
 
-        assert_colors_approx_equal(&c, &Color::new(0.38066, 0.47583, 0.2855));
+        color::test_utils::assert_colors_approx_equal(&c, &Color::new(0.38066, 0.47583, 0.2855));
     }
 
     #[test]
@@ -162,7 +159,7 @@ mod tests {
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);
 
-        assert_colors_approx_equal(&c, &Color::new(0.90498, 0.90498, 0.90498));
+        color::test_utils::assert_colors_approx_equal(&c, &Color::new(0.90498, 0.90498, 0.90498));
     }
 
     #[test]
@@ -180,7 +177,7 @@ mod tests {
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
         let c = w.color_at(&r);
 
-        assert_colors_approx_equal(&c, &Color::new(0.38066, 0.47583, 0.2855));
+        color::test_utils::assert_colors_approx_equal(&c, &Color::new(0.38066, 0.47583, 0.2855));
     }
 
     #[test]
@@ -196,11 +193,5 @@ mod tests {
         let c = w.color_at(&r);
 
         assert_eq!(c, inner_color);
-    }
-
-    fn assert_colors_approx_equal(a: &Color, b: &Color) {
-        assert!(util::test::are_within_tolerance(a.r(), b.r(), 1e-5));
-        assert!(util::test::are_within_tolerance(a.g(), b.g(), 1e-5));
-        assert!(util::test::are_within_tolerance(a.b(), b.b(), 1e-5));
     }
 }

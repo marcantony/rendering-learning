@@ -308,6 +308,8 @@ mod tests {
     }
 
     mod view_transform {
+        use crate::math::matrix;
+
         use super::*;
 
         #[test]
@@ -358,26 +360,7 @@ mod tests {
                 [0.00000, 0.00000, 0.00000, 1.00000],
             ]);
 
-            matrix_approx_equals(&t, &expected);
-        }
-
-        fn matrix_approx_equals<const N: usize>(a: &SquareMatrix<N>, b: &SquareMatrix<N>) {
-            for n in 0..N {
-                for m in 0..N {
-                    let lhs = a.at(n, m);
-                    let rhs = b.at(n, m);
-                    assert!(
-                        f64::abs(lhs - rhs) < 1e-5,
-                        "a[{}][{}]={}, b[{}][{}]={}",
-                        n,
-                        m,
-                        lhs,
-                        n,
-                        m,
-                        rhs
-                    );
-                }
-            }
+            matrix::test_utils::assert_matrix_approx_equals(&t, &expected);
         }
     }
 }

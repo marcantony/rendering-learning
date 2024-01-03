@@ -1,5 +1,6 @@
 use crate::math::{matrix::SquareMatrix, point::Point3d, vector::Vec3d};
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ray {
     pub origin: Point3d,
     pub direction: Vec3d,
