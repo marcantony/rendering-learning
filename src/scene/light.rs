@@ -1,5 +1,6 @@
 use crate::{draw::color::Color, math::point::Point3d};
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct PointLight {
     pub position: Point3d,
     pub intensity: Color,

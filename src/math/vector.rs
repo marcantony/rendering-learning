@@ -127,7 +127,7 @@ impl Display for Vec3d {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NormalizedVec3d(Vec3d);
 
 impl TryFrom<&Vec3d> for NormalizedVec3d {
@@ -144,6 +144,14 @@ impl TryFrom<&Vec3d> for NormalizedVec3d {
 impl AsRef<Vec3d> for NormalizedVec3d {
     fn as_ref(&self) -> &Vec3d {
         &self.0
+    }
+}
+
+impl Neg for &NormalizedVec3d {
+    type Output = NormalizedVec3d;
+
+    fn neg(self) -> Self::Output {
+        NormalizedVec3d::try_from(&-&self.0).unwrap()
     }
 }
 

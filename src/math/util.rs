@@ -18,3 +18,10 @@ pub fn are_equal(a: f64, b: f64) -> bool {
         }
     }
 }
+
+#[cfg(test)]
+pub mod test {
+    pub fn are_within_tolerance(a: f64, b: f64, t: f64) -> bool {
+        f64::abs(a - b) < t
+    }
+}

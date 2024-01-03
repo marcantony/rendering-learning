@@ -6,10 +6,10 @@ use crate::math::{
 
 use super::{intersect::Intersection, material::Material, ray::Ray};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Sphere {
     transform: SquareMatrix<4>,
-    material: Material,
+    pub material: Material,
 }
 
 impl Sphere {
@@ -77,12 +77,6 @@ impl Sphere {
 impl Default for Sphere {
     fn default() -> Self {
         Sphere::unit()
-    }
-}
-
-impl PartialEq for Sphere {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other)
     }
 }
 
