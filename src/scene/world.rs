@@ -45,12 +45,14 @@ impl World {
         self.lights
             .iter()
             .map(|light| {
+                let shadowed = self.is_shadowed(&comps.over_point, light);
                 lighting(
                     comps.object.material(),
                     &comps.point,
                     light,
                     &comps.eye_v,
                     &comps.normal_v,
+                    shadowed,
                 )
             })
             .reduce(|acc, c| &acc + &c)
@@ -65,6 +67,23 @@ impl World {
                 self.shade_hit(&comps)
             })
             .unwrap_or(color::black())
+    }
+
+    pub fn is_shadowed(&self, point: &Point3d, light: &PointLight) -> bool {
+        let v = &light.position - point;
+        let distance = v.mag();
+        let direction = v.norm();
+
+        direction
+            .and_then(|d| {
+                let r = Ray {
+                    origin: point.clone(),
+                    direction: d,
+                };
+                let intersections = self.intersect(&r);
+                intersect::hit(&intersections).map(|hit| hit.t() < distance)
+            })
+            .unwrap_or(false)
     }
 }
 
@@ -206,6 +225,32 @@ mod tests {
     }
 
     #[test]
+    fn shade_hit_is_given_an_intersection_in_shadow() {
+        let shape = Sphere {
+            transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 10.0))
+                .unwrap(),
+            ..Default::default()
+        };
+        let w = World {
+            lights: vec![PointLight {
+                position: Point3d::new(0.0, 0.0, -10.0),
+                intensity: color::white(),
+            }],
+            objects: vec![Default::default(), shape.clone()],
+        };
+        let r = Ray {
+            origin: Point3d::new(0.0, 0.0, 5.0),
+            direction: Vec3d::new(0.0, 0.0, 1.0),
+        };
+        let i = Intersection::new(4.0, &shape);
+
+        let comps = i.prepare_computations(&r);
+        let c = w.shade_hit(&comps);
+
+        assert_eq!(c, Some(Color::new(0.1, 0.1, 0.1)));
+    }
+
+    #[test]
     fn color_when_a_ray_misses() {
         let w = World::basic();
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 1.0, 0.0));
@@ -236,5 +281,37 @@ mod tests {
         let c = w.color_at(&r);
 
         assert_eq!(c, inner_color);
+    }
+
+    mod shadow {
+        use super::*;
+
+        #[test]
+        fn no_shadow_when_nothing_collinear_with_point_and_light() {
+            let w = World::basic();
+            let p = Point3d::new(0.0, 10.0, 0.0);
+            assert!(!w.is_shadowed(&p, &w.lights[0]));
+        }
+
+        #[test]
+        fn shadow_when_an_object_is_between_point_and_light() {
+            let w = World::basic();
+            let p = Point3d::new(10.0, -10.0, 10.0);
+            assert!(w.is_shadowed(&p, &w.lights[0]));
+        }
+
+        #[test]
+        fn no_shadow_when_an_object_is_behind_the_light() {
+            let w = World::basic();
+            let p = Point3d::new(-20.0, 20.0, -20.0);
+            assert!(!w.is_shadowed(&p, &w.lights[0]));
+        }
+
+        #[test]
+        fn shadow_when_an_object_is_behind_the_point() {
+            let w = World::basic();
+            let p = Point3d::new(-2.0, 2.0, -2.0);
+            assert!(!w.is_shadowed(&p, &w.lights[0]));
+        }
     }
 }

@@ -2,6 +2,8 @@ use crate::math::{point::Point3d, util, vector::NormalizedVec3d};
 
 use super::{ray::Ray, sphere::Sphere};
 
+const SHADOW_BIAS: f64 = 1e-5;
+
 #[derive(Debug, Clone)]
 pub struct Intersection<'a> {
     t: f64,
@@ -16,6 +18,7 @@ pub struct Precomputation<'a> {
     pub eye_v: NormalizedVec3d,
     pub normal_v: NormalizedVec3d,
     pub inside: bool,
+    pub over_point: Point3d,
 }
 
 impl<'a> Intersection<'a> {
@@ -45,6 +48,8 @@ impl<'a> Intersection<'a> {
             (normal_v, false)
         };
 
+        let over_point = &point + &(&*adjusted_normal_v * SHADOW_BIAS);
+
         Precomputation {
             t,
             object,
@@ -52,6 +57,7 @@ impl<'a> Intersection<'a> {
             eye_v,
             normal_v: adjusted_normal_v,
             inside,
+            over_point,
         }
     }
 }
@@ -144,6 +150,8 @@ mod test {
     }
 
     mod prepare_computations {
+        use crate::{math::matrix::InvertibleMatrix, scene::transformation};
+
         use super::*;
 
         #[test]
@@ -196,6 +204,25 @@ mod test {
                 comps.normal_v,
                 NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap()
             );
+        }
+
+        #[test]
+        fn the_hit_should_offset_the_point() {
+            let r = Ray {
+                origin: Point3d::new(0.0, 0.0, -5.0),
+                direction: Vec3d::new(0.0, 0.0, 1.0),
+            };
+            let shape = Sphere {
+                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
+                    .unwrap(),
+                ..Default::default()
+            };
+            let i = Intersection::new(5.0, &shape);
+
+            let comps = i.prepare_computations(&r);
+
+            assert!(comps.over_point.z() < -SHADOW_BIAS / 2.0);
+            assert!(comps.point.z() > comps.over_point.z());
         }
     }
 }

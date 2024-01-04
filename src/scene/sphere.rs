@@ -6,7 +6,7 @@ use crate::math::{
 
 use super::{intersect::Intersection, material::Material, ray::Ray};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Sphere {
     pub transform: InvertibleMatrix<4>,
     pub material: Material,
