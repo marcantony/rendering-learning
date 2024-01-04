@@ -1,7 +1,7 @@
 use std::f64::consts;
 
 use ray_tracer_challenge::{
-    draw::color::Color,
+    draw::color::{self, Color},
     math::{matrix::InvertibleMatrix, point::Point3d, vector::Vec3d},
     scene::{
         camera::Camera, light::PointLight, material::Material, sphere::Sphere, transformation,
@@ -32,7 +32,10 @@ fn main() {
             transformation::translation(0.0, 0.0, 5.0),
         ]))
         .unwrap(),
-        material: floor_material.clone(),
+        material: Material {
+            diffuse: 0.3,
+            ..floor_material.clone()
+        },
     };
 
     let right_wall = Sphere {
@@ -66,6 +69,7 @@ fn main() {
             color: Color::new(0.5, 1.0, 0.1),
             diffuse: 0.7,
             specular: 0.3,
+            shininess: 50.0,
             ..Default::default()
         },
     };
@@ -86,12 +90,17 @@ fn main() {
 
     let light_source = PointLight {
         position: Point3d::new(-10.0, 10.0, -10.0),
-        intensity: Color::new(1.0, 1.0, 1.0),
+        intensity: color::white(),
+    };
+
+    let light_source_2 = PointLight {
+        position: Point3d::new(10.0, 2.0, -10.0),
+        intensity: Color::new(1.0, 0.2, 0.35),
     };
 
     let world = World {
         objects: vec![floor, left_wall, right_wall, left, middle, right],
-        lights: vec![light_source],
+        lights: vec![light_source, light_source_2],
     };
 
     let from = Point3d::new(0.0, 1.5, -5.0);
