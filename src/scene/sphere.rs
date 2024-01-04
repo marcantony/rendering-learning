@@ -1,5 +1,5 @@
 use crate::math::{
-    matrix::{InvertibleMatrix, SquareMatrix},
+    matrix::InvertibleMatrix,
     point::Point3d,
     vector::{NormalizedVec3d, Vec3d},
 };
@@ -22,14 +22,6 @@ impl Sphere {
 
     pub fn unit() -> Self {
         Sphere::new(InvertibleMatrix::identity(), Default::default())
-    }
-
-    pub fn transform(&self) -> &SquareMatrix<4> {
-        &self.transform
-    }
-
-    pub fn material(&self) -> &Material {
-        &self.material
     }
 
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
@@ -178,12 +170,14 @@ mod tests {
     }
 
     mod transform {
+        use crate::math::matrix::SquareMatrix;
+
         use super::*;
 
         #[test]
         fn a_spheres_default_transformation() {
             let s = Sphere::unit();
-            assert_eq!(s.transform(), &SquareMatrix::identity());
+            assert_eq!(*s.transform, SquareMatrix::identity());
         }
 
         #[test]
@@ -193,7 +187,7 @@ mod tests {
                 transform: InvertibleMatrix::try_from(t.clone()).unwrap(),
                 ..Default::default()
             };
-            assert_eq!(s.transform(), &t);
+            assert_eq!(*s.transform, t);
         }
     }
 
@@ -286,7 +280,7 @@ mod tests {
         #[test]
         fn a_sphere_has_a_default_material() {
             let s: Sphere = Default::default();
-            assert_eq!(s.material(), &Default::default());
+            assert_eq!(s.material, Default::default());
         }
 
         #[test]
@@ -300,7 +294,7 @@ mod tests {
                 ..Default::default()
             };
 
-            assert_eq!(s.material(), &m);
+            assert_eq!(s.material, m);
         }
     }
 }
