@@ -1,5 +1,5 @@
 use crate::math::{
-    matrix::{InvertibleMatrix, Matrix, SquareMatrix},
+    matrix::{InvertibleMatrix, SquareMatrix},
     point::Point3d,
     vector::{NormalizedVec3d, Vec3d},
 };
@@ -8,7 +8,7 @@ use super::{intersect::Intersection, material::Material, ray::Ray};
 
 #[derive(Debug, PartialEq)]
 pub struct Sphere {
-    transform: InvertibleMatrix<4>,
+    pub transform: InvertibleMatrix<4>,
     pub material: Material,
 }
 
@@ -21,10 +21,7 @@ impl Sphere {
     }
 
     pub fn unit() -> Self {
-        Sphere::new(
-            InvertibleMatrix::try_from(Matrix::identity()).unwrap(),
-            Default::default(),
-        )
+        Sphere::new(InvertibleMatrix::identity(), Default::default())
     }
 
     pub fn transform(&self) -> &SquareMatrix<4> {
@@ -186,7 +183,7 @@ mod tests {
         #[test]
         fn a_spheres_default_transformation() {
             let s = Sphere::unit();
-            assert_eq!(s.transform(), &Matrix::identity());
+            assert_eq!(s.transform(), &SquareMatrix::identity());
         }
 
         #[test]
