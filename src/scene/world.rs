@@ -17,14 +17,14 @@ use super::{
 
 pub struct World {
     pub objects: Vec<Sphere>,
-    pub light: Option<PointLight>,
+    pub lights: Vec<PointLight>,
 }
 
 impl World {
     pub fn basic() -> Self {
         World {
             objects: basic_spheres(),
-            light: Some(basic_light()),
+            lights: vec![basic_light()],
         }
     }
 
@@ -41,24 +41,30 @@ impl World {
         intersections
     }
 
-    pub fn shade_hit(&self, comps: &Precomputation) -> Color {
-        lighting(
-            comps.object.material(),
-            &comps.point,
-            self.light.as_ref().unwrap(),
-            &comps.eye_v,
-            &comps.normal_v,
-        )
+    pub fn shade_hit(&self, comps: &Precomputation) -> Option<Color> {
+        self.lights
+            .iter()
+            .map(|light| {
+                lighting(
+                    comps.object.material(),
+                    &comps.point,
+                    light,
+                    &comps.eye_v,
+                    &comps.normal_v,
+                )
+            })
+            .reduce(|acc, c| &acc + &c)
     }
 
     pub fn color_at(&self, ray: &Ray) -> Color {
         let xs = self.intersect(ray);
-        if let Some(h) = intersect::hit(&xs) {
-            let comps = h.prepare_computations(ray);
-            self.shade_hit(&comps)
-        } else {
-            color::black()
-        }
+
+        intersect::hit(&xs)
+            .and_then(|h| {
+                let comps = h.prepare_computations(ray);
+                self.shade_hit(&comps)
+            })
+            .unwrap_or(color::black())
     }
 }
 
@@ -66,7 +72,7 @@ impl Default for World {
     fn default() -> Self {
         Self {
             objects: Default::default(),
-            light: Default::default(),
+            lights: Default::default(),
         }
     }
 }
@@ -107,14 +113,14 @@ mod tests {
         let w: World = Default::default();
 
         assert!(w.objects.is_empty());
-        assert_eq!(w.light, None);
+        assert_eq!(w.lights, vec![]);
     }
 
     #[test]
     fn the_default_world() {
         let w = World::basic();
 
-        assert_eq!(w.light, Some(basic_light()));
+        assert_eq!(w.lights, vec![basic_light()]);
         assert_eq!(w.objects, basic_spheres());
     }
 
@@ -142,16 +148,19 @@ mod tests {
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);
 
-        color::test_utils::assert_colors_approx_equal(&c, &Color::new(0.38066, 0.47583, 0.2855));
+        color::test_utils::assert_colors_approx_equal(
+            &c.unwrap(),
+            &Color::new(0.38066, 0.47583, 0.2855),
+        );
     }
 
     #[test]
     fn shading_an_intersection_from_the_inside() {
         let mut w = World::basic();
-        w.light = Some(PointLight {
+        w.lights = vec![PointLight {
             position: Point3d::new(0.0, 0.25, 0.0),
             intensity: color::white(),
-        });
+        }];
         let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
         let shape = &w.objects[1];
         let i = Intersection::new(0.5, shape);
@@ -159,7 +168,41 @@ mod tests {
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);
 
-        color::test_utils::assert_colors_approx_equal(&c, &Color::new(0.90498, 0.90498, 0.90498));
+        color::test_utils::assert_colors_approx_equal(
+            &c.unwrap(),
+            &Color::new(0.90498, 0.90498, 0.90498),
+        );
+    }
+
+    #[test]
+    fn shading_when_there_are_no_lights() {
+        let mut w = World::basic();
+        w.lights = vec![];
+        let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+        let shape = w.objects.first().unwrap();
+        let i = Intersection::new(4.0, shape);
+
+        let comps = i.prepare_computations(&r);
+        let c = w.shade_hit(&comps);
+
+        assert_eq!(c, None);
+    }
+
+    #[test]
+    fn shading_with_two_lights() {
+        let mut w = World::basic();
+        w.lights = vec![w.lights[0].clone(), w.lights[0].clone()];
+        let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+        let shape = w.objects.first().unwrap();
+        let i = Intersection::new(4.0, shape);
+
+        let comps = i.prepare_computations(&r);
+        let c = w.shade_hit(&comps);
+
+        color::test_utils::assert_colors_approx_equal(
+            &c.unwrap(),
+            &Color::new(0.38066 * 2.0, 0.47583 * 2.0, 0.2855 * 2.0),
+        );
     }
 
     #[test]

@@ -91,7 +91,7 @@ fn main() {
 
     let world = World {
         objects: vec![floor, left_wall, right_wall, left, middle, right],
-        light: Some(light_source),
+        lights: vec![light_source],
     };
 
     let from = Point3d::new(0.0, 1.5, -5.0);
