@@ -228,6 +228,13 @@ pub struct InvertibleMatrix<const N: usize> {
 }
 
 impl<const N: usize> InvertibleMatrix<N> {
+    pub fn identity() -> Self {
+        InvertibleMatrix {
+            matrix: SquareMatrix::identity(),
+            inverse: SquareMatrix::identity(),
+        }
+    }
+
     pub fn inverse(&self) -> &SquareMatrix<N> {
         &self.inverse
     }
@@ -724,6 +731,15 @@ mod tests {
             let b = InvertibleMatrix::try_from(a);
 
             assert!(b.is_err());
+        }
+
+        #[test]
+        fn construct_invertible_matrix_from_identity() {
+            let m = InvertibleMatrix::<4>::identity();
+            let id = SquareMatrix::<4>::identity();
+
+            assert_eq!(*m, id);
+            assert_eq!(m.inverse(), &id);
         }
     }
 }
