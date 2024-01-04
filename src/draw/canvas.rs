@@ -28,24 +28,23 @@ impl Canvas {
     }
 
     pub fn write(&mut self, coords: (usize, usize), color: Color) -> Option<()> {
-        let idx = self.to_idx(coords);
+        let idx = self.to_idx(coords.0, coords.1);
         idx.map(|i| {
             self.data[i] = color;
             ()
         })
     }
 
-    pub fn at(&self, coords: (usize, usize)) -> Option<&Color> {
-        let idx = self.to_idx(coords);
+    pub fn at(&self, x: usize, y: usize) -> Option<&Color> {
+        let idx = self.to_idx(x, y);
         idx.and_then(|i| self.data.get(i))
     }
 
-    fn to_idx(&self, coords: (usize, usize)) -> Option<usize> {
-        let (x, y) = coords;
+    fn to_idx(&self, x: usize, y: usize) -> Option<usize> {
         if x >= self.width || y >= self.height {
             None
         } else {
-            Some(self.width * coords.1 + coords.0)
+            Some(self.width * y + x)
         }
     }
 
@@ -124,7 +123,7 @@ mod tests {
 
         c.write((2, 3), r.clone());
 
-        assert_eq!(c.at((2, 3)).expect("pixel is defined"), &r);
+        assert_eq!(c.at(2, 3).expect("pixel is defined"), &r);
     }
 
     mod ppm {

@@ -190,7 +190,7 @@ mod tests {
         let image = c.render(&w);
 
         color::test_utils::assert_colors_approx_equal(
-            image.at((5, 5)).unwrap(),
+            image.at(5, 5).unwrap(),
             &Color::new(0.38066, 0.47583, 0.2855),
         );
     }
