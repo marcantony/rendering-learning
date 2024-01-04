@@ -50,7 +50,7 @@ fn main() {
     };
 
     let middle = Sphere {
-        transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 1.0, 0.5)).unwrap(),
+        transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 2.0, 0.5)).unwrap(),
         material: Material {
             color: Color::new(0.1, 1.0, 0.5),
             diffuse: 0.7,
@@ -107,8 +107,8 @@ fn main() {
     let to = Point3d::new(0.0, 1.0, 0.0);
     let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
-        1000,
-        500,
+        600,
+        400,
         consts::FRAC_PI_3,
         InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
     );
