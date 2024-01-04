@@ -11,20 +11,12 @@ impl Ray {
         Ray { origin, direction }
     }
 
-    pub fn origin(&self) -> &Point3d {
-        &self.origin
-    }
-
-    pub fn direction(&self) -> &Vec3d {
-        &self.direction
-    }
-
     pub fn position(&self, t: f64) -> Point3d {
         &self.origin + &(&self.direction * t)
     }
 
     pub fn transform(&self, transform: &SquareMatrix<4>) -> Self {
-        Ray::new(transform * self.origin(), transform * self.direction())
+        Ray::new(transform * &self.origin, transform * &self.direction)
     }
 }
 
@@ -40,8 +32,8 @@ mod tests {
 
         let r = Ray::new(origin.clone(), direction.clone());
 
-        assert_eq!(r.origin(), &origin);
-        assert_eq!(r.direction(), &direction);
+        assert_eq!(r.origin, origin);
+        assert_eq!(r.direction, direction);
     }
 
     #[test]
@@ -67,8 +59,8 @@ mod tests {
 
             let r2 = r.transform(&m);
 
-            assert_eq!(r2.origin(), &Point3d::new(4.0, 6.0, 8.0));
-            assert_eq!(r2.direction(), &Vec3d::new(0.0, 1.0, 0.0));
+            assert_eq!(r2.origin, Point3d::new(4.0, 6.0, 8.0));
+            assert_eq!(r2.direction, Vec3d::new(0.0, 1.0, 0.0));
         }
 
         #[test]
@@ -78,8 +70,8 @@ mod tests {
 
             let r2 = r.transform(&m);
 
-            assert_eq!(r2.origin(), &Point3d::new(2.0, 6.0, 12.0));
-            assert_eq!(r2.direction(), &Vec3d::new(0.0, 3.0, 0.0));
+            assert_eq!(r2.origin, Point3d::new(2.0, 6.0, 12.0));
+            assert_eq!(r2.direction, Vec3d::new(0.0, 3.0, 0.0));
         }
     }
 }

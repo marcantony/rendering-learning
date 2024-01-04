@@ -34,10 +34,10 @@ impl Sphere {
 
     pub fn intersect(&self, worldspace_ray: &Ray) -> Option<[Intersection; 2]> {
         let r = worldspace_ray.transform(&self.transform.inverse());
-        let sphere_to_ray = r.origin() - &Point3d::new(0.0, 0.0, 0.0);
+        let sphere_to_ray = &r.origin - &Point3d::new(0.0, 0.0, 0.0);
 
-        let a = r.direction().dot(r.direction());
-        let b = 2.0 * r.direction().dot(&sphere_to_ray);
+        let a = r.direction.dot(&r.direction);
+        let b = 2.0 * r.direction.dot(&sphere_to_ray);
         let c = sphere_to_ray.dot(&sphere_to_ray) - 1.0;
 
         let discriminant = b * b - 4.0 * a * c;

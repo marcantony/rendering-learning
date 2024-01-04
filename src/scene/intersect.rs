@@ -38,7 +38,7 @@ impl<'a> Intersection<'a> {
         let t = self.t();
         let object = self.object();
         let point = ray.position(t);
-        let eye_v = NormalizedVec3d::try_from(-ray.direction()).unwrap();
+        let eye_v = NormalizedVec3d::try_from(-&ray.direction).unwrap();
         let normal_v = object.normal_at(&point);
 
         let normal_dot_eye = normal_v.dot(&eye_v);
