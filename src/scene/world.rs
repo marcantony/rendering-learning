@@ -28,7 +28,7 @@ impl World {
         }
     }
 
-    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection> {
         let mut intersections = self
             .objects
             .iter()
@@ -41,7 +41,7 @@ impl World {
         intersections
     }
 
-    pub fn shade_hit(&self, comps: &Precomputation) -> Option<Color> {
+    fn shade_hit(&self, comps: &Precomputation) -> Option<Color> {
         self.lights
             .iter()
             .map(|light| {
@@ -69,7 +69,7 @@ impl World {
             .unwrap_or(color::black())
     }
 
-    pub fn is_shadowed(&self, point: &Point3d, light: &PointLight) -> bool {
+    fn is_shadowed(&self, point: &Point3d, light: &PointLight) -> bool {
         let v = &light.position - point;
         let distance = v.mag();
         let direction = v.norm();

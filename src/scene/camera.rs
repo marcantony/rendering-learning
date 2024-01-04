@@ -45,11 +45,7 @@ impl Camera {
         Camera::new(hsize, vsize, fov, InvertibleMatrix::identity())
     }
 
-    pub fn pixel_size(&self) -> f64 {
-        self.pixel_size
-    }
-
-    pub fn ray_for_pixel(&self, px: usize, py: usize) -> Ray {
+    fn ray_for_pixel(&self, px: usize, py: usize) -> Ray {
         // offset from the edge of the canvas to the pixel's center
         let xoffset = (px as f64 + 0.5) * self.pixel_size;
         let yoffset = (py as f64 + 0.5) * self.pixel_size;
@@ -109,13 +105,13 @@ mod tests {
     #[test]
     fn pixel_size_for_horizontal_canvas() {
         let c = Camera::default(200, 125, consts::FRAC_PI_2);
-        assert!(util::are_equal(c.pixel_size(), 0.01));
+        assert!(util::are_equal(c.pixel_size, 0.01));
     }
 
     #[test]
     fn pixel_size_for_vertical_canvas() {
         let c = Camera::default(125, 200, consts::FRAC_PI_2);
-        assert!(util::are_equal(c.pixel_size(), 0.01));
+        assert!(util::are_equal(c.pixel_size, 0.01));
     }
 
     mod ray {
