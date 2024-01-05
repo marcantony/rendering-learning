@@ -4,7 +4,11 @@ use ray_tracer_challenge::{
     draw::color::{self, Color},
     math::{matrix::InvertibleMatrix, point::Point3d, vector::Vec3d},
     scene::{
-        camera::Camera, light::PointLight, material::Material, sphere::Sphere, transformation,
+        camera::Camera,
+        light::PointLight,
+        material::Material,
+        object::{sphere::Sphere, Object},
+        transformation,
         world::World,
     },
     util,
@@ -99,7 +103,10 @@ fn main() {
     };
 
     let world = World {
-        objects: vec![floor, left_wall, right_wall, left, middle, right],
+        objects: vec![floor, left_wall, right_wall, left, middle, right]
+            .into_iter()
+            .map(|o| Box::new(o) as Box<dyn Object>)
+            .collect(),
         lights: vec![light_source, light_source_2],
     };
 

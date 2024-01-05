@@ -1,19 +1,19 @@
 use crate::math::{point::Point3d, util, vector::NormalizedVec3d};
 
-use super::{ray::Ray, sphere::Sphere};
+use super::{object::Object, ray::Ray};
 
 const SHADOW_BIAS: f64 = 1e-5;
 
 #[derive(Debug, Clone)]
-pub struct Intersection<'a> {
+pub struct Intersection<'a, T: Object + ?Sized> {
     t: f64,
-    object: &'a Sphere,
+    object: &'a T,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Precomputation<'a> {
+pub struct Precomputation<'a, T: Object + ?Sized> {
     pub t: f64,
-    pub object: &'a Sphere,
+    pub object: &'a T,
     pub point: Point3d,
     pub eye_v: NormalizedVec3d,
     pub normal_v: NormalizedVec3d,
@@ -21,8 +21,8 @@ pub struct Precomputation<'a> {
     pub over_point: Point3d,
 }
 
-impl<'a> Intersection<'a> {
-    pub fn new(t: f64, object: &Sphere) -> Intersection {
+impl<'a, T: Object + ?Sized> Intersection<'a, T> {
+    pub fn new(t: f64, object: &T) -> Intersection<T> {
         Intersection { t, object }
     }
 
@@ -30,11 +30,11 @@ impl<'a> Intersection<'a> {
         self.t
     }
 
-    pub fn object(&self) -> &Sphere {
+    pub fn object(&self) -> &T {
         self.object
     }
 
-    pub fn prepare_computations(&self, ray: &Ray) -> Precomputation {
+    pub fn prepare_computations(&self, ray: &Ray) -> Precomputation<T> {
         let t = self.t();
         let object = self.object();
         let point = ray.position(t);
@@ -62,13 +62,15 @@ impl<'a> Intersection<'a> {
     }
 }
 
-impl<'a> PartialEq for Intersection<'a> {
+impl<'a, T: Object + PartialEq + ?Sized> PartialEq for Intersection<'a, T> {
     fn eq(&self, other: &Self) -> bool {
         util::are_equal(self.t, other.t) && self.object == other.object
     }
 }
 
-pub fn hit<'a, 'b>(intersections: &'a [Intersection<'b>]) -> Option<&'a Intersection<'b>> {
+pub fn hit<'a, 'b, T: Object + ?Sized>(
+    intersections: &'a [Intersection<'b, T>],
+) -> Option<&'a Intersection<'b, T>> {
     intersections.iter().fold(None, |acc, i| {
         if i.t() >= 0.0 {
             acc.map(|lowest| if lowest.t() < i.t() { lowest } else { i })
@@ -81,7 +83,10 @@ pub fn hit<'a, 'b>(intersections: &'a [Intersection<'b>]) -> Option<&'a Intersec
 
 #[cfg(test)]
 mod test {
-    use crate::math::{point::Point3d, vector::Vec3d};
+    use crate::{
+        math::{point::Point3d, vector::Vec3d},
+        scene::object::sphere::Sphere,
+    };
 
     use super::*;
 
