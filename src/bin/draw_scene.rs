@@ -7,7 +7,7 @@ use ray_tracer_challenge::{
         camera::Camera,
         light::PointLight,
         material::Material,
-        object::{sphere::Sphere, Object},
+        object::{plane::Plane, sphere::Sphere},
         transformation,
         world::World,
     },
@@ -23,33 +23,8 @@ fn main() {
         specular: 0.0,
         ..Default::default()
     };
-    let floor = Sphere {
-        transform: InvertibleMatrix::try_from(transformation::scaling(10.0, 0.01, 10.0)).unwrap(),
-        material: floor_material.clone(),
-    };
-
-    let left_wall = Sphere {
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
-            transformation::scaling(10.0, 0.01, 10.0),
-            transformation::rotation_x(consts::FRAC_PI_2),
-            transformation::rotation_y(-consts::FRAC_PI_4),
-            transformation::translation(0.0, 0.0, 5.0),
-        ]))
-        .unwrap(),
-        material: Material {
-            diffuse: 0.3,
-            ..floor_material.clone()
-        },
-    };
-
-    let right_wall = Sphere {
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
-            transformation::scaling(10.0, 0.01, 10.0),
-            transformation::rotation_x(consts::FRAC_PI_2),
-            transformation::rotation_y(consts::FRAC_PI_4),
-            transformation::translation(0.0, 0.0, 5.0),
-        ]))
-        .unwrap(),
+    let floor = Plane {
+        transform: InvertibleMatrix::identity(),
         material: floor_material.clone(),
     };
 
@@ -103,16 +78,18 @@ fn main() {
     };
 
     let world = World {
-        objects: vec![floor, left_wall, right_wall, left, middle, right]
-            .into_iter()
-            .map(|o| Box::new(o) as Box<dyn Object>)
-            .collect(),
+        objects: vec![
+            Box::new(floor),
+            Box::new(left),
+            Box::new(middle),
+            Box::new(right),
+        ],
         lights: vec![light_source, light_source_2],
     };
 
     let from = Point3d::new(0.0, 1.5, -5.0);
     let to = Point3d::new(0.0, 1.0, 0.0);
-    let up = Vec3d::new(0.0, 1.0, 0.0);
+    let up = Vec3d::new(1.0, 1.0, 0.0);
     let camera = Camera::new(
         600,
         400,

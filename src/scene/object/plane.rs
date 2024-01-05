@@ -6,9 +6,9 @@ use crate::{
 use super::Object;
 
 /// A plane: by default, a plane in xz
-struct Plane {
-    transform: InvertibleMatrix<4>,
-    material: Material,
+pub struct Plane {
+    pub transform: InvertibleMatrix<4>,
+    pub material: Material,
 }
 
 impl Object for Plane {
