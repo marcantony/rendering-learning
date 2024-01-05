@@ -38,9 +38,9 @@ impl World {
             .map(|object| {
                 object
                     .intersect(ray)
-                    .map(|ts| ts.map(|t| Intersection::new(t, object.as_ref())))
+                    .into_iter()
+                    .map(|t| Intersection::new(t, object.as_ref()))
             })
-            .flatten()
             .flatten()
             .collect::<Vec<_>>();
         intersections.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap());

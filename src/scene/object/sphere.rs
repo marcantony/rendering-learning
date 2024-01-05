@@ -5,6 +5,7 @@ use crate::{
 
 use super::Object;
 
+/// A sphere: by default, a unit sphere (of radius 1 and its origin at (0, 0, 0))
 #[derive(Debug, PartialEq, Clone)]
 pub struct Sphere {
     pub transform: InvertibleMatrix<4>,
@@ -33,7 +34,7 @@ impl Object for Sphere {
         &self.transform
     }
 
-    fn intersect_local(&self, object_ray: &Ray) -> Option<[f64; 2]> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
         let sphere_to_ray = &object_ray.origin - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = object_ray.direction.dot(&object_ray.direction);
@@ -43,13 +44,13 @@ impl Object for Sphere {
         let discriminant = b * b - 4.0 * a * c;
 
         if discriminant < 0.0 {
-            None
+            Vec::new()
         } else {
             let disc_sqrt = f64::sqrt(discriminant);
             let t1 = (-b - disc_sqrt) / (2.0 * a);
             let t2 = (-b + disc_sqrt) / (2.0 * a);
 
-            Some([t1, t2])
+            vec![t1, t2]
         }
     }
 
@@ -84,7 +85,7 @@ mod tests {
 
             let xs = s.intersect_local(&r);
 
-            assert_eq!(xs, Some([4.0, 6.0]));
+            assert_eq!(xs, vec![4.0, 6.0]);
         }
 
         #[test]
@@ -94,7 +95,7 @@ mod tests {
 
             let xs = s.intersect_local(&r);
 
-            assert_eq!(xs, Some([5.0, 5.0]));
+            assert_eq!(xs, vec![5.0, 5.0]);
         }
 
         #[test]
@@ -104,7 +105,7 @@ mod tests {
 
             let xs = s.intersect_local(&r);
 
-            assert_eq!(xs, None);
+            assert!(xs.is_empty());
         }
 
         #[test]
@@ -114,7 +115,7 @@ mod tests {
 
             let xs = s.intersect_local(&r);
 
-            assert_eq!(xs, Some([-1.0, 1.0]));
+            assert_eq!(xs, vec![-1.0, 1.0]);
         }
 
         #[test]
@@ -124,7 +125,7 @@ mod tests {
 
             let xs = s.intersect_local(&r);
 
-            assert_eq!(xs, Some([-6.0, -4.0]));
+            assert_eq!(xs, vec![-6.0, -4.0]);
         }
     }
 

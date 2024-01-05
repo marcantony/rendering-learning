@@ -6,8 +6,8 @@ pub trait Object {
     fn material(&self) -> &Material;
     fn transform(&self) -> &InvertibleMatrix<4>;
 
-    fn intersect_local(&self, object_ray: &Ray) -> Option<[f64; 2]>;
-    fn intersect(&self, world_ray: &Ray) -> Option<[f64; 2]> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64>;
+    fn intersect(&self, world_ray: &Ray) -> Vec<f64> {
         let local_ray = world_ray.transform(&self.transform().inverse());
         self.intersect_local(&local_ray)
     }
@@ -21,6 +21,7 @@ pub trait Object {
     }
 }
 
+pub mod plane;
 pub mod sphere;
 
 #[cfg(test)]
@@ -41,12 +42,12 @@ mod tests {
             &self.transform
         }
 
-        fn intersect_local(&self, object_ray: &Ray) -> Option<[f64; 2]> {
+        fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
             assert_eq!(
                 Some(object_ray),
                 self.intersect_local_arg_expectation.as_ref()
             );
-            None
+            Vec::new()
         }
 
         fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
