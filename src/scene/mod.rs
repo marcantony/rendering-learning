@@ -3,6 +3,7 @@ pub mod intersect;
 pub mod light;
 pub mod material;
 pub mod object;
+pub mod pattern;
 pub mod ray;
 pub mod transformation;
 pub mod world;

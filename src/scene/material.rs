@@ -3,7 +3,10 @@ use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
 };
 
-use super::light::PointLight;
+use super::{
+    light::PointLight,
+    pattern::{self, Pattern},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Material {
@@ -12,6 +15,7 @@ pub struct Material {
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
+    pub pattern: Option<Pattern>,
 }
 
 impl Default for Material {
@@ -22,6 +26,7 @@ impl Default for Material {
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.0,
+            pattern: None,
         }
     }
 }
@@ -34,7 +39,9 @@ pub fn lighting(
     normalv: &NormalizedVec3d,
     in_shadow: bool,
 ) -> Color {
-    let effective_color = &material.color * &light.intensity;
+    let pattern_color = material.pattern.as_ref().map(|p| pattern::at(p, point));
+    let color = pattern_color.as_ref().unwrap_or(&material.color);
+    let effective_color = color * &light.intensity;
     let lightv = (&light.position - point).norm().unwrap();
 
     let ambient = &effective_color * material.ambient;
@@ -178,6 +185,43 @@ mod tests {
 
             let result = lighting(&m, &position, &light, &eyev, &normalv, in_shadow);
             assert_eq!(result, Color::new(0.1, 0.1, 0.1));
+        }
+
+        #[test]
+        fn lighting_with_a_pattern_applied() {
+            let m = Material {
+                pattern: Some(Pattern::Stripe(color::white(), color::black())),
+                ambient: 1.0,
+                diffuse: 0.0,
+                specular: 0.0,
+                ..Default::default()
+            };
+            let eyev = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
+            let normalv = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
+            let light = PointLight {
+                position: Point3d::new(0.0, 0.0, -10.0),
+                intensity: color::white(),
+            };
+
+            let c1 = lighting(
+                &m,
+                &Point3d::new(0.9, 0.0, 0.0),
+                &light,
+                &eyev,
+                &normalv,
+                false,
+            );
+            let c2 = lighting(
+                &m,
+                &Point3d::new(1.1, 0.0, 0.0),
+                &light,
+                &eyev,
+                &normalv,
+                false,
+            );
+
+            assert_eq!(c1, color::white());
+            assert_eq!(c2, color::black());
         }
     }
 }
