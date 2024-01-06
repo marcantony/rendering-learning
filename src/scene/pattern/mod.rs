@@ -15,6 +15,7 @@ pub trait Pattern {
     }
 }
 
+pub mod checker3d;
 pub mod gradient;
 pub mod ring;
 pub mod stripe;
