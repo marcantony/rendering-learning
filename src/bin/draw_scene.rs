@@ -6,7 +6,7 @@ use ray_tracer_challenge::{
     scene::{
         camera::Camera,
         light::PointLight,
-        material::Material,
+        material::{Material, Surface},
         object::{plane::Plane, sphere::Sphere},
         pattern::stripe::Stripe,
         transformation,
@@ -20,7 +20,7 @@ fn main() {
     let now = Instant::now();
 
     let floor_material = Material {
-        color: Color::new(1.0, 0.9, 0.9),
+        surface: Surface::Color(Color::new(1.0, 0.9, 0.9)),
         specular: 0.0,
         ..Default::default()
     };
@@ -32,7 +32,7 @@ fn main() {
     let middle = Sphere {
         transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 2.0, 0.5)).unwrap(),
         material: Material {
-            pattern: Some(Box::new(Stripe {
+            surface: Surface::Pattern(Box::new(Stripe {
                 a: color::white(),
                 b: color::blue(),
                 transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
@@ -41,7 +41,6 @@ fn main() {
                 ]))
                 .unwrap(),
             })),
-            color: Color::new(0.1, 1.0, 0.5),
             diffuse: 0.7,
             specular: 0.3,
             ..Default::default()
@@ -55,7 +54,7 @@ fn main() {
         ]))
         .unwrap(),
         material: Material {
-            color: Color::new(0.5, 1.0, 0.1),
+            surface: Surface::Color(Color::new(0.5, 1.0, 0.1)),
             diffuse: 0.7,
             specular: 0.3,
             shininess: 50.0,
@@ -70,7 +69,7 @@ fn main() {
         ]))
         .unwrap(),
         material: Material {
-            color: Color::new(1.0, 0.8, 0.1),
+            surface: Surface::Color(Color::new(1.0, 0.8, 0.1)),
             diffuse: 0.7,
             specular: 0.3,
             ..Default::default()

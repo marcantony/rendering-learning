@@ -4,7 +4,10 @@ use crate::{
         matrix::{InvertibleMatrix, SquareMatrix},
         point::Point3d,
     },
-    scene::{material::Material, transformation},
+    scene::{
+        material::{Material, Surface},
+        transformation,
+    },
 };
 
 use super::{
@@ -115,7 +118,7 @@ fn basic_spheres() -> Vec<Sphere> {
     let s1 = Sphere::new(
         InvertibleMatrix::try_from(SquareMatrix::<4>::identity()).unwrap(),
         Material {
-            color: Color::new(0.8, 1.0, 0.6),
+            surface: Surface::Color(Color::new(0.8, 1.0, 0.6)),
             diffuse: 0.7,
             specular: 0.2,
             ..Default::default()
@@ -284,7 +287,6 @@ mod tests {
         outer.material.ambient = 1.0;
         let inner = &mut spheres[1];
         inner.material.ambient = 1.0;
-        let inner_color = inner.material.color.clone();
 
         let w = World {
             objects: spheres
@@ -296,8 +298,9 @@ mod tests {
         let r = Ray::new(Point3d::new(0.0, 0.0, 0.75), Vec3d::new(0.0, 0.0, -1.0));
 
         let c = w.color_at(&r);
+        let inner_surface = &w.objects[1].material().surface;
 
-        assert_eq!(c, inner_color);
+        assert!(matches!(inner_surface, Surface::Color(col) if col == &c));
     }
 
     mod shadow {

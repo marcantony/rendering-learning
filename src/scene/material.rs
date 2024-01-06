@@ -5,24 +5,27 @@ use crate::{
 
 use super::{light::PointLight, object::Object, pattern::Pattern};
 
+pub enum Surface {
+    Color(Color),
+    Pattern(Box<dyn Pattern>),
+}
+
 pub struct Material {
-    pub color: Color,
+    pub surface: Surface,
     pub ambient: f64,
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
-    pub pattern: Option<Box<dyn Pattern>>,
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
-            color: Color::new(1.0, 1.0, 1.0),
+            surface: Surface::Color(Color::new(1.0, 1.0, 1.0)),
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.0,
-            pattern: None,
         }
     }
 }
@@ -36,12 +39,10 @@ pub fn lighting(
     normalv: &NormalizedVec3d,
     in_shadow: bool,
 ) -> Color {
-    let pattern_color = material
-        .pattern
-        .as_ref()
-        .map(|p| p.at_object(object, point));
-    let color = pattern_color.as_ref().unwrap_or(&material.color);
-    let effective_color = color * &light.intensity;
+    let effective_color = match &material.surface {
+        Surface::Color(c) => c * &light.intensity,
+        Surface::Pattern(p) => &p.at_object(object, point) * &light.intensity,
+    };
     let lightv = (&light.position - point).norm().unwrap();
 
     let ambient = &effective_color * material.ambient;
@@ -78,7 +79,7 @@ mod tests {
     fn the_default_material() {
         let m: Material = Default::default();
 
-        assert_eq!(m.color, Color::new(1.0, 1.0, 1.0));
+        assert!(matches!(m.surface, Surface::Color(c) if c == Color::new(1.0, 1.0, 1.0)));
         assert_eq!(m.ambient, 0.1);
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);
@@ -241,7 +242,7 @@ mod tests {
         #[test]
         fn lighting_with_a_pattern_applied() {
             let m = Material {
-                pattern: Some(Box::new(Stripe {
+                surface: Surface::Pattern(Box::new(Stripe {
                     a: color::white(),
                     b: color::black(),
                     transform: InvertibleMatrix::identity(),
