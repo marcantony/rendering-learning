@@ -8,7 +8,7 @@ use ray_tracer_challenge::{
         light::PointLight,
         material::Material,
         object::{plane::Plane, sphere::Sphere},
-        pattern::Pattern,
+        pattern::stripe::Stripe,
         transformation,
         world::World,
     },
@@ -26,21 +26,21 @@ fn main() {
     };
     let floor = Plane {
         transform: InvertibleMatrix::identity(),
-        material: floor_material.clone(),
+        material: floor_material,
     };
 
     let middle = Sphere {
         transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 2.0, 0.5)).unwrap(),
         material: Material {
-            pattern: Some(Pattern::Stripe(
-                color::white(),
-                color::blue(),
-                InvertibleMatrix::try_from(transformation::sequence(&vec![
+            pattern: Some(Box::new(Stripe {
+                a: color::white(),
+                b: color::blue(),
+                transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
                     transformation::scaling(0.2, 1.0, 1.0),
                     transformation::rotation_z(-consts::FRAC_PI_4),
                 ]))
                 .unwrap(),
-            )),
+            })),
             color: Color::new(0.1, 1.0, 0.5),
             diffuse: 0.7,
             specular: 0.3,

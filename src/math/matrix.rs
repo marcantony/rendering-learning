@@ -262,6 +262,12 @@ impl<const N: usize> Deref for InvertibleMatrix<N> {
     }
 }
 
+impl<const N: usize> Default for InvertibleMatrix<N> {
+    fn default() -> Self {
+        InvertibleMatrix::identity()
+    }
+}
+
 #[cfg(test)]
 pub mod test_utils {
     use super::*;

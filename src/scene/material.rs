@@ -3,20 +3,15 @@ use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
 };
 
-use super::{
-    light::PointLight,
-    object::Object,
-    pattern::{self, Pattern},
-};
+use super::{light::PointLight, object::Object, pattern::Pattern};
 
-#[derive(Debug, Clone, PartialEq)]
 pub struct Material {
     pub color: Color,
     pub ambient: f64,
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
-    pub pattern: Option<Pattern>,
+    pub pattern: Option<Box<dyn Pattern>>,
 }
 
 impl Default for Material {
@@ -44,7 +39,7 @@ pub fn lighting(
     let pattern_color = material
         .pattern
         .as_ref()
-        .map(|p| pattern::at_object(p, object, point));
+        .map(|p| p.at_object(object, point));
     let color = pattern_color.as_ref().unwrap_or(&material.color);
     let effective_color = color * &light.intensity;
     let lightv = (&light.position - point).norm().unwrap();
@@ -93,7 +88,7 @@ mod tests {
     mod lighting {
         use crate::{
             math::{matrix::InvertibleMatrix, vector::Vec3d},
-            scene::{light::PointLight, object::sphere::Sphere},
+            scene::{light::PointLight, object::sphere::Sphere, pattern::stripe::Stripe},
         };
 
         use super::*;
@@ -246,11 +241,11 @@ mod tests {
         #[test]
         fn lighting_with_a_pattern_applied() {
             let m = Material {
-                pattern: Some(Pattern::Stripe(
-                    color::white(),
-                    color::black(),
-                    InvertibleMatrix::identity(),
-                )),
+                pattern: Some(Box::new(Stripe {
+                    a: color::white(),
+                    b: color::black(),
+                    transform: InvertibleMatrix::identity(),
+                })),
                 ambient: 1.0,
                 diffuse: 0.0,
                 specular: 0.0,

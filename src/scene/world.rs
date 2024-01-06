@@ -245,16 +245,13 @@ mod tests {
                 position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: color::white(),
             }],
-            objects: vec![
-                Box::<Sphere>::new(Default::default()),
-                Box::new(shape.clone()),
-            ],
+            objects: vec![Box::<Sphere>::new(Default::default()), Box::new(shape)],
         };
         let r = Ray {
             origin: Point3d::new(0.0, 0.0, 5.0),
             direction: Vec3d::new(0.0, 0.0, 1.0),
         };
-        let i = Intersection::new(4.0, &shape as &dyn Object);
+        let i = Intersection::new(4.0, w.objects[1].as_ref() as &dyn Object);
 
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);

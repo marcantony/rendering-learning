@@ -64,7 +64,7 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
 
 impl<'a, T: Object + PartialEq + ?Sized> PartialEq for Intersection<'a, T> {
     fn eq(&self, other: &Self) -> bool {
-        util::are_equal(self.t, other.t) && self.object == other.object
+        util::are_equal(self.t, other.t) && std::ptr::eq(self.object, other.object)
     }
 }
 
@@ -97,7 +97,7 @@ mod test {
         let i = Intersection::new(3.5, &s);
 
         assert_eq!(i.t(), 3.5);
-        assert_eq!(i.object(), &s);
+        assert!(std::ptr::eq(i.object(), &s));
     }
 
     mod hit {
@@ -108,11 +108,11 @@ mod test {
             let s = Sphere::unit();
             let i1 = Intersection::new(1.0, &s);
             let i2 = Intersection::new(2.0, &s);
-            let xs = vec![i2.clone(), i1.clone()];
+            let xs = vec![i2, i1];
 
             let i = hit(&xs);
 
-            assert_eq!(i, Some(&i1));
+            assert!(std::ptr::eq(i.unwrap(), &xs[1]));
         }
 
         #[test]
@@ -120,11 +120,11 @@ mod test {
             let s = Sphere::unit();
             let i1 = Intersection::new(-1.0, &s);
             let i2 = Intersection::new(1.0, &s);
-            let xs = vec![i2.clone(), i1.clone()];
+            let xs = vec![i2, i1];
 
             let i = hit(&xs);
 
-            assert_eq!(i, Some(&i2));
+            assert!(std::ptr::eq(i.unwrap(), &xs[0]));
         }
 
         #[test]
@@ -132,11 +132,11 @@ mod test {
             let s = Sphere::unit();
             let i1 = Intersection::new(-2.0, &s);
             let i2 = Intersection::new(-1.0, &s);
-            let xs = vec![i2.clone(), i1.clone()];
+            let xs = vec![i2, i1];
 
             let i = hit(&xs);
 
-            assert_eq!(i, None);
+            assert!(i.is_none());
         }
 
         #[test]
@@ -146,11 +146,11 @@ mod test {
             let i2 = Intersection::new(7.0, &s);
             let i3 = Intersection::new(-3.0, &s);
             let i4 = Intersection::new(2.0, &s);
-            let xs = vec![i1.clone(), i2.clone(), i3.clone(), i4.clone()];
+            let xs = vec![i1, i2, i3, i4];
 
             let i = hit(&xs);
 
-            assert_eq!(i, Some(&i4));
+            assert!(std::ptr::eq(i.unwrap(), &xs[3]));
         }
     }
 
@@ -168,7 +168,7 @@ mod test {
             let comps = i.prepare_computations(&r);
 
             assert_eq!(comps.t, i.t());
-            assert_eq!(comps.object, i.object());
+            assert!(std::ptr::eq(comps.object, i.object()));
             assert_eq!(comps.point, Point3d::new(0.0, 0.0, -1.0));
             assert_eq!(
                 comps.eye_v,
