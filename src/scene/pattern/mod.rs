@@ -16,6 +16,7 @@ pub trait Pattern {
 }
 
 pub mod gradient;
+pub mod ring;
 pub mod stripe;
 
 #[cfg(test)]
