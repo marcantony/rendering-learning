@@ -81,6 +81,22 @@ pub fn blue() -> Color {
     Color::new(0.0, 0.0, 1.0)
 }
 
+pub fn tungsten_40w() -> Color {
+    Color::new(1.0, 0.77254, 0.56078)
+}
+
+pub fn tungsten_100w() -> Color {
+    Color::new(1.0, 0.83921, 0.66667)
+}
+
+pub fn halogen() -> Color {
+    Color::new(1.0, 0.9451, 0.87843)
+}
+
+pub fn sun() -> Color {
+    white()
+}
+
 #[cfg(test)]
 pub mod test_utils {
     use crate::math::util;

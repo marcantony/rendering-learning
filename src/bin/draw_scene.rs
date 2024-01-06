@@ -8,7 +8,7 @@ use ray_tracer_challenge::{
         light::PointLight,
         material::{Material, Surface},
         object::{plane::Plane, sphere::Sphere},
-        pattern::stripe::Stripe,
+        pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
         world::World,
     },
@@ -20,7 +20,7 @@ fn main() {
     let now = Instant::now();
 
     let floor_material = Material {
-        surface: Surface::Color(Color::new(1.0, 0.9, 0.9)),
+        surface: Surface::Pattern(Box::<Checker3d>::new(Default::default())),
         specular: 0.0,
         ..Default::default()
     };
@@ -83,7 +83,7 @@ fn main() {
 
     let light_source_2 = PointLight {
         position: Point3d::new(10.0, 2.0, -10.0),
-        intensity: Color::new(1.0, 0.2, 0.35),
+        intensity: color::tungsten_40w(),
     };
 
     let world = World {
@@ -100,8 +100,8 @@ fn main() {
     let to = Point3d::new(0.0, 1.0, 0.0);
     let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
-        600,
-        400,
+        1200,
+        800,
         consts::FRAC_PI_3,
         InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
     );
