@@ -8,6 +8,7 @@ use ray_tracer_challenge::{
         light::PointLight,
         material::Material,
         object::{plane::Plane, sphere::Sphere},
+        pattern::Pattern,
         transformation,
         world::World,
     },
@@ -31,6 +32,15 @@ fn main() {
     let middle = Sphere {
         transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 2.0, 0.5)).unwrap(),
         material: Material {
+            pattern: Some(Pattern::Stripe(
+                color::white(),
+                color::blue(),
+                InvertibleMatrix::try_from(transformation::sequence(&vec![
+                    transformation::scaling(0.2, 1.0, 1.0),
+                    transformation::rotation_z(-consts::FRAC_PI_4),
+                ]))
+                .unwrap(),
+            )),
             color: Color::new(0.1, 1.0, 0.5),
             diffuse: 0.7,
             specular: 0.3,
@@ -89,7 +99,7 @@ fn main() {
 
     let from = Point3d::new(0.0, 1.5, -5.0);
     let to = Point3d::new(0.0, 1.0, 0.0);
-    let up = Vec3d::new(1.0, 1.0, 0.0);
+    let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
         600,
         400,

@@ -48,13 +48,14 @@ impl World {
         intersections
     }
 
-    fn shade_hit<T: Object + ?Sized>(&self, comps: &Precomputation<T>) -> Option<Color> {
+    fn shade_hit(&self, comps: &Precomputation<dyn Object>) -> Option<Color> {
         self.lights
             .iter()
             .map(|light| {
                 let shadowed = self.is_shadowed(&comps.over_point, light);
                 lighting(
                     &comps.object.material(),
+                    comps.object,
                     &comps.point,
                     light,
                     &comps.eye_v,
@@ -253,7 +254,7 @@ mod tests {
             origin: Point3d::new(0.0, 0.0, 5.0),
             direction: Vec3d::new(0.0, 0.0, 1.0),
         };
-        let i = Intersection::new(4.0, &shape);
+        let i = Intersection::new(4.0, &shape as &dyn Object);
 
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);

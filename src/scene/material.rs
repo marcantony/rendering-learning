@@ -5,6 +5,7 @@ use crate::{
 
 use super::{
     light::PointLight,
+    object::Object,
     pattern::{self, Pattern},
 };
 
@@ -33,13 +34,17 @@ impl Default for Material {
 
 pub fn lighting(
     material: &Material,
+    object: &dyn Object,
     point: &Point3d,
     light: &PointLight,
     eyev: &NormalizedVec3d,
     normalv: &NormalizedVec3d,
     in_shadow: bool,
 ) -> Color {
-    let pattern_color = material.pattern.as_ref().map(|p| pattern::at(p, point));
+    let pattern_color = material
+        .pattern
+        .as_ref()
+        .map(|p| pattern::at_object(p, object, point));
     let color = pattern_color.as_ref().unwrap_or(&material.color);
     let effective_color = color * &light.intensity;
     let lightv = (&light.position - point).norm().unwrap();
@@ -86,7 +91,10 @@ mod tests {
     }
 
     mod lighting {
-        use crate::{math::vector::Vec3d, scene::light::PointLight};
+        use crate::{
+            math::{matrix::InvertibleMatrix, vector::Vec3d},
+            scene::{light::PointLight, object::sphere::Sphere},
+        };
 
         use super::*;
 
@@ -104,7 +112,15 @@ mod tests {
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
-            let result = lighting(&m, &position, &light, &eyev, &normalv, false);
+            let result = lighting(
+                &m,
+                &Sphere::unit() as &dyn Object,
+                &position,
+                &light,
+                &eyev,
+                &normalv,
+                false,
+            );
             assert_eq!(result, Color::new(1.9, 1.9, 1.9));
         }
 
@@ -119,7 +135,15 @@ mod tests {
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
-            let result = lighting(&m, &position, &light, &eyev, &normalv, false);
+            let result = lighting(
+                &m,
+                &Sphere::unit() as &dyn Object,
+                &position,
+                &light,
+                &eyev,
+                &normalv,
+                false,
+            );
             assert_eq!(result, Color::new(1.0, 1.0, 1.0));
         }
 
@@ -133,7 +157,15 @@ mod tests {
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
-            let result = lighting(&m, &position, &light, &eyev, &normalv, false);
+            let result = lighting(
+                &m,
+                &Sphere::unit() as &dyn Object,
+                &position,
+                &light,
+                &eyev,
+                &normalv,
+                false,
+            );
             color::test_utils::assert_colors_approx_equal(
                 &result,
                 &Color::new(0.7364, 0.7364, 0.7364),
@@ -151,7 +183,15 @@ mod tests {
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
-            let result = lighting(&m, &position, &light, &eyev, &normalv, false);
+            let result = lighting(
+                &m,
+                &Sphere::unit() as &dyn Object,
+                &position,
+                &light,
+                &eyev,
+                &normalv,
+                false,
+            );
             color::test_utils::assert_colors_approx_equal(
                 &result,
                 &Color::new(1.6364, 1.6364, 1.6364),
@@ -168,7 +208,15 @@ mod tests {
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
 
-            let result = lighting(&m, &position, &light, &eyev, &normalv, false);
+            let result = lighting(
+                &m,
+                &Sphere::unit() as &dyn Object,
+                &position,
+                &light,
+                &eyev,
+                &normalv,
+                false,
+            );
             assert_eq!(result, Color::new(0.1, 0.1, 0.1));
         }
 
@@ -183,14 +231,26 @@ mod tests {
             };
             let in_shadow = true;
 
-            let result = lighting(&m, &position, &light, &eyev, &normalv, in_shadow);
+            let result = lighting(
+                &m,
+                &Sphere::unit() as &dyn Object,
+                &position,
+                &light,
+                &eyev,
+                &normalv,
+                in_shadow,
+            );
             assert_eq!(result, Color::new(0.1, 0.1, 0.1));
         }
 
         #[test]
         fn lighting_with_a_pattern_applied() {
             let m = Material {
-                pattern: Some(Pattern::Stripe(color::white(), color::black())),
+                pattern: Some(Pattern::Stripe(
+                    color::white(),
+                    color::black(),
+                    InvertibleMatrix::identity(),
+                )),
                 ambient: 1.0,
                 diffuse: 0.0,
                 specular: 0.0,
@@ -205,6 +265,7 @@ mod tests {
 
             let c1 = lighting(
                 &m,
+                &Sphere::unit() as &dyn Object,
                 &Point3d::new(0.9, 0.0, 0.0),
                 &light,
                 &eyev,
@@ -213,6 +274,7 @@ mod tests {
             );
             let c2 = lighting(
                 &m,
+                &Sphere::unit() as &dyn Object,
                 &Point3d::new(1.1, 0.0, 0.0),
                 &light,
                 &eyev,
