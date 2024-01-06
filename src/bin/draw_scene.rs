@@ -20,7 +20,12 @@ fn main() {
     let now = Instant::now();
 
     let floor_material = Material {
-        surface: Surface::Pattern(Box::<Checker3d>::new(Default::default())),
+        surface: Surface::Pattern(Box::new(Checker3d {
+            a: color::white(),
+            b: color::black(),
+            transform: InvertibleMatrix::try_from(transformation::translation(0.0, -0.01, 0.0))
+                .unwrap(),
+        })),
         specular: 0.0,
         ..Default::default()
     };
@@ -96,12 +101,12 @@ fn main() {
         lights: vec![light_source, light_source_2],
     };
 
-    let from = Point3d::new(0.0, 1.5, -5.0);
+    let from = Point3d::new(0.0, 4.0, -5.0);
     let to = Point3d::new(0.0, 1.0, 0.0);
     let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
-        1200,
-        800,
+        600,
+        400,
         consts::FRAC_PI_3,
         InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
     );
