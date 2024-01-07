@@ -81,7 +81,7 @@ impl World {
 
         intersect::hit(&xs)
             .and_then(|h| {
-                let comps = h.prepare_computations(ray);
+                let comps = h.prepare_computations(ray, &xs);
                 self.shade_hit(&comps, remaining)
             })
             .unwrap_or(color::black())
@@ -200,7 +200,7 @@ mod tests {
         let shape = w.objects.first().unwrap().as_ref();
         let i = Intersection::new(4.0, shape);
 
-        let comps = i.prepare_computations(&r);
+        let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
 
         color::test_utils::assert_colors_approx_equal(
@@ -220,7 +220,7 @@ mod tests {
         let shape = w.objects[1].as_ref();
         let i = Intersection::new(0.5, shape);
 
-        let comps = i.prepare_computations(&r);
+        let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
 
         color::test_utils::assert_colors_approx_equal(
@@ -237,7 +237,7 @@ mod tests {
         let shape = w.objects.first().unwrap().as_ref();
         let i = Intersection::new(4.0, shape);
 
-        let comps = i.prepare_computations(&r);
+        let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
 
         assert_eq!(c, None);
@@ -251,7 +251,7 @@ mod tests {
         let shape = w.objects.first().unwrap().as_ref();
         let i = Intersection::new(4.0, shape);
 
-        let comps = i.prepare_computations(&r);
+        let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
 
         color::test_utils::assert_colors_approx_equal(
@@ -281,7 +281,7 @@ mod tests {
         };
         let i = Intersection::new(4.0, w.objects[1].as_ref() as &dyn Object);
 
-        let comps = i.prepare_computations(&r);
+        let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
 
         assert_eq!(c, Some(Color::new(0.1, 0.1, 0.1)));
@@ -383,7 +383,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let i = Intersection::new(1.0, w.objects[1].as_ref());
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, TEST_DEPTH);
 
             assert_eq!(color, color::black());
@@ -409,7 +409,7 @@ mod tests {
             );
             let i = Intersection::new(sqrt2, w.objects[2].as_ref());
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, TEST_DEPTH);
 
             color::test_utils::assert_colors_approx_equal(
@@ -438,7 +438,7 @@ mod tests {
             );
             let i = Intersection::new(sqrt2, w.objects[2].as_ref());
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
             let color = w.shade_hit(&comps, TEST_DEPTH).unwrap();
 
             color::test_utils::assert_colors_approx_equal(
@@ -499,7 +499,7 @@ mod tests {
             );
             let i = Intersection::new(sqrt2, w.objects[2].as_ref());
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, 0);
 
             color::test_utils::assert_colors_approx_equal(&color, &color::black());

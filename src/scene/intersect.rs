@@ -20,6 +20,8 @@ pub struct Precomputation<'a, T: Object + ?Sized> {
     pub inside: bool,
     pub over_point: Point3d,
     pub reflect_v: NormalizedVec3d,
+    pub refraction_exiting: f64,
+    pub refraction_entering: f64,
 }
 
 impl<'a, T: Object + ?Sized> Intersection<'a, T> {
@@ -35,7 +37,7 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
         self.object
     }
 
-    pub fn prepare_computations(&self, ray: &Ray) -> Precomputation<T> {
+    pub fn prepare_computations(&self, ray: &Ray, xs: &[Intersection<T>]) -> Precomputation<T> {
         let t = self.t();
         let object = self.object();
         let point = ray.position(t);
@@ -54,6 +56,32 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
         let reflect_v =
             NormalizedVec3d::try_from(ray.direction.reflect(&adjusted_normal_v)).unwrap();
 
+        let mut containers = Vec::<&T>::new();
+        let mut n1: f64 = 1.0;
+        let mut n2: f64 = 1.0;
+        for i in xs {
+            if i == self {
+                n1 = match containers.last() {
+                    Some(o) => o.material().refractive_index,
+                    None => 1.0,
+                };
+            }
+
+            if let Some(index) = containers.iter().position(|&obj| std::ptr::eq(obj, i.object())) {
+                containers.remove(index);
+            } else {
+                containers.push(i.object());
+            }
+
+            if i == self {
+                n2 = match containers.last() {
+                    Some(o) => o.material().refractive_index,
+                    None => 1.0
+                };
+                break;
+            }
+        }
+
         Precomputation {
             t,
             object,
@@ -63,11 +91,13 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
             inside,
             over_point,
             reflect_v,
+            refraction_exiting: n1,
+            refraction_entering: n2,
         }
     }
 }
 
-impl<'a, T: Object + PartialEq + ?Sized> PartialEq for Intersection<'a, T> {
+impl<'a, T: Object + ?Sized> PartialEq for Intersection<'a, T> {
     fn eq(&self, other: &Self) -> bool {
         util::are_equal(self.t, other.t) && std::ptr::eq(self.object, other.object)
     }
@@ -173,7 +203,7 @@ mod test {
             let s: Sphere = Default::default();
             let i = Intersection::new(4.0, &s);
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
 
             assert_eq!(comps.t, i.t());
             assert!(std::ptr::eq(comps.object, i.object()));
@@ -195,7 +225,7 @@ mod test {
             let r = Ray::new(Point3d::new(0.0, 1.0, -1.0), Vec3d::new(0.0, -t, t));
             let i = Intersection::new(std::f64::consts::SQRT_2, &shape);
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
 
             assert_eq!(*comps.reflect_v, Vec3d::new(0.0, t, t));
         }
@@ -206,7 +236,7 @@ mod test {
             let s: Sphere = Default::default();
             let i = Intersection { t: 4.0, object: &s };
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
 
             assert_eq!(comps.inside, false);
         }
@@ -217,7 +247,7 @@ mod test {
             let s: Sphere = Default::default();
             let i = Intersection { t: 1.0, object: &s };
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
 
             assert_eq!(comps.point, Point3d::new(0.0, 0.0, 1.0));
             assert_eq!(
@@ -244,10 +274,82 @@ mod test {
             };
             let i = Intersection::new(5.0, &shape);
 
-            let comps = i.prepare_computations(&r);
+            let comps = i.prepare_computations(&r, &vec![]);
 
             assert!(comps.over_point.z() < -SHADOW_BIAS / 2.0);
             assert!(comps.point.z() > comps.over_point.z());
+        }
+
+        mod refraction {
+            use crate::scene::object::sphere;
+
+            use super::*;
+
+            fn get_objects() -> (Sphere, Sphere, Sphere) {
+                let mut a = sphere::glass_sphere();
+                a.transform =
+                    InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap();
+                a.material.refractive_index = 1.5;
+
+                let mut b = sphere::glass_sphere();
+                b.transform =
+                    InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, -0.25))
+                        .unwrap();
+                b.material.refractive_index = 2.0;
+
+                let mut c = sphere::glass_sphere();
+                c.transform =
+                    InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 0.25))
+                        .unwrap();
+                c.material.refractive_index = 2.5;
+
+                (a, b, c)
+            }
+
+            fn get_xs<'a>(
+                a: &'a Sphere,
+                b: &'a Sphere,
+                c: &'a Sphere,
+            ) -> Vec<Intersection<'a, Sphere>> {
+                vec![
+                    (2.0, a),
+                    (2.75, b),
+                    (3.25, c),
+                    (4.75, b),
+                    (5.25, c),
+                    (6.0, a),
+                ]
+                .into_iter()
+                .map(|(t, o)| Intersection::new(t, o))
+                .collect()
+            }
+
+            macro_rules! refractive_index_tests {
+                ($($name:ident: $value:expr,)*) => {
+                    $(
+                        #[test]
+                        fn $name() {
+                            let (index, n1, n2) = $value;
+                            let (a, b, c) = get_objects();
+                            let xs = get_xs(&a, &b, &c);
+                            let r = Ray::new(Point3d::new(0.0, 0.0, -4.0), Vec3d::new(0.0, 0.0, 1.0));
+                            let comps = xs[index].prepare_computations(&r, &xs);
+
+                            assert_eq!(comps.refraction_exiting, n1);
+                            assert_eq!(comps.refraction_entering, n2);
+                        }
+                    )*
+                };
+            }
+
+            refractive_index_tests! {
+                refractive_index_0: (0, 1.0, 1.5),
+                refractive_index_1: (1, 1.5, 2.0),
+                refractive_index_2: (2, 2.0, 2.5),
+                refractive_index_3: (3, 2.5, 2.5),
+                refractive_index_4: (4, 2.5, 1.5),
+                refractive_index_5: (5, 1.5, 1.0),
+            }
         }
     }
 }
