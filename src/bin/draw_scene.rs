@@ -15,6 +15,9 @@ use ray_tracer_challenge::{
     util,
 };
 
+const RES_X: usize = 600;
+const RES_Y: usize = 400;
+
 fn main() {
     use std::time::Instant;
     let now = Instant::now();
@@ -27,6 +30,7 @@ fn main() {
                 .unwrap(),
         })),
         specular: 0.0,
+        reflectivity: 0.02,
         ..Default::default()
     };
     let floor = Plane {
@@ -48,6 +52,7 @@ fn main() {
             })),
             diffuse: 0.7,
             specular: 0.3,
+            reflectivity: 0.5,
             ..Default::default()
         },
     };
@@ -77,6 +82,7 @@ fn main() {
             surface: Surface::Color(Color::new(1.0, 0.8, 0.1)),
             diffuse: 0.7,
             specular: 0.3,
+            reflectivity: 0.1,
             ..Default::default()
         },
     };
@@ -106,8 +112,8 @@ fn main() {
     let to = Point3d::new(0.0, 1.0, 0.0);
     let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
-        600,
-        400,
+        RES_X,
+        RES_Y,
         consts::FRAC_PI_3,
         InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
     );
