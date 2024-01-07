@@ -99,6 +99,7 @@ fn main() {
             Box::new(right),
         ],
         lights: vec![light_source, light_source_2],
+        ..Default::default()
     };
 
     let from = Point3d::new(0.0, 4.0, -5.0);

@@ -19,6 +19,7 @@ pub struct Precomputation<'a, T: Object + ?Sized> {
     pub normal_v: NormalizedVec3d,
     pub inside: bool,
     pub over_point: Point3d,
+    pub reflect_v: NormalizedVec3d,
 }
 
 impl<'a, T: Object + ?Sized> Intersection<'a, T> {
@@ -50,6 +51,9 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
 
         let over_point = &point + &(&*adjusted_normal_v * SHADOW_BIAS);
 
+        let reflect_v =
+            NormalizedVec3d::try_from(ray.direction.reflect(&adjusted_normal_v)).unwrap();
+
         Precomputation {
             t,
             object,
@@ -58,6 +62,7 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
             normal_v: adjusted_normal_v,
             inside,
             over_point,
+            reflect_v,
         }
     }
 }
@@ -155,7 +160,10 @@ mod test {
     }
 
     mod prepare_computations {
-        use crate::{math::matrix::InvertibleMatrix, scene::transformation};
+        use crate::{
+            math::matrix::InvertibleMatrix,
+            scene::{object::plane::Plane, transformation},
+        };
 
         use super::*;
 
@@ -178,6 +186,18 @@ mod test {
                 comps.normal_v,
                 NormalizedVec3d::try_from(Vec3d::new(0.0, 0.0, -1.0)).unwrap()
             );
+        }
+
+        #[test]
+        fn precomputing_the_reflection_vector() {
+            let shape: Plane = Default::default();
+            let t = std::f64::consts::SQRT_2 / 2.0;
+            let r = Ray::new(Point3d::new(0.0, 1.0, -1.0), Vec3d::new(0.0, -t, t));
+            let i = Intersection::new(std::f64::consts::SQRT_2, &shape);
+
+            let comps = i.prepare_computations(&r);
+
+            assert_eq!(*comps.reflect_v, Vec3d::new(0.0, t, t));
         }
 
         #[test]
