@@ -64,6 +64,17 @@ impl Default for Sphere {
     }
 }
 
+pub fn glass_sphere() -> Sphere {
+    Sphere {
+        material: Material {
+            transparency: 1.0,
+            refractive_index: 1.52,
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

@@ -17,6 +17,8 @@ pub struct Material {
     pub specular: f64,
     pub shininess: f64,
     pub reflectivity: f64,
+    pub transparency: f64,
+    pub refractive_index: f64,
 }
 
 impl Default for Material {
@@ -28,6 +30,8 @@ impl Default for Material {
             specular: 0.9,
             shininess: 200.0,
             reflectivity: 0.0,
+            transparency: 0.0,
+            refractive_index: 1.0,
         }
     }
 }
@@ -87,6 +91,8 @@ mod tests {
         assert_eq!(m.specular, 0.9);
         assert_eq!(m.shininess, 200.0);
         assert_eq!(m.reflectivity, 0.0);
+        assert_eq!(m.transparency, 0.0);
+        assert_eq!(m.refractive_index, 1.0);
     }
 
     mod lighting {
