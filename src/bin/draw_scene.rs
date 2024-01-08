@@ -22,67 +22,124 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let floor_material = Material {
-        surface: Surface::Pattern(Box::new(Checker3d {
-            a: color::white(),
-            b: color::black(),
-            transform: InvertibleMatrix::try_from(transformation::translation(0.0, -0.01, 0.0))
-                .unwrap(),
-        })),
-        specular: 0.0,
-        reflectivity: 0.02,
-        ..Default::default()
-    };
     let floor = Plane {
         transform: InvertibleMatrix::identity(),
-        material: floor_material,
-    };
-
-    let middle = Sphere {
-        transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 2.0, 0.5)).unwrap(),
         material: Material {
-            surface: Surface::Pattern(Box::new(Stripe {
+            surface: Surface::Pattern(Box::new(Checker3d {
                 a: color::white(),
-                b: color::blue(),
-                transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
-                    transformation::scaling(0.2, 1.0, 1.0),
-                    transformation::rotation_z(-consts::FRAC_PI_4),
-                ]))
-                .unwrap(),
+                b: color::black(),
+                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -0.01, 0.0))
+                    .unwrap(),
             })),
-            diffuse: 0.7,
-            specular: 0.3,
-            reflectivity: 0.5,
+            specular: 0.0,
+            reflectivity: 0.02,
             ..Default::default()
         },
     };
 
-    let right = Sphere {
+    let left_wall = Plane {
         transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
-            transformation::scaling(0.5, 0.5, 0.5),
-            transformation::translation(1.5, 0.5, -0.5),
+            transformation::rotation_x(consts::FRAC_PI_2),
+            transformation::rotation_y(-consts::FRAC_PI_3),
+            transformation::translation(-8.0, 0.0, 0.0),
         ]))
         .unwrap(),
         material: Material {
-            surface: Surface::Color(Color::new(0.5, 1.0, 0.1)),
-            diffuse: 0.7,
-            specular: 0.3,
+            surface: Surface::Color(color::white()),
+            specular: 1.0,
+            reflectivity: 0.9,
+            shininess: 400.0,
+            diffuse: 0.0,
+            ..Default::default()
+        },
+    };
+
+    let right_wall = Plane {
+        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+            transformation::rotation_x(consts::FRAC_PI_2),
+            transformation::rotation_y(consts::FRAC_PI_4),
+            transformation::translation(10.0, 0.0, 0.0),
+        ]))
+        .unwrap(),
+        material: Material {
+            surface: Surface::Color(color::white()),
+            specular: 1.0,
+            reflectivity: 1.0,
+            shininess: 400.0,
+            diffuse: 0.0,
+            ..Default::default()
+        },
+    };
+
+    let middle_wall = Plane {
+        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+            transformation::rotation_x(consts::FRAC_PI_2),
+            transformation::translation(0.0, 0.0, 7.0),
+        ]))
+        .unwrap(),
+        material: Material {
+            surface: Surface::Color(Color::new(0.945, 0.788, 0.647)),
+            specular: 0.1,
             shininess: 50.0,
             ..Default::default()
         },
     };
 
-    let left = Sphere {
+    let ball = Sphere {
+        transform: InvertibleMatrix::try_from(transformation::translation(0.0, 2.0, 0.0)).unwrap(),
+        material: Material {
+            surface: Surface::Color(Color::new(0.059, 0.322, 0.729)),
+            diffuse: 0.3,
+            specular: 1.0,
+            reflectivity: 0.9,
+            transparency: 0.75,
+            refractive_index: 1.52,
+            ..Default::default()
+        },
+    };
+
+    let inner_air_pocket = Sphere {
         transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
-            transformation::scaling(0.33, 0.33, 0.33),
-            transformation::translation(-1.5, 0.33, -0.75),
+            transformation::scaling(0.5, 0.5, 0.5),
+            transformation::translation(0.0, 2.0, 0.0),
         ]))
         .unwrap(),
         material: Material {
-            surface: Surface::Color(Color::new(1.0, 0.8, 0.1)),
-            diffuse: 0.7,
-            specular: 0.3,
-            reflectivity: 0.1,
+            surface: Surface::Color(color::white()),
+            ambient: 0.0,
+            diffuse: 0.0,
+            specular: 0.0,
+            transparency: 1.0,
+            refractive_index: 1.0,
+            reflectivity: 1.0,
+            ..Default::default()
+        },
+    };
+
+    let behind_ball = Sphere {
+        transform: InvertibleMatrix::try_from(transformation::translation(3.0, 0.0, -10.0))
+            .unwrap(),
+        material: Material {
+            surface: Surface::Pattern(Box::new(Stripe {
+                a: Color::new(0.545, 0.0, 0.0),
+                b: Color::new(0.0, 0.392, 0.0),
+                transform: InvertibleMatrix::try_from(transformation::scaling(0.2, 1.0, 1.0))
+                    .unwrap(),
+            })),
+            ..Default::default()
+        },
+    };
+
+    let behind_wall = Plane {
+        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+            transformation::rotation_x(consts::FRAC_PI_2),
+            transformation::translation(0.0, 0.0, -100.0),
+        ]))
+        .unwrap(),
+        material: Material {
+            surface: Surface::Color(Color::new(0.678, 0.847, 0.902)),
+            specular: 0.1,
+            shininess: 50.0,
             ..Default::default()
         },
     };
@@ -92,24 +149,23 @@ fn main() {
         intensity: color::white(),
     };
 
-    let light_source_2 = PointLight {
-        position: Point3d::new(10.0, 2.0, -10.0),
-        intensity: color::tungsten_40w(),
-    };
-
     let world = World {
         objects: vec![
             Box::new(floor),
-            Box::new(left),
-            Box::new(middle),
-            Box::new(right),
+            Box::new(left_wall),
+            Box::new(right_wall),
+            Box::new(middle_wall),
+            Box::new(ball),
+            Box::new(inner_air_pocket),
+            Box::new(behind_ball),
+            Box::new(behind_wall),
         ],
-        lights: vec![light_source, light_source_2],
+        lights: vec![light_source],
         ..Default::default()
     };
 
-    let from = Point3d::new(0.0, 4.0, -5.0);
-    let to = Point3d::new(0.0, 1.0, 0.0);
+    let from = Point3d::new(0.0, 2.0, -7.0);
+    let to = Point3d::new(0.0, 1.5, 0.0);
     let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
         RES_X,
