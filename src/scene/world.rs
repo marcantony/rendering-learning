@@ -72,7 +72,15 @@ impl World {
                 let reflected_color = self.reflected_color(comps, remaining);
                 let refracted_color = self.refracted_color(comps, remaining);
 
-                &surface_color + &(&reflected_color + &refracted_color)
+                let m = comps.object.material();
+                if m.reflectivity > 0.0 && m.transparency > 0.0 {
+                    let reflectance = comps.schlick();
+                    &surface_color
+                        + &(&(&reflected_color * reflectance)
+                            + &(&refracted_color * (1.0 - reflectance)))
+                } else {
+                    &surface_color + &(&reflected_color + &refracted_color)
+                }
             })
             .reduce(|acc, c| &acc + &c)
     }
@@ -180,7 +188,7 @@ fn basic_spheres() -> Vec<Sphere> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{draw::color, math::vector::Vec3d};
+    use crate::{draw::color, math::vector::Vec3d, scene::object::plane::Plane};
 
     use super::*;
 
@@ -670,5 +678,46 @@ mod tests {
                 &Color::new(0.93642, 0.68642, 0.68642),
             );
         }
+    }
+
+    #[test]
+    fn shade_hit_with_a_reflective_transparent_material() {
+        let mut w = World::basic();
+        let floor = Plane {
+            transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
+                .unwrap(),
+            material: Material {
+                transparency: 0.5,
+                refractive_index: 1.5,
+                reflectivity: 0.5,
+                ..Default::default()
+            },
+        };
+        let ball = Sphere {
+            transform: InvertibleMatrix::try_from(transformation::translation(0.0, -3.5, -0.5))
+                .unwrap(),
+            material: Material {
+                surface: Surface::Color(color::red()),
+                ambient: 0.5,
+                ..Default::default()
+            },
+        };
+        w.objects.push(Box::new(floor));
+        w.objects.push(Box::new(ball));
+
+        let sqrt2 = std::f64::consts::SQRT_2;
+        let r = Ray::new(
+            Point3d::new(0.0, 0.0, -3.0),
+            Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
+        );
+        let xs = vec![Intersection::new(sqrt2, w.objects[2].as_ref())];
+
+        let comps = xs[0].prepare_computations(&r, &xs);
+        let color = w.shade_hit(&comps, 5).unwrap();
+
+        color::test_utils::assert_colors_approx_equal(
+            &color,
+            &Color::new(0.93391, 0.69643, 0.69243),
+        );
     }
 }

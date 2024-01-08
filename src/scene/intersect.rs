@@ -10,21 +10,6 @@ pub struct Intersection<'a, T: Object + ?Sized> {
     object: &'a T,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Precomputation<'a, T: Object + ?Sized> {
-    pub t: f64,
-    pub object: &'a T,
-    pub point: Point3d,
-    pub eye_v: NormalizedVec3d,
-    pub normal_v: NormalizedVec3d,
-    pub inside: bool,
-    pub over_point: Point3d,
-    pub under_point: Point3d,
-    pub reflect_v: NormalizedVec3d,
-    pub refraction_exiting: f64,
-    pub refraction_entering: f64,
-}
-
 impl<'a, T: Object + ?Sized> Intersection<'a, T> {
     pub fn new(t: f64, object: &T) -> Intersection<T> {
         Intersection { t, object }
@@ -106,6 +91,41 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
 impl<'a, T: Object + ?Sized> PartialEq for Intersection<'a, T> {
     fn eq(&self, other: &Self) -> bool {
         util::are_equal(self.t, other.t) && std::ptr::eq(self.object, other.object)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Precomputation<'a, T: Object + ?Sized> {
+    pub t: f64,
+    pub object: &'a T,
+    pub point: Point3d,
+    pub eye_v: NormalizedVec3d,
+    pub normal_v: NormalizedVec3d,
+    pub inside: bool,
+    pub over_point: Point3d,
+    pub under_point: Point3d,
+    pub reflect_v: NormalizedVec3d,
+    pub refraction_exiting: f64,
+    pub refraction_entering: f64,
+}
+
+impl<'a, T: Object + ?Sized> Precomputation<'a, T> {
+    pub fn schlick(&self) -> f64 {
+        let cos = self.eye_v.dot(&self.normal_v);
+        let n = self.refraction_exiting / self.refraction_entering;
+        let sin2_t = n * n * (1.0 - cos * cos);
+        let cos_t = f64::sqrt(1.0 - sin2_t);
+
+        let cos_adjusted = if n > 1.0 { cos_t } else { cos };
+
+        if sin2_t > 1.0 && n > 1.0 {
+            1.0
+        } else {
+            let r0 = ((self.refraction_exiting - self.refraction_entering)
+                / (self.refraction_exiting + self.refraction_entering))
+                .powi(2);
+            r0 + (1.0 - r0) * (1.0 - cos_adjusted).powi(5)
+        }
     }
 }
 
@@ -371,6 +391,58 @@ mod test {
                 refractive_index_3: (3, 2.5, 2.5),
                 refractive_index_4: (4, 2.5, 1.5),
                 refractive_index_5: (5, 1.5, 1.0),
+            }
+        }
+
+        mod schlick {
+            use super::*;
+
+            #[test]
+            fn schlick_approximation_under_total_internal_reflection() {
+                let shape = sphere::glass_sphere();
+                let t = std::f64::consts::SQRT_2 / 2.0;
+                let r = Ray::new(Point3d::new(0.0, 0.0, t), Vec3d::new(0.0, 1.0, 0.0));
+                let xs = vec![Intersection::new(-t, &shape), Intersection::new(t, &shape)];
+
+                let comps = xs[1].prepare_computations(&r, &xs);
+                let reflectance = comps.schlick();
+
+                assert_eq!(reflectance, 1.0);
+            }
+
+            #[test]
+            fn schlick_approximation_with_a_perpendicular_viewing_angle() {
+                let shape = sphere::glass_sphere();
+                let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 1.0, 0.0));
+                let xs = vec![
+                    Intersection::new(-1.0, &shape),
+                    Intersection::new(1.0, &shape),
+                ];
+
+                let comps = xs[1].prepare_computations(&r, &xs);
+                let reflectance = comps.schlick();
+
+                assert!(util::test_utils::are_within_tolerance(
+                    reflectance,
+                    0.04,
+                    1e-2
+                ));
+            }
+
+            #[test]
+            fn schlick_approximation_with_a_small_angle_and_n2_greater_than_n1() {
+                let shape = sphere::glass_sphere();
+                let r = Ray::new(Point3d::new(0.0, 0.99, -2.0), Vec3d::new(0.0, 0.0, 1.0));
+                let xs = vec![Intersection::new(1.8589, &shape)];
+
+                let comps = xs[0].prepare_computations(&r, &xs);
+                let reflectance = comps.schlick();
+
+                assert!(util::test_utils::are_within_tolerance(
+                    reflectance,
+                    0.49010,
+                    1e-5
+                ));
             }
         }
     }
