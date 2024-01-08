@@ -43,7 +43,7 @@ pub fn lighting(
     light: &PointLight,
     eyev: &NormalizedVec3d,
     normalv: &NormalizedVec3d,
-    in_shadow: bool,
+    shadow_attenuation: f64,
 ) -> Color {
     let effective_color = match &material.surface {
         Surface::Color(c) => c * &light.intensity,
@@ -55,7 +55,7 @@ pub fn lighting(
 
     let light_dot_normal = lightv.dot(normalv);
 
-    let (diffuse, specular) = if in_shadow || light_dot_normal < 0.0 {
+    let (diffuse, specular) = if light_dot_normal < 0.0 {
         (color::black(), color::black())
     } else {
         let diff = &(&effective_color * material.diffuse) * light_dot_normal;
@@ -64,12 +64,12 @@ pub fn lighting(
         let reflect_dot_eye = reflectv.dot(eyev);
 
         (
-            diff,
+            &diff * shadow_attenuation,
             if reflect_dot_eye <= 0.0 {
                 color::black()
             } else {
                 let factor = reflect_dot_eye.powf(material.shininess);
-                &(&light.intensity * material.specular) * factor
+                &light.intensity * (material.specular * factor * shadow_attenuation)
             },
         )
     };
@@ -124,7 +124,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                false,
+                1.0,
             );
             assert_eq!(result, Color::new(1.9, 1.9, 1.9));
         }
@@ -147,7 +147,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                false,
+                1.0,
             );
             assert_eq!(result, Color::new(1.0, 1.0, 1.0));
         }
@@ -169,7 +169,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                false,
+                1.0,
             );
             color::test_utils::assert_colors_approx_equal(
                 &result,
@@ -195,7 +195,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                false,
+                1.0,
             );
             color::test_utils::assert_colors_approx_equal(
                 &result,
@@ -220,7 +220,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                false,
+                1.0,
             );
             assert_eq!(result, Color::new(0.1, 0.1, 0.1));
         }
@@ -234,7 +234,6 @@ mod tests {
                 position: Point3d::new(0.0, 0.0, -10.0),
                 intensity: Color::new(1.0, 1.0, 1.0),
             };
-            let in_shadow = true;
 
             let result = lighting(
                 &m,
@@ -243,7 +242,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                in_shadow,
+                0.0,
             );
             assert_eq!(result, Color::new(0.1, 0.1, 0.1));
         }
@@ -275,7 +274,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                false,
+                1.0,
             );
             let c2 = lighting(
                 &m,
@@ -284,7 +283,7 @@ mod tests {
                 &light,
                 &eyev,
                 &normalv,
-                false,
+                1.0,
             );
 
             assert_eq!(c1, color::white());

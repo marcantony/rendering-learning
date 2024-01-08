@@ -1,3 +1,7 @@
+use std::collections::HashSet;
+
+use by_address::ByAddress;
+
 use crate::{
     draw::color::{self, Color},
     math::{
@@ -57,7 +61,7 @@ impl World {
         self.lights
             .iter()
             .map(|light| {
-                let shadowed = self.is_shadowed(&comps.over_point, light);
+                let shadow_attenuation = self.shadow_attenuation(&comps.over_point, light);
 
                 let surface_color = lighting(
                     &comps.object.material(),
@@ -66,7 +70,7 @@ impl World {
                     light,
                     &comps.eye_v,
                     &comps.normal_v,
-                    shadowed,
+                    shadow_attenuation,
                 );
 
                 let reflected_color = self.reflected_color(comps, remaining);
@@ -100,21 +104,26 @@ impl World {
         self.color_at_internal(ray, self.max_reflection_depth)
     }
 
-    fn is_shadowed(&self, point: &Point3d, light: &PointLight) -> bool {
+    fn shadow_attenuation(&self, point: &Point3d, light: &PointLight) -> f64 {
         let v = &light.position - point;
         let distance = v.mag();
         let direction = v.norm();
 
         direction
-            .and_then(|d| {
+            .map(|d| {
                 let r = Ray {
                     origin: point.clone(),
                     direction: d,
                 };
                 let intersections = self.intersect(&r);
-                intersect::hit(&intersections).map(|hit| hit.t() < distance)
+                let mut seen = HashSet::<ByAddress<&dyn Object>>::new();
+                intersections.iter()
+                    .filter(|i| i.t() > 0.0 && i.t() < distance)
+                    .take_while(|i| seen.insert(ByAddress(i.object())))
+                    .map(|i| i.object().material().transparency)
+                    .product()
             })
-            .unwrap_or(false)
+            .unwrap_or(1.0)
     }
 
     fn reflected_color(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Color {
@@ -368,28 +377,45 @@ mod tests {
         fn no_shadow_when_nothing_collinear_with_point_and_light() {
             let w = World::basic();
             let p = Point3d::new(0.0, 10.0, 0.0);
-            assert!(!w.is_shadowed(&p, &w.lights[0]));
+            assert_eq!(w.shadow_attenuation(&p, &w.lights[0]), 1.0);
         }
 
         #[test]
         fn shadow_when_an_object_is_between_point_and_light() {
             let w = World::basic();
             let p = Point3d::new(10.0, -10.0, 10.0);
-            assert!(w.is_shadowed(&p, &w.lights[0]));
+            assert_eq!(w.shadow_attenuation(&p, &w.lights[0]), 0.0);
         }
 
         #[test]
         fn no_shadow_when_an_object_is_behind_the_light() {
             let w = World::basic();
             let p = Point3d::new(-20.0, 20.0, -20.0);
-            assert!(!w.is_shadowed(&p, &w.lights[0]));
+            assert_eq!(w.shadow_attenuation(&p, &w.lights[0]), 1.0);
         }
 
         #[test]
-        fn shadow_when_an_object_is_behind_the_point() {
+        fn no_shadow_when_an_object_is_behind_the_point() {
             let w = World::basic();
             let p = Point3d::new(-2.0, 2.0, -2.0);
-            assert!(!w.is_shadowed(&p, &w.lights[0]));
+            assert_eq!(w.shadow_attenuation(&p, &w.lights[0]), 1.0);
+        }
+
+        #[test]
+        fn partial_shadow_when_somewhat_transparent_objects_are_between_point_and_light() {
+            let mut spheres = basic_spheres();
+            spheres[0].material.transparency = 0.5;
+            spheres[1].material.transparency = 1.0;
+            let w = World {
+                objects: spheres
+                    .into_iter()
+                    .map(|s| Box::new(s) as Box<dyn Object>)
+                    .collect(),
+                lights: vec![basic_light()],
+                ..Default::default()
+            };
+            let p = Point3d::new(10.0, -10.0, 10.0);
+            assert_eq!(w.shadow_attenuation(&p, &w.lights[0]), 0.5);
         }
     }
 
@@ -675,7 +701,7 @@ mod tests {
 
             color::test_utils::assert_colors_approx_equal(
                 &color,
-                &Color::new(0.93642, 0.68642, 0.68642),
+                &Color::new(1.12546, 0.68642, 0.68642),
             );
         }
     }
@@ -717,7 +743,7 @@ mod tests {
 
         color::test_utils::assert_colors_approx_equal(
             &color,
-            &Color::new(0.93391, 0.69643, 0.69243),
+            &Color::new(1.11500, 0.69643, 0.69243),
         );
     }
 }
