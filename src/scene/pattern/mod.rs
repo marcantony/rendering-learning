@@ -21,16 +21,11 @@ pub mod ring;
 pub mod stripe;
 
 #[cfg(test)]
-mod tests {
-    use crate::{
-        math::matrix::InvertibleMatrix,
-        scene::{object::sphere::Sphere, transformation},
-    };
-
+pub mod test_utils {
     use super::*;
 
-    struct MockPattern {
-        transform: InvertibleMatrix<4>,
+    pub struct MockPattern {
+        pub transform: InvertibleMatrix<4>,
     }
 
     impl Pattern for MockPattern {
@@ -42,6 +37,16 @@ mod tests {
             Color::new(point.x(), point.y(), point.z())
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        math::matrix::InvertibleMatrix,
+        scene::{object::sphere::Sphere, pattern::test_utils::MockPattern, transformation},
+    };
+
+    use super::*;
 
     #[test]
     fn a_pattern_with_an_object_transformation() {

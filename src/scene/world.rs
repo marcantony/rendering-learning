@@ -70,8 +70,9 @@ impl World {
                 );
 
                 let reflected_color = self.reflected_color(comps, remaining);
+                let refracted_color = self.refracted_color(comps, remaining);
 
-                &surface_color + &reflected_color
+                &surface_color + &(&reflected_color + &refracted_color)
             })
             .reduce(|acc, c| &acc + &c)
     }
@@ -115,6 +116,29 @@ impl World {
             let reflect_ray = Ray::new(comps.over_point.clone(), (*comps.reflect_v).clone());
             let color = self.color_at_internal(&reflect_ray, remaining - 1);
             &color * comps.object.material().reflectivity
+        }
+    }
+
+    fn refracted_color(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Color {
+        if remaining == 0 || comps.object.material().transparency == 0.0 {
+            color::black()
+        } else {
+            // Snell's law: n_ratio = n1/n2
+            let n_ratio = comps.refraction_exiting / comps.refraction_entering;
+            let cos_i = comps.eye_v.dot(&comps.normal_v);
+            let sin2_t = n_ratio * n_ratio * (1.0 - cos_i * cos_i);
+
+            if sin2_t > 1.0 {
+                // Total internal reflection
+                color::black()
+            } else {
+                let cos_t = f64::sqrt(1.0 - sin2_t);
+                let direction =
+                    &(&*comps.normal_v * (n_ratio * cos_i - cos_t)) - &(&*comps.eye_v * n_ratio);
+                let refract_ray = Ray::new(comps.under_point.clone(), direction);
+                &self.color_at_internal(&refract_ray, remaining - 1)
+                    * comps.object.material().transparency
+            }
         }
     }
 }
@@ -503,6 +527,148 @@ mod tests {
             let color = w.reflected_color(&comps, 0);
 
             color::test_utils::assert_colors_approx_equal(&color, &color::black());
+        }
+    }
+
+    mod refract {
+        use crate::scene::{
+            object::{plane::Plane, sphere},
+            pattern::test_utils::MockPattern,
+        };
+
+        use super::*;
+
+        #[test]
+        fn the_refracted_color_with_an_opaque_surface() {
+            let w = World::basic();
+            let shape = w.objects[0].as_ref();
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+            let xs = vec![Intersection::new(4.0, shape), Intersection::new(6.0, shape)];
+
+            let comps = xs[0].prepare_computations(&r, &xs);
+            let c = w.refracted_color(&comps, 5);
+
+            assert_eq!(c, color::black());
+        }
+
+        #[test]
+        fn the_refracted_color_at_the_maximum_recursive_depth() {
+            let shape = sphere::glass_sphere();
+            let mut w = World::basic();
+            w.objects[0] = Box::new(shape);
+            let shape_ref = w.objects[0].as_ref();
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+            let xs = vec![
+                Intersection::new(4.0, shape_ref),
+                Intersection::new(6.0, shape_ref),
+            ];
+
+            let comps = xs[0].prepare_computations(&r, &xs);
+            let c = w.refracted_color(&comps, 0);
+
+            assert_eq!(c, color::black());
+        }
+
+        #[test]
+        fn the_refracted_color_under_total_internal_reflection() {
+            let mut spheres = basic_spheres();
+            let shape = &mut spheres[0];
+            shape.material.transparency = 1.0;
+            shape.material.refractive_index = 1.5;
+            let mut w = World::basic();
+            w.objects = spheres
+                .into_iter()
+                .map(|s| Box::new(s) as Box<dyn Object>)
+                .collect();
+            let shape_ref = w.objects[0].as_ref();
+
+            let t = std::f64::consts::SQRT_2 / 2.0;
+            let r = Ray::new(Point3d::new(0.0, 0.0, t), Vec3d::new(0.0, 1.0, 0.0));
+            let xs = vec![
+                Intersection::new(-t, shape_ref),
+                Intersection::new(t, shape_ref),
+            ];
+
+            let comps = xs[1].prepare_computations(&r, &xs);
+            let c = w.refracted_color(&comps, 5);
+
+            assert_eq!(c, color::black());
+        }
+
+        #[test]
+        fn the_refracted_color_with_a_refracted_ray() {
+            let mut spheres = basic_spheres();
+            let a = &mut spheres[0];
+            a.material.ambient = 1.0;
+            a.material.surface = Surface::Pattern(Box::new(MockPattern {
+                transform: InvertibleMatrix::identity(),
+            }));
+            let b = &mut spheres[1];
+            b.material.transparency = 1.0;
+            b.material.refractive_index = 1.5;
+            let mut w = World::basic();
+            w.objects = spheres
+                .into_iter()
+                .map(|s| Box::new(s) as Box<dyn Object>)
+                .collect();
+            let a_ref = w.objects[0].as_ref();
+            let b_ref = w.objects[1].as_ref();
+
+            let r = Ray::new(Point3d::new(0.0, 0.0, 0.1), Vec3d::new(0.0, 1.0, 0.0));
+            let xs: Vec<_> = vec![
+                (-0.9899, a_ref),
+                (-0.4899, b_ref),
+                (0.4899, b_ref),
+                (0.9899, a_ref),
+            ]
+            .into_iter()
+            .map(|(t, o)| Intersection::new(t, o))
+            .collect();
+
+            let comps = xs[2].prepare_computations(&r, &xs);
+            let c = w.refracted_color(&comps, 5);
+
+            color::test_utils::assert_colors_approx_equal(&c, &Color::new(0.0, 0.99888, 0.04721));
+        }
+
+        #[test]
+        fn shade_hit_with_a_transparent_material() {
+            let mut w = World::basic();
+            let floor = Plane {
+                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
+                    .unwrap(),
+                material: Material {
+                    transparency: 0.5,
+                    refractive_index: 1.5,
+                    ..Default::default()
+                },
+            };
+            let ball = Sphere {
+                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -3.5, -0.5))
+                    .unwrap(),
+                material: Material {
+                    surface: Surface::Color(color::red()),
+                    ambient: 0.5,
+                    ..Default::default()
+                },
+            };
+            w.objects.push(Box::new(floor));
+            w.objects.push(Box::new(ball));
+
+            let sqrt2 = std::f64::consts::SQRT_2;
+            let r = Ray::new(
+                Point3d::new(0.0, 0.0, -3.0),
+                Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
+            );
+            let xs = vec![Intersection::new(sqrt2, w.objects[2].as_ref())];
+
+            let comps = xs[0].prepare_computations(&r, &xs);
+            let color = w.shade_hit(&comps, 5).unwrap();
+
+            color::test_utils::assert_colors_approx_equal(
+                &color,
+                &Color::new(0.93642, 0.68642, 0.68642),
+            );
         }
     }
 }
