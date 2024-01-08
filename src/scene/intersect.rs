@@ -2,7 +2,7 @@ use crate::math::{point::Point3d, util, vector::NormalizedVec3d};
 
 use super::{object::Object, ray::Ray};
 
-const SHADOW_BIAS: f64 = 1e-5;
+const POINT_OFFSET_BIAS: f64 = 1e-5;
 
 #[derive(Debug, Clone)]
 pub struct Intersection<'a, T: Object + ?Sized> {
@@ -19,6 +19,7 @@ pub struct Precomputation<'a, T: Object + ?Sized> {
     pub normal_v: NormalizedVec3d,
     pub inside: bool,
     pub over_point: Point3d,
+    pub under_point: Point3d,
     pub reflect_v: NormalizedVec3d,
     pub refraction_exiting: f64,
     pub refraction_entering: f64,
@@ -51,7 +52,8 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
             (normal_v, false)
         };
 
-        let over_point = &point + &(&*adjusted_normal_v * SHADOW_BIAS);
+        let over_point = &point + &(&*adjusted_normal_v * POINT_OFFSET_BIAS);
+        let under_point = &point - &(&*adjusted_normal_v * POINT_OFFSET_BIAS);
 
         let reflect_v =
             NormalizedVec3d::try_from(ray.direction.reflect(&adjusted_normal_v)).unwrap();
@@ -67,7 +69,10 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
                 };
             }
 
-            if let Some(index) = containers.iter().position(|&obj| std::ptr::eq(obj, i.object())) {
+            if let Some(index) = containers
+                .iter()
+                .position(|&obj| std::ptr::eq(obj, i.object()))
+            {
                 containers.remove(index);
             } else {
                 containers.push(i.object());
@@ -76,7 +81,7 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
             if i == self {
                 n2 = match containers.last() {
                     Some(o) => o.material().refractive_index,
-                    None => 1.0
+                    None => 1.0,
                 };
                 break;
             }
@@ -90,6 +95,7 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
             normal_v: adjusted_normal_v,
             inside,
             over_point,
+            under_point,
             reflect_v,
             refraction_exiting: n1,
             refraction_entering: n2,
@@ -192,7 +198,10 @@ mod test {
     mod prepare_computations {
         use crate::{
             math::matrix::InvertibleMatrix,
-            scene::{object::plane::Plane, transformation},
+            scene::{
+                object::{plane::Plane, sphere},
+                transformation,
+            },
         };
 
         use super::*;
@@ -262,7 +271,7 @@ mod test {
         }
 
         #[test]
-        fn the_hit_should_offset_the_point() {
+        fn the_hit_should_offset_the_over_point() {
             let r = Ray {
                 origin: Point3d::new(0.0, 0.0, -5.0),
                 direction: Vec3d::new(0.0, 0.0, 1.0),
@@ -276,13 +285,26 @@ mod test {
 
             let comps = i.prepare_computations(&r, &vec![]);
 
-            assert!(comps.over_point.z() < -SHADOW_BIAS / 2.0);
+            assert!(comps.over_point.z() < -POINT_OFFSET_BIAS / 2.0);
             assert!(comps.point.z() > comps.over_point.z());
         }
 
-        mod refraction {
-            use crate::scene::object::sphere;
+        #[test]
+        fn the_under_point_is_below_the_surface() {
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+            let mut shape = sphere::glass_sphere();
+            shape.transform =
+                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0)).unwrap();
+            let i = Intersection::new(5.0, &shape);
+            let xs = vec![i];
 
+            let comps = xs[0].prepare_computations(&r, &xs);
+
+            assert!(comps.under_point.z() > POINT_OFFSET_BIAS / 2.0);
+            assert!(comps.point.z() < comps.under_point.z());
+        }
+
+        mod refraction {
             use super::*;
 
             fn get_objects() -> (Sphere, Sphere, Sphere) {
