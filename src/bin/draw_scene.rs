@@ -7,7 +7,7 @@ use ray_tracer_challenge::{
         camera::Camera,
         light::PointLight,
         material::{Material, Surface},
-        object::{plane::Plane, sphere::Sphere},
+        object::{plane::Plane, sphere::Sphere, cube::Cube},
         pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
         world::World,
@@ -116,7 +116,7 @@ fn main() {
         },
     };
 
-    let behind_ball = Sphere {
+    let behind_cube = Cube {
         transform: InvertibleMatrix::try_from(transformation::translation(3.0, 0.0, -10.0))
             .unwrap(),
         material: Material {
@@ -157,7 +157,7 @@ fn main() {
             Box::new(middle_wall),
             Box::new(ball),
             Box::new(inner_air_pocket),
-            Box::new(behind_ball),
+            Box::new(behind_cube),
             Box::new(behind_wall),
         ],
         lights: vec![light_source],
