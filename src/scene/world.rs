@@ -117,7 +117,8 @@ impl World {
                 };
                 let intersections = self.intersect(&r);
                 let mut seen = HashSet::<ByAddress<&dyn Object>>::new();
-                intersections.iter()
+                intersections
+                    .iter()
                     .filter(|i| i.t() > 0.0 && i.t() < distance)
                     .take_while(|i| seen.insert(ByAddress(i.object())))
                     .map(|i| i.object().material().transparency)

@@ -21,6 +21,7 @@ pub trait Object {
     }
 }
 
+pub mod cube;
 pub mod plane;
 pub mod sphere;
 
