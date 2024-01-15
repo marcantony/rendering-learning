@@ -5,12 +5,15 @@ use crate::{
 
 use super::Object;
 
+const EPSILON: f64 = 1e-8;
+
 /// A cylinder, by default with radius 1 and infinite length around the y-axis
 pub struct Cylinder {
     pub material: Material,
     pub transform: InvertibleMatrix<4>,
     pub minimum: Option<f64>,
     pub maximum: Option<f64>,
+    pub closed: bool,
 }
 
 impl Cylinder {
@@ -20,6 +23,42 @@ impl Cylinder {
             (Some(min), None) => y > min,
             (None, Some(max)) => y < max,
             (None, None) => true,
+        }
+    }
+
+    fn check_cap(&self, ray: &Ray, t: f64) -> bool {
+        let x = ray.origin.x() + t * ray.direction.x();
+        let z = ray.origin.z() + t * ray.direction.z();
+
+        x.powi(2) + z.powi(2) <= 1.0
+    }
+
+    fn intersects_caps(&self, ray: &Ray) -> Vec<f64> {
+        if !self.closed || ray.direction.y().abs() < EPSILON {
+            Vec::new()
+        } else {
+            let mut results = Vec::<f64>::new();
+
+            // check for intersection with lower end cap
+            let tl = self
+                .minimum
+                .map(|min| (min - ray.origin.y()) / ray.direction.y());
+            if let Some(val) = tl {
+                if self.check_cap(ray, val) {
+                    results.push(val);
+                }
+            }
+
+            let tu = self
+                .maximum
+                .map(|max| (max - ray.origin.y()) / ray.direction.y());
+            if let Some(val) = tu {
+                if self.check_cap(ray, val) {
+                    results.push(val);
+                }
+            }
+
+            results
         }
     }
 }
@@ -37,7 +76,7 @@ impl Object for Cylinder {
         let a = object_ray.direction.x().powi(2) + object_ray.direction.z().powi(2);
 
         // Ray is parallel to the y-axis
-        if a < 1e-5 {
+        let mut wall_xs = if a.abs() < EPSILON {
             // a is approximately 0
             Vec::new()
         } else {
@@ -65,11 +104,33 @@ impl Object for Cylinder {
 
                 results
             }
-        }
+        };
+
+        let mut cap_xs = self.intersects_caps(object_ray);
+
+        wall_xs.append(&mut cap_xs);
+
+        wall_xs
     }
 
     fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
-        NormalizedVec3d::new(object_point.x(), 0.0, object_point.z()).unwrap()
+        let dist2 = object_point.x().powi(2) + object_point.z().powi(2);
+
+        if dist2 < 1.0
+            && self
+                .maximum
+                .map_or(false, |max| object_point.y() >= max - EPSILON)
+        {
+            NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
+        } else if dist2 < 1.0
+            && self
+                .minimum
+                .map_or(false, |min| object_point.y() <= min + EPSILON)
+        {
+            NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()
+        } else {
+            NormalizedVec3d::new(object_point.x(), 0.0, object_point.z()).unwrap()
+        }
     }
 }
 
@@ -80,6 +141,7 @@ impl Default for Cylinder {
             transform: Default::default(),
             minimum: None,
             maximum: None,
+            closed: false,
         }
     }
 }
@@ -190,6 +252,79 @@ mod tests {
             ray_on_max_y_misses: (Point3d::new(0.0, 2.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), 0),
             ray_on_min_y_misses: (Point3d::new(0.0, 1.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), 0),
             ray_through_middle_hits: (Point3d::new(0.0, 1.5, -2.0), Vec3d::new(0.0, 0.0, 1.0), 2)
+        }
+    }
+
+    mod closed {
+        use crate::math::vector::Vec3d;
+
+        use super::*;
+
+        #[test]
+        fn the_default_closed_value_for_a_cylinder() {
+            let cyl: Cylinder = Default::default();
+
+            assert!(!cyl.closed);
+        }
+
+        macro_rules! capped_cylinder_intersect_tests {
+            ($($name:ident: $value:expr),*) => {
+                $(
+                    #[test]
+                    fn $name() {
+                        let (origin, direction, expected) = $value;
+                        let cyl = Cylinder {
+                            minimum: Some(1.0),
+                            maximum: Some(2.0),
+                            closed: true,
+                            ..Default::default()
+                        };
+                        let nd = direction.norm().unwrap();
+                        let r = Ray::new(origin, nd);
+
+                        let xs = cyl.intersect_local(&r);
+
+                        assert_eq!(xs.len(), expected);
+                    }
+                )*
+            };
+        }
+
+        capped_cylinder_intersect_tests! {
+            ray_from_above_through_middle: (Point3d::new(0.0, 3.0, 0.0), Vec3d::new(0.0, -1.0, 0.0), 2),
+            ray_from_above_diagonally_through_cap_and_side: (Point3d::new(0.0, 3.0, -2.0), Vec3d::new(0.0, -1.0, 2.0), 2),
+            ray_from_above_through_cap_and_opposite_corner: (Point3d::new(0.0, 4.0, -2.0), Vec3d::new(0.0, -1.0, 1.0), 2),
+            ray_from_below_diagonally_through_cap_and_side: (Point3d::new(0.0, 0.0, -2.0), Vec3d::new(0.0, 1.0, 2.0), 2),
+            ray_from_below_through_cap_and_opposite_corner: (Point3d::new(0.0, -1.0, -2.0), Vec3d::new(0.0, 1.0, 1.0), 2)
+        }
+
+        macro_rules! capped_cylinder_normal_tests {
+            ($($name:ident: $value:expr),*) => {
+                $(
+                    #[test]
+                    fn $name() {
+                        let (point, expected) = $value;
+                        let cyl = Cylinder {
+                            minimum: Some(1.0),
+                            maximum: Some(2.0),
+                            closed: true,
+                            ..Default::default()
+                        };
+                        let n = cyl.normal_at_local(&point);
+
+                        assert_eq!(n, expected);
+                    }
+                )*
+            };
+        }
+
+        capped_cylinder_normal_tests! {
+            cylinder_normal_min_cap_1: (Point3d::new(0.0, 1.0, 0.0), NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()),
+            cylinder_normal_min_cap_2: (Point3d::new(0.5, 1.0, 0.0), NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()),
+            cylinder_normal_min_cap_3: (Point3d::new(0.0, 1.0, 0.5), NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()),
+            cylinder_normal_max_cap_1: (Point3d::new(0.0, 2.0, 0.0), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()),
+            cylinder_normal_max_cap_2: (Point3d::new(0.5, 2.0, 0.0), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()),
+            cylinder_normal_max_cap_3: (Point3d::new(0.0, 2.0, 0.5), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap())
         }
     }
 }
