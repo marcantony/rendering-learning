@@ -7,7 +7,7 @@ use ray_tracer_challenge::{
         camera::Camera,
         light::PointLight,
         material::{Material, Surface},
-        object::{plane::Plane, sphere::Sphere, cube::Cube},
+        object::{cube::Cube, plane::Plane, sphere::Sphere},
         pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
         world::World,
