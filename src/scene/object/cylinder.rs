@@ -9,6 +9,19 @@ use super::Object;
 pub struct Cylinder {
     pub material: Material,
     pub transform: InvertibleMatrix<4>,
+    pub minimum: Option<f64>,
+    pub maximum: Option<f64>,
+}
+
+impl Cylinder {
+    fn in_bounds(&self, y: f64) -> bool {
+        match (self.minimum, self.maximum) {
+            (Some(min), Some(max)) => y > min && y < max,
+            (Some(min), None) => y > min,
+            (None, Some(max)) => y < max,
+            (None, None) => true,
+        }
+    }
 }
 
 impl Object for Cylinder {
@@ -40,7 +53,17 @@ impl Object for Cylinder {
                 let t0 = (-b - f64::sqrt(discriminant)) / (2.0 * a);
                 let t1 = (-b + f64::sqrt(discriminant)) / (2.0 * a);
 
-                vec![t0, t1]
+                let mut results = Vec::<f64>::new();
+                let y0 = object_ray.origin.y() + t0 * object_ray.direction.y();
+                if self.in_bounds(y0) {
+                    results.push(t0)
+                }
+                let y1 = object_ray.origin.y() + t1 * object_ray.direction.y();
+                if self.in_bounds(y1) {
+                    results.push(t1)
+                }
+
+                results
             }
         }
     }
@@ -55,6 +78,8 @@ impl Default for Cylinder {
         Self {
             material: Default::default(),
             transform: Default::default(),
+            minimum: None,
+            maximum: None,
         }
     }
 }
@@ -120,6 +145,51 @@ mod tests {
             cylinder_normal_neg_z: (Point3d::new(0.0, 5.0, -1.0), NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap()),
             cylinder_normal_pos_z: (Point3d::new(0.0, -2.0, 1.0), NormalizedVec3d::new(0.0, 0.0, 1.0).unwrap()),
             cylinder_normal_neg_x: (Point3d::new(-1.0, 1.0, 0.0), NormalizedVec3d::new(-1.0, 0.0, 0.0).unwrap())
+        }
+    }
+
+    mod truncate {
+        use crate::math::vector::Vec3d;
+
+        use super::*;
+
+        #[test]
+        fn the_default_minimum_and_maximum_for_a_cylinder() {
+            let cyl: Cylinder = Default::default();
+
+            assert_eq!(cyl.minimum, None);
+            assert_eq!(cyl.maximum, None);
+        }
+
+        macro_rules! truncated_cylinder_intersect_tests {
+            ($($name:ident: $value:expr),*) => {
+                $(
+                    #[test]
+                    fn $name() {
+                        let (origin, direction, expected) = $value;
+                        let cyl = Cylinder {
+                            minimum: Some(1.0),
+                            maximum: Some(2.0),
+                            ..Default::default()
+                        };
+                        let nd = direction.norm().unwrap();
+                        let r = Ray::new(origin, nd);
+
+                        let xs = cyl.intersect_local(&r);
+
+                        assert_eq!(xs.len(), expected);
+                    }
+                )*
+            };
+        }
+
+        truncated_cylinder_intersect_tests! {
+            diagonal_ray_from_inside_misses: (Point3d::new(0.0, 1.5, 0.0), Vec3d::new(0.1, 1.0, 0.0), 0),
+            ray_above_cylinder_misses: (Point3d::new(0.0, 3.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), 0),
+            ray_below_cylinder_misses: (Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), 0),
+            ray_on_max_y_misses: (Point3d::new(0.0, 2.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), 0),
+            ray_on_min_y_misses: (Point3d::new(0.0, 1.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), 0),
+            ray_through_middle_hits: (Point3d::new(0.0, 1.5, -2.0), Vec3d::new(0.0, 0.0, 1.0), 2)
         }
     }
 }
