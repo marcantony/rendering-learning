@@ -1,20 +1,23 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::{self, Intersection}, material::Material, ray::Ray},
+    scene::{
+        intersect::{self, Intersection},
+        material::Material,
+        ray::Ray,
+    },
 };
 
 use super::Object;
 
 /// A group of multiple sub-objects
 pub struct Group {
-    pub material: Material,
     pub transform: InvertibleMatrix<4>,
     pub children: Vec<Box<dyn Object>>,
 }
 
 impl Object for Group {
     fn material(&self) -> &Material {
-        &self.material
+        todo!()
     }
 
     fn transform(&self) -> &InvertibleMatrix<4> {
@@ -41,7 +44,6 @@ impl Object for Group {
 impl Default for Group {
     fn default() -> Self {
         Self {
-            material: Default::default(),
             transform: Default::default(),
             children: Default::default(),
         }
