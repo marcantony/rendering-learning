@@ -1,6 +1,6 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::Intersection, material::Material, ray::Ray},
+    scene::{intersect::{self, Intersection}, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -28,7 +28,7 @@ impl Object for Group {
             .flat_map(|obj| obj.intersect(&object_ray))
             .collect();
 
-        intersections.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap());
+        intersect::sort(&mut intersections);
 
         intersections
     }

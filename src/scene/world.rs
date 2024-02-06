@@ -47,7 +47,7 @@ impl World {
             .map(|object| object.intersect(ray))
             .flatten()
             .collect::<Vec<_>>();
-        intersections.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap());
+        intersect::sort(&mut intersections);
 
         intersections
     }

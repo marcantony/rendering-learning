@@ -142,6 +142,10 @@ pub fn hit<'a, 'b, T: Object + ?Sized>(
     })
 }
 
+pub fn sort<T: Object + ?Sized>(xs: &mut Vec<Intersection<T>>) {
+    xs.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap())
+}
+
 #[cfg(test)]
 pub mod test_utils {
     use super::*;
