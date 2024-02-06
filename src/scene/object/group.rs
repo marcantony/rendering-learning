@@ -1,6 +1,6 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{material::Material, ray::Ray},
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -21,14 +21,14 @@ impl Object for Group {
         &self.transform
     }
 
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let mut intersections: Vec<_> = self
             .children
             .iter()
             .flat_map(|obj| obj.intersect(&object_ray))
             .collect();
 
-        intersections.sort_by(|a, b| a.partial_cmp(&b).unwrap());
+        intersections.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap());
 
         intersections
     }
@@ -50,6 +50,7 @@ impl Default for Group {
 
 #[cfg(test)]
 mod tests {
+    use crate::scene::intersect as is;
     use crate::scene::object::sphere::Sphere;
 
     use super::*;
@@ -105,7 +106,7 @@ mod tests {
             };
 
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let xs = g.intersect_local(&r);
+            let xs = is::test_utils::to_ts(g.intersect_local(&r));
 
             assert_eq!(xs, vec![1.0, 3.0, 4.0, 6.0]);
         }

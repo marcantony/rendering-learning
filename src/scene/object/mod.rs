@@ -1,13 +1,13 @@
 use crate::math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d};
 
-use super::{material::Material, ray::Ray};
+use super::{intersect::Intersection, material::Material, ray::Ray};
 
 pub trait Object {
     fn material(&self) -> &Material;
     fn transform(&self) -> &InvertibleMatrix<4>;
 
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64>;
-    fn intersect(&self, world_ray: &Ray) -> Vec<f64> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>>;
+    fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let local_ray = world_ray.transform(&self.transform().inverse());
         self.intersect_local(&local_ray)
     }
@@ -46,7 +46,7 @@ mod tests {
             &self.transform
         }
 
-        fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
+        fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
             assert_eq!(
                 Some(object_ray),
                 self.intersect_local_arg_expectation.as_ref()

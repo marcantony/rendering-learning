@@ -1,6 +1,6 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{material::Material, ray::Ray},
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -68,7 +68,7 @@ impl Object for Cone {
         &self.transform
     }
 
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let a = object_ray.direction.x().powi(2) - object_ray.direction.y().powi(2)
             + object_ray.direction.z().powi(2);
         let b = 2.0 * object_ray.origin.x() * object_ray.direction.x()
@@ -113,6 +113,9 @@ impl Object for Cone {
         wall_xs.append(&mut cap_xs);
 
         wall_xs
+            .into_iter()
+            .map(|t| Intersection::new(t, self as &dyn Object))
+            .collect()
     }
 
     fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
@@ -148,6 +151,8 @@ impl Default for Cone {
 
 #[cfg(test)]
 mod tests {
+    use crate::scene::intersect as is;
+
     use super::*;
 
     mod intersect {
@@ -165,7 +170,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs = cone.intersect_local(&r);
+                        let xs: Vec<f64> = is::test_utils::to_ts(cone.intersect_local(&r));
 
                         assert_eq!(xs, expected);
                     }
@@ -185,7 +190,7 @@ mod tests {
             let nd = Vec3d::new(0.0, 1.0, 1.0).norm().unwrap();
             let r = Ray::new(Point3d::new(0.0, 0.0, -1.0), nd);
 
-            let xs = shape.intersect_local(&r);
+            let xs = is::test_utils::to_ts(shape.intersect_local(&r));
 
             assert_eq!(xs, vec![0.3535533905932738]);
         }

@@ -143,6 +143,15 @@ pub fn hit<'a, 'b, T: Object + ?Sized>(
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use super::*;
+
+    pub fn to_ts<'a, T: Object + ?Sized>(ts: Vec<Intersection<'a, T>>) -> Vec<f64> {
+        ts.into_iter().map(|i| i.t()).collect()
+    }
+}
+
+#[cfg(test)]
 mod test {
     use crate::{
         math::{point::Point3d, vector::Vec3d},

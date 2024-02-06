@@ -1,6 +1,6 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{material::Material, ray::Ray},
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -20,13 +20,17 @@ impl Object for Plane {
         &self.transform
     }
 
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
-        if f64::abs(object_ray.direction.y()) < 1e-8 {
+        let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
             return Vec::new();
         } else {
             vec![-object_ray.origin.y() / object_ray.direction.y()]
-        }
+        };
+
+        ts.into_iter()
+            .map(|t| Intersection::new(t, self as &dyn Object))
+            .collect()
     }
 
     fn normal_at_local(&self, _: &Point3d) -> NormalizedVec3d {
@@ -46,6 +50,7 @@ impl Default for Plane {
 #[cfg(test)]
 mod tests {
     use crate::math::vector::Vec3d;
+    use crate::scene::intersect as is;
 
     use super::*;
 
@@ -86,7 +91,7 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, 1.0, 0.0), Vec3d::new(0.0, -1.0, 0.0));
 
-        let xs = p.intersect_local(&r);
+        let xs = is::test_utils::to_ts(p.intersect_local(&r));
         assert_eq!(xs, vec![1.0]);
     }
 
@@ -95,7 +100,7 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, -1.0, 0.0), Vec3d::new(0.0, 1.0, 0.0));
 
-        let xs = p.intersect_local(&r);
+        let xs = is::test_utils::to_ts(p.intersect_local(&r));
         assert_eq!(xs, vec![1.0]);
     }
 }

@@ -44,12 +44,7 @@ impl World {
         let mut intersections = self
             .objects
             .iter()
-            .map(|object| {
-                object
-                    .intersect(ray)
-                    .into_iter()
-                    .map(|t| Intersection::new(t, object.as_ref()))
-            })
+            .map(|object| object.intersect(ray))
             .flatten()
             .collect::<Vec<_>>();
         intersections.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap());

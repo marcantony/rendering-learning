@@ -1,6 +1,6 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{material::Material, ray::Ray},
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -20,7 +20,7 @@ impl Object for Cube {
         &self.transform
     }
 
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let (xtmin, xtmax) = check_axis(object_ray.origin.x(), object_ray.direction.x());
         let (ytmin, ytmax) = check_axis(object_ray.origin.y(), object_ray.direction.y());
         let (ztmin, ztmax) = check_axis(object_ray.origin.z(), object_ray.direction.z());
@@ -28,11 +28,15 @@ impl Object for Cube {
         let tmin = xtmin.max(ytmin).max(ztmin);
         let tmax = xtmax.min(ytmax).min(ztmax);
 
-        if tmin > tmax {
+        let ts = if tmin > tmax {
             Vec::new()
         } else {
             vec![tmin, tmax]
-        }
+        };
+
+        ts.into_iter()
+            .map(|t| Intersection::new(t, self as &dyn Object))
+            .collect()
     }
 
     fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
@@ -71,6 +75,7 @@ fn check_axis(origin: f64, direction: f64) -> (f64, f64) {
 mod tests {
     use super::*;
     use crate::math::vector::Vec3d;
+    use crate::scene::intersect as is;
 
     mod intersect {
 
@@ -86,7 +91,7 @@ mod tests {
                         let c: Cube = Default::default();
                         let r = Ray::new(origin, direction);
 
-                        let xs = c.intersect_local(&r);
+                        let xs = is::test_utils::to_ts(c.intersect_local(&r));
 
                         assert_eq!(xs, expected);
                     }

@@ -1,6 +1,6 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{material::Material, ray::Ray},
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -72,7 +72,7 @@ impl Object for Cylinder {
         &self.transform
     }
 
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let a = object_ray.direction.x().powi(2) + object_ray.direction.z().powi(2);
 
         // Ray is parallel to the y-axis
@@ -111,6 +111,9 @@ impl Object for Cylinder {
         wall_xs.append(&mut cap_xs);
 
         wall_xs
+            .into_iter()
+            .map(|t| Intersection::new(t, self as &dyn Object))
+            .collect()
     }
 
     fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
@@ -148,6 +151,8 @@ impl Default for Cylinder {
 
 #[cfg(test)]
 mod tests {
+    use crate::scene::intersect as is;
+
     use super::*;
 
     mod intersect {
@@ -165,7 +170,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs = cyl.intersect_local(&r);
+                        let xs = is::test_utils::to_ts(cyl.intersect_local(&r));
 
                         assert_eq!(xs, expected);
                     }

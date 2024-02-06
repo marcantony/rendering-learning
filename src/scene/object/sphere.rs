@@ -1,6 +1,6 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{material::Material, ray::Ray},
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -33,7 +33,7 @@ impl Object for Sphere {
         &self.transform
     }
 
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<f64> {
+    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let sphere_to_ray = &object_ray.origin - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = object_ray.direction.dot(&object_ray.direction);
@@ -42,7 +42,7 @@ impl Object for Sphere {
 
         let discriminant = b * b - 4.0 * a * c;
 
-        if discriminant < 0.0 {
+        let ts = if discriminant < 0.0 {
             Vec::new()
         } else {
             let disc_sqrt = f64::sqrt(discriminant);
@@ -50,7 +50,11 @@ impl Object for Sphere {
             let t2 = (-b + disc_sqrt) / (2.0 * a);
 
             vec![t1, t2]
-        }
+        };
+
+        ts.into_iter()
+            .map(|t| Intersection::new(t, self as &dyn Object))
+            .collect()
     }
 
     fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
@@ -79,7 +83,7 @@ pub fn glass_sphere() -> Sphere {
 mod tests {
     use crate::{
         math::vector::Vec3d,
-        scene::{ray::Ray, transformation},
+        scene::{intersect as is, ray::Ray, transformation},
     };
 
     use super::*;
@@ -93,7 +97,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = s.intersect_local(&r);
+            let xs = is::test_utils::to_ts(s.intersect_local(&r));
 
             assert_eq!(xs, vec![4.0, 6.0]);
         }
@@ -103,7 +107,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 1.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = s.intersect_local(&r);
+            let xs = is::test_utils::to_ts(s.intersect_local(&r));
 
             assert_eq!(xs, vec![5.0, 5.0]);
         }
@@ -123,7 +127,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = s.intersect_local(&r);
+            let xs = is::test_utils::to_ts(s.intersect_local(&r));
 
             assert_eq!(xs, vec![-1.0, 1.0]);
         }
@@ -133,7 +137,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, 5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = s.intersect_local(&r);
+            let xs = is::test_utils::to_ts(s.intersect_local(&r));
 
             assert_eq!(xs, vec![-6.0, -4.0]);
         }
