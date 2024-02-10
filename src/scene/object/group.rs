@@ -177,16 +177,32 @@ mod tests {
 
         #[test]
         fn finding_the_normal_of_an_object_in_a_group() {
+            let s = Sphere {
+                transform: InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
+                ..Default::default()
+            };
             let g = Group::new(
                 InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
-                vec![Box::new(Sphere::unit())],
+                vec![Box::new(s)],
             );
 
             let s = g.children[0].as_ref();
 
             assert_eq!(
                 NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap(),
-                s.normal_at(&Point3d::new(1.0, 1.0, 0.0))
+                s.normal_at(&Point3d::new(2.0, 1.0, 0.0))
+            );
+            assert_eq!(
+                NormalizedVec3d::new(-1.0, 0.0, 0.0).unwrap(),
+                s.normal_at(&Point3d::new(1.0, 0.0, 0.0))
+            );
+            assert_eq!(
+                NormalizedVec3d::new(1.0, 0.0, 0.0).unwrap(),
+                s.normal_at(&Point3d::new(3.0, 0.0, 0.0))
+            );
+            assert_eq!(
+                NormalizedVec3d::new(0.0, 0.0, 1.0).unwrap(),
+                s.normal_at(&Point3d::new(2.0, 0.0, 1.0))
             );
         }
     }
