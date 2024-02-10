@@ -240,6 +240,19 @@ impl<const N: usize> InvertibleMatrix<N> {
     }
 }
 
+impl<const N: usize> Mul for &InvertibleMatrix<N> {
+    type Output = InvertibleMatrix<N>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let new_val = &self.matrix * &rhs.matrix;
+        let new_inverse = new_val.invert().expect("Uh oh, broke math...");
+        InvertibleMatrix {
+            matrix: new_val,
+            inverse: new_inverse,
+        }
+    }
+}
+
 impl<const N: usize> TryFrom<SquareMatrix<N>> for InvertibleMatrix<N> {
     type Error = String;
 
@@ -746,6 +759,16 @@ mod tests {
 
             assert_eq!(*m, id);
             assert_eq!(m.inverse(), &id);
+        }
+
+        #[test]
+        fn multiply_two_invertible_matrices() {
+            let a = InvertibleMatrix::try_from(Matrix::new([[3.0, 1.0], [4.0, 2.0]])).unwrap();
+            let b = InvertibleMatrix::try_from(Matrix::new([[2.0, 4.0], [-3.0, 1.0]])).unwrap();
+
+            let c = InvertibleMatrix::try_from(&*a * &*b).unwrap();
+
+            assert_eq!(c, &a * &b);
         }
     }
 }
