@@ -33,6 +33,10 @@ impl Object for Sphere {
         &self.transform
     }
 
+    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
+        self.transform = t * &self.transform;
+    }
+
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let sphere_to_ray = &object_ray.origin - &Point3d::new(0.0, 0.0, 0.0);
 
@@ -238,5 +242,15 @@ mod tests {
 
             assert_eq!(s.material.ambient, 1.0);
         }
+    }
+
+    #[test]
+    fn transform_by_adds_a_transformation() {
+        let mut shape: Sphere = Default::default();
+        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
+
+        shape.transform_by(&t);
+
+        assert_eq!(&t, &shape.transform);
     }
 }

@@ -20,6 +20,10 @@ impl Object for Cube {
         &self.transform
     }
 
+    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
+        self.transform = t * &self.transform;
+    }
+
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let (xtmin, xtmax) = check_axis(object_ray.origin.x(), object_ray.direction.x());
         let (ytmin, ytmax) = check_axis(object_ray.origin.y(), object_ray.direction.y());
@@ -75,7 +79,7 @@ fn check_axis(origin: f64, direction: f64) -> (f64, f64) {
 mod tests {
     use super::*;
     use crate::math::vector::Vec3d;
-    use crate::scene::intersect as is;
+    use crate::scene::{intersect as is, transformation};
 
     mod intersect {
 
@@ -149,5 +153,15 @@ mod tests {
             cube_normal_7: (Point3d::new(1.0, 1.0, 1.0), Vec3d::new(1.0, 0.0, 0.0)),
             cube_normal_8: (Point3d::new(-1.0, -1.0, -1.0), Vec3d::new(-1.0, 0.0, 0.0))
         }
+    }
+
+    #[test]
+    fn transform_by_adds_a_transformation() {
+        let mut shape: Cube = Default::default();
+        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
+
+        shape.transform_by(&t);
+
+        assert_eq!(&t, &shape.transform);
     }
 }

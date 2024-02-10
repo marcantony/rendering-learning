@@ -20,6 +20,10 @@ impl Object for Plane {
         &self.transform
     }
 
+    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
+        self.transform = t * &self.transform;
+    }
+
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
         let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
@@ -50,7 +54,7 @@ impl Default for Plane {
 #[cfg(test)]
 mod tests {
     use crate::math::vector::Vec3d;
-    use crate::scene::intersect as is;
+    use crate::scene::{intersect as is, transformation};
 
     use super::*;
 
@@ -102,5 +106,15 @@ mod tests {
 
         let xs = is::test_utils::to_ts(p.intersect_local(&r));
         assert_eq!(xs, vec![1.0]);
+    }
+
+    #[test]
+    fn transform_by_adds_a_transformation() {
+        let mut shape: Plane = Default::default();
+        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
+
+        shape.transform_by(&t);
+
+        assert_eq!(&t, &shape.transform);
     }
 }

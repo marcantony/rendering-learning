@@ -68,6 +68,10 @@ impl Object for Cone {
         &self.transform
     }
 
+    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
+        self.transform = t * &self.transform;
+    }
+
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let a = object_ray.direction.x().powi(2) - object_ray.direction.y().powi(2)
             + object_ray.direction.z().powi(2);
@@ -151,7 +155,7 @@ impl Default for Cone {
 
 #[cfg(test)]
 mod tests {
-    use crate::scene::intersect as is;
+    use crate::scene::{intersect as is, transformation};
 
     use super::*;
 
@@ -256,5 +260,15 @@ mod tests {
 
             cone.normal_at_local(&Point3d::new(0.0, 0.0, 0.0));
         }
+    }
+
+    #[test]
+    fn transform_by_adds_a_transformation() {
+        let mut shape: Cone = Default::default();
+        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
+
+        shape.transform_by(&t);
+
+        assert_eq!(&t, &shape.transform);
     }
 }

@@ -5,6 +5,7 @@ use super::{intersect::Intersection, material::Material, ray::Ray};
 pub trait Object {
     fn material(&self) -> &Material;
     fn transform(&self) -> &InvertibleMatrix<4>;
+    fn transform_by(&mut self, t: &InvertibleMatrix<4>);
 
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>>;
     fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<dyn Object>> {
@@ -39,11 +40,15 @@ mod tests {
 
     impl Object for MockObject {
         fn material(&self) -> &Material {
-            todo!()
+            unimplemented!()
         }
 
         fn transform(&self) -> &InvertibleMatrix<4> {
             &self.transform
+        }
+
+        fn transform_by(&mut self, _t: &InvertibleMatrix<4>) {
+            unimplemented!()
         }
 
         fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {

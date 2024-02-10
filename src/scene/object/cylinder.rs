@@ -72,6 +72,10 @@ impl Object for Cylinder {
         &self.transform
     }
 
+    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
+        self.transform = t * &self.transform;
+    }
+
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let a = object_ray.direction.x().powi(2) + object_ray.direction.z().powi(2);
 
@@ -151,7 +155,7 @@ impl Default for Cylinder {
 
 #[cfg(test)]
 mod tests {
-    use crate::scene::intersect as is;
+    use crate::scene::{intersect as is, transformation};
 
     use super::*;
 
@@ -331,5 +335,15 @@ mod tests {
             cylinder_normal_max_cap_2: (Point3d::new(0.5, 2.0, 0.0), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()),
             cylinder_normal_max_cap_3: (Point3d::new(0.0, 2.0, 0.5), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap())
         }
+    }
+
+    #[test]
+    fn transform_by_adds_a_transformation() {
+        let mut shape: Cylinder = Default::default();
+        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
+
+        shape.transform_by(&t);
+
+        assert_eq!(&t, &shape.transform);
     }
 }

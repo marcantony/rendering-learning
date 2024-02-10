@@ -11,17 +11,32 @@ use super::Object;
 
 /// A group of multiple sub-objects
 pub struct Group {
-    pub transform: InvertibleMatrix<4>,
-    pub children: Vec<Box<dyn Object>>,
+    transform: InvertibleMatrix<4>,
+    children: Vec<Box<dyn Object>>,
+}
+
+impl Group {
+    pub fn new(transform: InvertibleMatrix<4>, mut children: Vec<Box<dyn Object>>) -> Group {
+        children.iter_mut().for_each(|c| c.transform_by(&transform));
+        Group {
+            transform,
+            children,
+        }
+    }
 }
 
 impl Object for Group {
     fn material(&self) -> &Material {
-        todo!()
+        unimplemented!()
     }
 
     fn transform(&self) -> &InvertibleMatrix<4> {
         &self.transform
+    }
+
+    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
+        self.transform = t * &self.transform;
+        self.children.iter_mut().for_each(|c| c.transform_by(t));
     }
 
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
@@ -36,8 +51,8 @@ impl Object for Group {
         intersections
     }
 
-    fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
-        todo!()
+    fn normal_at_local(&self, _object_point: &Point3d) -> NormalizedVec3d {
+        unimplemented!()
     }
 }
 
@@ -52,8 +67,8 @@ impl Default for Group {
 
 #[cfg(test)]
 mod tests {
-    use crate::scene::intersect as is;
     use crate::scene::object::sphere::Sphere;
+    use crate::scene::{intersect as is, transformation};
 
     use super::*;
 
@@ -67,12 +82,36 @@ mod tests {
 
     #[test]
     fn adding_a_child_to_a_group() {
-        let g = Group {
-            children: vec![Box::new(Sphere::unit())],
-            ..Default::default()
-        };
+        let g = Group::new(Default::default(), vec![Box::new(Sphere::unit())]);
 
         assert_eq!(g.children.len(), 1);
+    }
+
+    #[test]
+    fn adding_a_child_to_a_transformed_group() {
+        let s: Sphere = Sphere::unit();
+        let g = Group::new(
+            InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
+            vec![Box::new(s)],
+        );
+
+        assert_eq!(
+            **g.children[0].transform(),
+            transformation::translation(1.0, 0.0, 0.0)
+        );
+    }
+
+    #[test]
+    fn transforming_an_existing_group() {
+        let mut g = Group::new(Default::default(), vec![Box::new(Sphere::unit())]);
+        g.transform_by(
+            &InvertibleMatrix::try_from(transformation::translation(0.0, 2.0, 0.0)).unwrap(),
+        );
+
+        assert_eq!(
+            **g.children[0].transform(),
+            transformation::translation(0.0, 2.0, 0.0)
+        );
     }
 
     mod intersect {
@@ -130,6 +169,25 @@ mod tests {
             let xs = g.intersect(&r);
 
             assert_eq!(xs.len(), 2);
+        }
+    }
+
+    mod normal {
+        use super::*;
+
+        #[test]
+        fn finding_the_normal_of_an_object_in_a_group() {
+            let g = Group::new(
+                InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
+                vec![Box::new(Sphere::unit())],
+            );
+
+            let s = g.children[0].as_ref();
+
+            assert_eq!(
+                NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap(),
+                s.normal_at(&Point3d::new(1.0, 1.0, 0.0))
+            );
         }
     }
 }
