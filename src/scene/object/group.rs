@@ -39,6 +39,10 @@ impl Object for Group {
         self.children.iter_mut().for_each(|c| c.transform_by(t));
     }
 
+    fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+        self.intersect_local(world_ray)
+    }
+
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let mut intersections: Vec<_> = self
             .children
@@ -124,7 +128,7 @@ mod tests {
             let g: Group = Default::default();
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
 
-            let xs = g.intersect_local(&r);
+            let xs = g.intersect(&r);
 
             assert!(xs.is_empty());
         }
@@ -141,13 +145,13 @@ mod tests {
             s3.transform =
                 InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap();
 
-            let g = Group {
-                children: vec![Box::new(s1), Box::new(s2), Box::new(s3)],
-                ..Default::default()
-            };
+            let g = Group::new(
+                Default::default(),
+                vec![Box::new(s1), Box::new(s2), Box::new(s3)],
+            );
 
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let xs = is::test_utils::to_ts(g.intersect_local(&r));
+            let xs = is::test_utils::to_ts(g.intersect(&r));
 
             assert_eq!(xs, vec![1.0, 3.0, 4.0, 6.0]);
         }
@@ -158,12 +162,10 @@ mod tests {
             s.transform =
                 InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap();
 
-            let g = Group {
-                children: vec![Box::new(s)],
-                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                    .unwrap(),
-                ..Default::default()
-            };
+            let g = Group::new(
+                InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
+                vec![Box::new(s)],
+            );
 
             let r = Ray::new(Point3d::new(10.0, 0.0, -10.0), Vec3d::new(0.0, 0.0, 1.0));
             let xs = g.intersect(&r);
@@ -178,7 +180,8 @@ mod tests {
         #[test]
         fn finding_the_normal_of_an_object_in_a_group() {
             let s = Sphere {
-                transform: InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
+                transform: InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0))
+                    .unwrap(),
                 ..Default::default()
             };
             let g = Group::new(
