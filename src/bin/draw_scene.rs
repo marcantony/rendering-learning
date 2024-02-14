@@ -7,7 +7,7 @@ use ray_tracer_challenge::{
         camera::Camera,
         light::PointLight,
         material::{Material, Surface},
-        object::{cube::Cube, plane::Plane, sphere::Sphere},
+        object::{cube::Cube, group::Group, plane::Plane, sphere::Sphere},
         pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
         world::World,
@@ -21,6 +21,19 @@ const RES_Y: usize = 400;
 fn main() {
     use std::time::Instant;
     let now = Instant::now();
+
+    let gs1 = Sphere {
+        transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 0.0, 0.0)).unwrap(),
+        ..Default::default()
+    };
+    let gs2 = Sphere {
+        transform: InvertibleMatrix::try_from(transformation::translation(0.5, 0.0, 0.0)).unwrap(),
+        ..Default::default()
+    };
+    let sphere_group = Group::new(
+        InvertibleMatrix::try_from(transformation::translation(-1.0, 0.0, 0.0)).unwrap(),
+        vec![Box::new(gs1), Box::new(gs2)],
+    );
 
     let floor = Plane {
         transform: InvertibleMatrix::identity(),
@@ -159,6 +172,7 @@ fn main() {
             Box::new(inner_air_pocket),
             Box::new(behind_cube),
             Box::new(behind_wall),
+            Box::new(sphere_group),
         ],
         lights: vec![light_source],
         ..Default::default()
