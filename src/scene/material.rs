@@ -37,7 +37,6 @@ impl Default for Material {
 }
 
 pub fn lighting(
-    material: &Material,
     object: &dyn Object,
     point: &Point3d,
     light: &PointLight,
@@ -48,6 +47,7 @@ pub fn lighting(
     let effective_color = &object.color_at(point) * &light.intensity;
     let lightv = (&light.position - point).norm().unwrap();
 
+    let material = object.material();
     let ambient = &effective_color * material.ambient;
 
     let light_dot_normal = lightv.dot(normalv);
@@ -122,8 +122,10 @@ mod tests {
             };
 
             let result = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &Sphere {
+                    material: m,
+                    ..Default::default()
+                } as &dyn Object,
                 &position,
                 &light,
                 &eyev,
@@ -145,8 +147,10 @@ mod tests {
             };
 
             let result = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &Sphere {
+                    material: m,
+                    ..Default::default()
+                } as &dyn Object,
                 &position,
                 &light,
                 &eyev,
@@ -167,8 +171,10 @@ mod tests {
             };
 
             let result = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &Sphere {
+                    material: m,
+                    ..Default::default()
+                } as &dyn Object,
                 &position,
                 &light,
                 &eyev,
@@ -193,8 +199,10 @@ mod tests {
             };
 
             let result = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &Sphere {
+                    material: m,
+                    ..Default::default()
+                } as &dyn Object,
                 &position,
                 &light,
                 &eyev,
@@ -218,8 +226,10 @@ mod tests {
             };
 
             let result = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &Sphere {
+                    material: m,
+                    ..Default::default()
+                } as &dyn Object,
                 &position,
                 &light,
                 &eyev,
@@ -240,8 +250,10 @@ mod tests {
             };
 
             let result = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &Sphere {
+                    material: m,
+                    ..Default::default()
+                } as &dyn Object,
                 &position,
                 &light,
                 &eyev,
@@ -274,7 +286,6 @@ mod tests {
             };
 
             let c1 = lighting(
-                &object.material,
                 &object as &dyn Object,
                 &Point3d::new(0.9, 0.0, 0.0),
                 &light,
@@ -283,7 +294,6 @@ mod tests {
                 1.0,
             );
             let c2 = lighting(
-                &object.material,
                 &object as &dyn Object,
                 &Point3d::new(1.1, 0.0, 0.0),
                 &light,

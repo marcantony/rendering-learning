@@ -59,7 +59,6 @@ impl World {
                 let shadow_attenuation = self.shadow_attenuation(&comps.over_point, light);
 
                 let surface_color = lighting(
-                    &comps.object.material(),
                     comps.object,
                     &comps.point,
                     light,
