@@ -17,7 +17,7 @@ impl Pattern for Gradient {
         &self.transform
     }
 
-    fn at(&self, point: &crate::math::point::Point3d) -> Color {
+    fn at_local(&self, point: &crate::math::point::Point3d) -> Color {
         let distance = &self.b - &self.a;
         let fraction = point.x() - f64::floor(point.x());
 
@@ -45,17 +45,20 @@ mod tests {
     fn gradient_linearly_interpolates_between_colors() {
         let pattern: Gradient = Default::default();
 
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 0.0)), color::white());
         assert_eq!(
-            pattern.at(&Point3d::new(0.25, 0.0, 0.0)),
+            pattern.at_local(&Point3d::new(0.0, 0.0, 0.0)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.25, 0.0, 0.0)),
             Color::new(0.75, 0.75, 0.75)
         );
         assert_eq!(
-            pattern.at(&Point3d::new(0.5, 0.0, 0.0)),
+            pattern.at_local(&Point3d::new(0.5, 0.0, 0.0)),
             Color::new(0.5, 0.5, 0.5)
         );
         assert_eq!(
-            pattern.at(&Point3d::new(0.75, 0.0, 0.0)),
+            pattern.at_local(&Point3d::new(0.75, 0.0, 0.0)),
             Color::new(0.25, 0.25, 0.25)
         );
     }

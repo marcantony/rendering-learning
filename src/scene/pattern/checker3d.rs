@@ -16,7 +16,7 @@ impl Pattern for Checker3d {
         &self.transform
     }
 
-    fn at(&self, point: &crate::math::point::Point3d) -> Color {
+    fn at_local(&self, point: &crate::math::point::Point3d) -> Color {
         if (f64::floor(point.x()) + f64::floor(point.y()) + f64::floor(point.z())) as i64 % 2 == 0 {
             self.a.clone()
         } else {
@@ -45,26 +45,53 @@ mod tests {
     fn checkers_should_repeat_in_x() {
         let pattern: Checker3d = Default::default();
 
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 0.0)), color::white());
-        assert_eq!(pattern.at(&Point3d::new(0.99, 0.0, 0.0)), color::white());
-        assert_eq!(pattern.at(&Point3d::new(1.01, 0.0, 0.0)), color::black());
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.0, 0.0)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.99, 0.0, 0.0)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(1.01, 0.0, 0.0)),
+            color::black()
+        );
     }
 
     #[test]
     fn checkers_should_repeat_in_y() {
         let pattern: Checker3d = Default::default();
 
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 0.0)), color::white());
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.99, 0.0)), color::white());
-        assert_eq!(pattern.at(&Point3d::new(0.0, 1.01, 0.0)), color::black());
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.0, 0.0)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.99, 0.0)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 1.01, 0.0)),
+            color::black()
+        );
     }
 
     #[test]
     fn checkers_should_repeat_in_z() {
         let pattern: Checker3d = Default::default();
 
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 0.0)), color::white());
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 0.99)), color::white());
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 1.01)), color::black());
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.0, 0.0)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.0, 0.99)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.0, 1.01)),
+            color::black()
+        );
     }
 }

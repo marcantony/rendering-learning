@@ -1,11 +1,23 @@
-use crate::math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d};
+use crate::{
+    draw::color::Color,
+    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
+};
 
-use super::{intersect::Intersection, material::Material, ray::Ray};
+use super::{
+    intersect::Intersection,
+    material::{self, Material},
+    ray::Ray,
+};
 
 pub trait Object {
-    fn material(&self) -> &Material;
     fn transform(&self) -> &InvertibleMatrix<4>;
     fn transform_by(&mut self, t: &InvertibleMatrix<4>);
+
+    fn material(&self) -> &Material;
+    fn color_at(&self, point: &Point3d) -> Color {
+        let object_point = self.transform().inverse() * point;
+        material::color_at(&self.material().surface, &object_point)
+    }
 
     fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>>;
     fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<dyn Object>> {
@@ -36,11 +48,12 @@ mod tests {
     struct MockObject {
         transform: InvertibleMatrix<4>,
         intersect_local_arg_expectation: Option<Ray>,
+        material: Material,
     }
 
     impl Object for MockObject {
         fn material(&self) -> &Material {
-            unimplemented!()
+            &self.material
         }
 
         fn transform(&self) -> &InvertibleMatrix<4> {
@@ -79,6 +92,7 @@ mod tests {
                 )),
                 transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
                     .unwrap(),
+                material: Default::default(),
             };
 
             s.intersect(&r);
@@ -94,6 +108,7 @@ mod tests {
                 )),
                 transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
                     .unwrap(),
+                material: Default::default(),
             };
 
             s.intersect(&r);
@@ -114,6 +129,7 @@ mod tests {
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 1.0, 0.0))
                     .unwrap(),
                 intersect_local_arg_expectation: None,
+                material: Default::default(),
             };
 
             let n = s.normal_at(&Point3d::new(0.0, 1.70711, -0.70711));
@@ -130,12 +146,61 @@ mod tests {
                 ]))
                 .unwrap(),
                 intersect_local_arg_expectation: None,
+                material: Default::default(),
             };
 
             let t = std::f64::consts::SQRT_2 / 2.0;
             let n = s.normal_at(&Point3d::new(0.0, t, -t));
 
             vector::test_utils::assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.97014, -0.24254));
+        }
+    }
+
+    mod color_at {
+        use crate::scene::material::Surface;
+        use crate::scene::{pattern::test_utils::MockPattern, transformation};
+
+        use super::*;
+
+        #[test]
+        fn color_at_with_an_object_transformation() {
+            let pattern = MockPattern {
+                transform: Default::default(),
+            };
+            let shape = MockObject {
+                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
+                    .unwrap(),
+                intersect_local_arg_expectation: None,
+                material: Material {
+                    surface: Surface::Pattern(Box::new(pattern)),
+                    ..Default::default()
+                },
+            };
+
+            let c = shape.color_at(&Point3d::new(2.0, 3.0, 4.0));
+
+            assert_eq!(c, Color::new(1.0, 1.5, 2.0));
+        }
+
+        #[test]
+        fn color_at_with_an_object_transformation_and_a_pattern_transformation() {
+            let pattern = MockPattern {
+                transform: InvertibleMatrix::try_from(transformation::translation(0.5, 1.0, 1.5))
+                    .unwrap(),
+            };
+            let shape = MockObject {
+                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
+                    .unwrap(),
+                intersect_local_arg_expectation: None,
+                material: Material {
+                    surface: Surface::Pattern(Box::new(pattern)),
+                    ..Default::default()
+                },
+            };
+
+            let c = shape.color_at(&Point3d::new(2.5, 3.0, 3.5));
+
+            assert_eq!(c, Color::new(0.75, 0.5, 0.25));
         }
     }
 }

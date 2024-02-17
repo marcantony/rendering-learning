@@ -45,10 +45,7 @@ pub fn lighting(
     normalv: &NormalizedVec3d,
     shadow_attenuation: f64,
 ) -> Color {
-    let effective_color = match &material.surface {
-        Surface::Color(c) => c * &light.intensity,
-        Surface::Pattern(p) => &p.at_object(object, point) * &light.intensity,
-    };
+    let effective_color = &object.color_at(point) * &light.intensity;
     let lightv = (&light.position - point).norm().unwrap();
 
     let ambient = &effective_color * material.ambient;
@@ -75,6 +72,13 @@ pub fn lighting(
     };
 
     return &(&ambient + &diffuse) + &specular;
+}
+
+pub fn color_at(surface: &Surface, point: &Point3d) -> Color {
+    match surface {
+        Surface::Color(c) => c.clone(),
+        Surface::Pattern(p) => p.at(point),
+    }
 }
 
 #[cfg(test)]
@@ -260,6 +264,8 @@ mod tests {
                 specular: 0.0,
                 ..Default::default()
             };
+            let mut object = Sphere::unit();
+            object.material = m;
             let eyev = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
             let normalv = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
             let light = PointLight {
@@ -268,8 +274,8 @@ mod tests {
             };
 
             let c1 = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &object.material,
+                &object as &dyn Object,
                 &Point3d::new(0.9, 0.0, 0.0),
                 &light,
                 &eyev,
@@ -277,8 +283,8 @@ mod tests {
                 1.0,
             );
             let c2 = lighting(
-                &m,
-                &Sphere::unit() as &dyn Object,
+                &object.material,
+                &object as &dyn Object,
                 &Point3d::new(1.1, 0.0, 0.0),
                 &light,
                 &eyev,

@@ -17,7 +17,7 @@ impl Pattern for Ring {
         &self.transform
     }
 
-    fn at(&self, point: &Point3d) -> Color {
+    fn at_local(&self, point: &Point3d) -> Color {
         let radius = f64::sqrt(point.x() * point.x() + point.z() * point.z());
 
         if f64::floor(radius) as i64 % 2 == 0 {
@@ -48,10 +48,22 @@ mod tests {
     fn a_ring_should_extend_in_both_x_and_z() {
         let pattern: Ring = Default::default();
 
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 0.0)), color::white());
-        assert_eq!(pattern.at(&Point3d::new(1.0, 0.0, 0.0)), color::black());
-        assert_eq!(pattern.at(&Point3d::new(0.0, 0.0, 1.0)), color::black());
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.0, 0.0)),
+            color::white()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(1.0, 0.0, 0.0)),
+            color::black()
+        );
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.0, 0.0, 1.0)),
+            color::black()
+        );
         // 0.708 = just slightly more than √2/2
-        assert_eq!(pattern.at(&Point3d::new(0.708, 0.0, 0.708)), color::black());
+        assert_eq!(
+            pattern.at_local(&Point3d::new(0.708, 0.0, 0.708)),
+            color::black()
+        );
     }
 }
