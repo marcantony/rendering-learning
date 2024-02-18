@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::Object;
+use super::{bounded::Bounds, Object};
 
 const EPSILON: f64 = 1e-8;
 
@@ -131,8 +131,11 @@ impl Object for Cylinder {
         }
     }
 
-    fn bounds(&self) -> super::bounded::Bounds {
-        todo!()
+    fn bounds(&self) -> Bounds {
+        Bounds {
+            minimum: (-1.0, self.minimum.unwrap_or(f64::NEG_INFINITY), -1.0),
+            maximum: (1.0, self.maximum.unwrap_or(f64::INFINITY), 1.0),
+        }
     }
 }
 
@@ -328,6 +331,38 @@ mod tests {
             cylinder_normal_max_cap_1: (Point3d::new(0.0, 2.0, 0.0), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()),
             cylinder_normal_max_cap_2: (Point3d::new(0.5, 2.0, 0.0), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()),
             cylinder_normal_max_cap_3: (Point3d::new(0.0, 2.0, 0.5), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap())
+        }
+    }
+
+    mod bounds {
+        use super::*;
+
+        #[test]
+        fn bounds_of_an_infinite_cylinder() {
+            let cylinder = Cylinder::default();
+            assert_eq!(
+                cylinder.bounds(),
+                Bounds {
+                    minimum: (-1.0, f64::NEG_INFINITY, -1.0),
+                    maximum: (1.0, f64::INFINITY, 1.0)
+                }
+            );
+        }
+
+        #[test]
+        fn bounds_of_a_truncated_cylinder() {
+            let cylinder = Cylinder {
+                minimum: Some(1.0),
+                maximum: Some(3.0),
+                ..Default::default()
+            };
+            assert_eq!(
+                cylinder.bounds(),
+                Bounds {
+                    minimum: (-1.0, 1.0, -1.0),
+                    maximum: (1.0, 3.0, 1.0)
+                }
+            );
         }
     }
 }
