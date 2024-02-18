@@ -207,5 +207,20 @@ mod tests {
             a_ray_misses_neg_z_3: (Ray::new(Point3d::new(3.0, 4.1, -5.0), Vec3d::new(0.0, 0.0, 1.0)), false),
             a_ray_misses_neg_z_4: (Ray::new(Point3d::new(3.0, 1.9, -5.0), Vec3d::new(0.0, 0.0, 1.0)), false)
         }
+
+        #[test]
+        fn a_ray_intersects_a_bounding_box_going_to_infinity() {
+            let shape = MockObject {
+                bounds: Bounds {
+                    minimum: (-1.0, f64::NEG_INFINITY, -1.0),
+                    maximum: (1.0, f64::INFINITY, 1.0),
+                },
+                ..Default::default()
+            };
+            let bounded = Bounded::new(shape);
+            let ray = Ray::new(Point3d::new(5.0, 1e100, 0.0), Vec3d::new(-1.0, 0.0, 0.0));
+
+            assert!(bounded.test(&ray))
+        }
     }
 }
