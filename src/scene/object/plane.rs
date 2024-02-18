@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::Object;
+use super::{bounded::Bounds, Object};
 
 /// A plane: by default, a plane in xz
 pub struct Plane {
@@ -32,8 +32,12 @@ impl Object for Plane {
         NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
     }
 
-    fn bounds(&self) -> super::bounded::Bounds {
-        todo!()
+    fn bounds(&self) -> Bounds {
+        Bounds {
+            // Use an epsilon for -y/+y to avoid any floating point wonkiness
+            minimum: (f64::NEG_INFINITY, -1e8, f64::NEG_INFINITY),
+            maximum: (f64::INFINITY, 1e8, f64::INFINITY),
+        }
     }
 }
 
