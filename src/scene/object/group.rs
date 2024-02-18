@@ -48,6 +48,10 @@ impl Object for Group {
     fn normal_at(&self, _object_point: &Point3d) -> NormalizedVec3d {
         unimplemented!()
     }
+
+    fn bounds(&self) -> super::bounded::Bounds {
+        todo!()
+    }
 }
 
 impl Default for Group {

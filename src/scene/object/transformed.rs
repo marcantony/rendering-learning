@@ -39,6 +39,10 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
         let world_normal = &self.transform.inverse().transpose() * &*local_normal;
         NormalizedVec3d::try_from(world_normal).unwrap()
     }
+
+    fn bounds(&self) -> super::bounded::Bounds {
+        todo!()
+    }
 }
 
 #[cfg(test)]
@@ -61,7 +65,7 @@ mod tests {
                         Point3d::new(0.0, 0.0, -2.5),
                         Vec3d::new(0.0, 0.0, 0.5),
                     )),
-                    material: Default::default(),
+                    ..Default::default()
                 }),
                 transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
                     .unwrap(),
@@ -79,7 +83,7 @@ mod tests {
                         Point3d::new(-5.0, 0.0, -5.0),
                         Vec3d::new(0.0, 0.0, 1.0),
                     )),
-                    material: Default::default(),
+                    ..Default::default()
                 }),
                 transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
                     .unwrap(),
@@ -100,10 +104,7 @@ mod tests {
         #[test]
         fn computing_normal_on_translated_shape() {
             let s = Transformed {
-                child: Box::new(MockObject {
-                    intersect_local_arg_expectation: None,
-                    material: Default::default(),
-                }),
+                child: Box::new(MockObject::default()),
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 1.0, 0.0))
                     .unwrap(),
             };
@@ -116,10 +117,7 @@ mod tests {
         #[test]
         fn computing_normal_on_transformed_shape() {
             let s = Transformed {
-                child: Box::new(MockObject {
-                    intersect_local_arg_expectation: None,
-                    material: Default::default(),
-                }),
+                child: Box::new(MockObject::default()),
                 transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
                     transformation::rotation_z(std::f64::consts::PI / 5.0),
                     transformation::scaling(1.0, 0.5, 1.0),
@@ -147,11 +145,11 @@ mod tests {
             };
             let shape = Transformed {
                 child: Box::new(MockObject {
-                    intersect_local_arg_expectation: None,
                     material: Material {
                         surface: Surface::Pattern(Box::new(pattern)),
                         ..Default::default()
                     },
+                    ..Default::default()
                 }),
                 transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
                     .unwrap(),
@@ -170,11 +168,11 @@ mod tests {
             };
             let shape = Transformed {
                 child: Box::new(MockObject {
-                    intersect_local_arg_expectation: None,
                     material: Material {
                         surface: Surface::Pattern(Box::new(pattern)),
                         ..Default::default()
                     },
+                    ..Default::default()
                 }),
                 transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
                     .unwrap(),

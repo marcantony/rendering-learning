@@ -52,6 +52,10 @@ impl Object for Sphere {
     fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
         NormalizedVec3d::try_from(object_point - &Point3d::new(0.0, 0.0, 0.0)).unwrap()
     }
+
+    fn bounds(&self) -> super::bounded::Bounds {
+        todo!()
+    }
 }
 
 impl Default for Sphere {

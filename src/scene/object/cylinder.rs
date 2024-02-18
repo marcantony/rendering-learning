@@ -130,6 +130,10 @@ impl Object for Cylinder {
             NormalizedVec3d::new(object_point.x(), 0.0, object_point.z()).unwrap()
         }
     }
+
+    fn bounds(&self) -> super::bounded::Bounds {
+        todo!()
+    }
 }
 
 impl Default for Cylinder {

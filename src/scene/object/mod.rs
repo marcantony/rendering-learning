@@ -3,6 +3,8 @@ use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
 };
 
+use self::bounded::Bounds;
+
 use super::{
     intersect::Intersection,
     material::{self, Material},
@@ -16,8 +18,10 @@ pub trait Object {
     }
     fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>>;
     fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d;
+    fn bounds(&self) -> Bounds;
 }
 
+pub mod bounded;
 pub mod cone;
 pub mod cube;
 pub mod cylinder;
@@ -30,9 +34,11 @@ pub mod transformed;
 pub mod test_utils {
     use super::*;
 
+    #[derive(Default)]
     pub struct MockObject {
         pub intersect_local_arg_expectation: Option<Ray>,
         pub material: Material,
+        pub bounds: Bounds,
     }
 
     impl Object for MockObject {
@@ -41,15 +47,18 @@ pub mod test_utils {
         }
 
         fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
-            assert_eq!(
-                Some(object_ray),
-                self.intersect_local_arg_expectation.as_ref()
-            );
-            Vec::new()
+            if let Some(expected) = self.intersect_local_arg_expectation.as_ref() {
+                assert_eq!(object_ray, expected);
+            }
+            vec![Intersection::new(1.0, self as &dyn Object)]
         }
 
         fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
             NormalizedVec3d::new(object_point.x(), object_point.y(), object_point.z()).unwrap()
+        }
+
+        fn bounds(&self) -> Bounds {
+            self.bounds.clone()
         }
     }
 }
@@ -72,11 +81,11 @@ mod tests {
                 transform: Default::default(),
             };
             let shape = MockObject {
-                intersect_local_arg_expectation: None,
                 material: Material {
                     surface: Surface::Pattern(Box::new(pattern)),
                     ..Default::default()
                 },
+                ..Default::default()
             };
 
             let c = shape.color_at(&Point3d::new(2.0, 3.0, 4.0));

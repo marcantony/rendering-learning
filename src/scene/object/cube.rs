@@ -50,6 +50,10 @@ impl Object for Cube {
         }
         .unwrap()
     }
+
+    fn bounds(&self) -> super::bounded::Bounds {
+        todo!()
+    }
 }
 
 fn check_axis(origin: f64, direction: f64) -> (f64, f64) {

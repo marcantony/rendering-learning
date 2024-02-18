@@ -130,6 +130,10 @@ impl Object for Cone {
             NormalizedVec3d::new(object_point.x(), y, object_point.z()).unwrap()
         }
     }
+
+    fn bounds(&self) -> super::bounded::Bounds {
+        todo!()
+    }
 }
 
 impl Default for Cone {

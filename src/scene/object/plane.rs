@@ -31,6 +31,10 @@ impl Object for Plane {
     fn normal_at(&self, _: &Point3d) -> NormalizedVec3d {
         NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
     }
+
+    fn bounds(&self) -> super::bounded::Bounds {
+        todo!()
+    }
 }
 
 impl Default for Plane {
