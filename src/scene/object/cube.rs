@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::Object;
+use super::{bounded::Bounds, Object};
 
 #[derive(Default)]
 pub struct Cube {
@@ -51,8 +51,11 @@ impl Object for Cube {
         .unwrap()
     }
 
-    fn bounds(&self) -> super::bounded::Bounds {
-        todo!()
+    fn bounds(&self) -> Bounds {
+        Bounds {
+            minimum: (-1.0, -1.0, -1.0),
+            maximum: (1.0, 1.0, 1.0),
+        }
     }
 }
 
