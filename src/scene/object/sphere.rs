@@ -1,5 +1,5 @@
 use crate::{
-    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
+    math::{point::Point3d, vector::NormalizedVec3d},
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
@@ -7,20 +7,16 @@ use super::Object;
 
 /// A sphere: by default, a unit sphere (of radius 1 and its origin at (0, 0, 0))
 pub struct Sphere {
-    pub transform: InvertibleMatrix<4>,
     pub material: Material,
 }
 
 impl Sphere {
-    pub fn new(transform: InvertibleMatrix<4>, material: Material) -> Self {
-        Sphere {
-            transform,
-            material,
-        }
+    pub fn new(material: Material) -> Self {
+        Sphere { material }
     }
 
     pub fn unit() -> Self {
-        Sphere::new(InvertibleMatrix::identity(), Default::default())
+        Sphere::new(Default::default())
     }
 }
 
@@ -29,15 +25,7 @@ impl Object for Sphere {
         &self.material
     }
 
-    fn transform(&self) -> &InvertibleMatrix<4> {
-        &self.transform
-    }
-
-    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
-        self.transform = t * &self.transform;
-    }
-
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let sphere_to_ray = &object_ray.origin - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = object_ray.direction.dot(&object_ray.direction);
@@ -61,7 +49,7 @@ impl Object for Sphere {
             .collect()
     }
 
-    fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
+    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
         NormalizedVec3d::try_from(object_point - &Point3d::new(0.0, 0.0, 0.0)).unwrap()
     }
 }
@@ -87,7 +75,7 @@ pub fn glass_sphere() -> Sphere {
 mod tests {
     use crate::{
         math::vector::Vec3d,
-        scene::{intersect as is, ray::Ray, transformation},
+        scene::{intersect as is, ray::Ray},
     };
 
     use super::*;
@@ -101,7 +89,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect_local(&r));
+            let xs = is::test_utils::to_ts(s.intersect(&r));
 
             assert_eq!(xs, vec![4.0, 6.0]);
         }
@@ -111,7 +99,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 1.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect_local(&r));
+            let xs = is::test_utils::to_ts(s.intersect(&r));
 
             assert_eq!(xs, vec![5.0, 5.0]);
         }
@@ -121,7 +109,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 2.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = s.intersect_local(&r);
+            let xs = s.intersect(&r);
 
             assert!(xs.is_empty());
         }
@@ -131,7 +119,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect_local(&r));
+            let xs = is::test_utils::to_ts(s.intersect(&r));
 
             assert_eq!(xs, vec![-1.0, 1.0]);
         }
@@ -141,31 +129,9 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, 5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect_local(&r));
+            let xs = is::test_utils::to_ts(s.intersect(&r));
 
             assert_eq!(xs, vec![-6.0, -4.0]);
-        }
-    }
-
-    mod transform {
-        use crate::math::matrix::SquareMatrix;
-
-        use super::*;
-
-        #[test]
-        fn a_spheres_default_transformation() {
-            let s = Sphere::unit();
-            assert_eq!(*s.transform, SquareMatrix::identity());
-        }
-
-        #[test]
-        fn using_a_different_transformation() {
-            let t = transformation::translation(2.0, 3.0, 4.0);
-            let s = Sphere {
-                transform: InvertibleMatrix::try_from(t.clone()).unwrap(),
-                ..Default::default()
-            };
-            assert_eq!(*s.transform, t);
         }
     }
 
@@ -176,7 +142,7 @@ mod tests {
         fn normal_on_a_sphere_at_a_point_on_x_axis() {
             let s = Sphere::unit();
 
-            let n = s.normal_at_local(&Point3d::new(1.0, 0.0, 0.0));
+            let n = s.normal_at(&Point3d::new(1.0, 0.0, 0.0));
 
             assert_eq!(*n, Vec3d::new(1.0, 0.0, 0.0));
         }
@@ -185,7 +151,7 @@ mod tests {
         fn normal_on_a_sphere_at_a_point_on_y_axis() {
             let s = Sphere::unit();
 
-            let n = s.normal_at_local(&Point3d::new(0.0, 1.0, 0.0));
+            let n = s.normal_at(&Point3d::new(0.0, 1.0, 0.0));
 
             assert_eq!(*n, Vec3d::new(0.0, 1.0, 0.0));
         }
@@ -194,7 +160,7 @@ mod tests {
         fn normal_on_a_sphere_at_a_point_on_z_axis() {
             let s = Sphere::unit();
 
-            let n = s.normal_at_local(&Point3d::new(0.0, 0.0, 1.0));
+            let n = s.normal_at(&Point3d::new(0.0, 0.0, 1.0));
 
             assert_eq!(*n, Vec3d::new(0.0, 0.0, 1.0));
         }
@@ -204,7 +170,7 @@ mod tests {
             let s = Sphere::unit();
             let t = f64::sqrt(3.0) / 3.0;
 
-            let n = s.normal_at_local(&Point3d::new(t, t, t));
+            let n = s.normal_at(&Point3d::new(t, t, t));
 
             assert_eq!(*n, Vec3d::new(t, t, t));
         }
@@ -214,7 +180,7 @@ mod tests {
             let s = Sphere::unit();
             let t = f64::sqrt(3.0) / 3.0;
 
-            let n = s.normal_at_local(&Point3d::new(t, t, t));
+            let n = s.normal_at(&Point3d::new(t, t, t));
 
             assert_eq!(*n, n.norm().unwrap());
         }
@@ -242,15 +208,5 @@ mod tests {
 
             assert_eq!(s.material.ambient, 1.0);
         }
-    }
-
-    #[test]
-    fn transform_by_adds_a_transformation() {
-        let mut shape: Sphere = Default::default();
-        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
-
-        shape.transform_by(&t);
-
-        assert_eq!(&t, &shape.transform);
     }
 }

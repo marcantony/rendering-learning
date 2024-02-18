@@ -1,5 +1,5 @@
 use crate::{
-    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
+    math::{point::Point3d, vector::NormalizedVec3d},
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
@@ -7,7 +7,6 @@ use super::Object;
 
 /// A plane: by default, a plane in xz
 pub struct Plane {
-    pub transform: InvertibleMatrix<4>,
     pub material: Material,
 }
 
@@ -16,15 +15,7 @@ impl Object for Plane {
         &self.material
     }
 
-    fn transform(&self) -> &InvertibleMatrix<4> {
-        &self.transform
-    }
-
-    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
-        self.transform = t * &self.transform;
-    }
-
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
         let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
             return Vec::new();
@@ -37,7 +28,7 @@ impl Object for Plane {
             .collect()
     }
 
-    fn normal_at_local(&self, _: &Point3d) -> NormalizedVec3d {
+    fn normal_at(&self, _: &Point3d) -> NormalizedVec3d {
         NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
     }
 }
@@ -45,7 +36,6 @@ impl Object for Plane {
 impl Default for Plane {
     fn default() -> Self {
         Self {
-            transform: InvertibleMatrix::identity(),
             material: Default::default(),
         }
     }
@@ -54,7 +44,7 @@ impl Default for Plane {
 #[cfg(test)]
 mod tests {
     use crate::math::vector::Vec3d;
-    use crate::scene::{intersect as is, transformation};
+    use crate::scene::intersect as is;
 
     use super::*;
 
@@ -62,9 +52,9 @@ mod tests {
     fn the_normal_of_a_plane_is_constant_everywhere() {
         let p: Plane = Default::default();
 
-        let n1 = p.normal_at_local(&Point3d::new(0.0, 0.0, 0.0));
-        let n2 = p.normal_at_local(&Point3d::new(10.0, 0.0, -10.0));
-        let n3 = p.normal_at_local(&Point3d::new(-5.0, 0.0, 150.0));
+        let n1 = p.normal_at(&Point3d::new(0.0, 0.0, 0.0));
+        let n2 = p.normal_at(&Point3d::new(10.0, 0.0, -10.0));
+        let n3 = p.normal_at(&Point3d::new(-5.0, 0.0, 150.0));
 
         let expected = Vec3d::new(0.0, 1.0, 0.0);
         assert_eq!(*n1, expected);
@@ -77,7 +67,7 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, 10.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
 
-        let xs = p.intersect_local(&r);
+        let xs = p.intersect(&r);
         assert!(xs.is_empty());
     }
 
@@ -86,7 +76,7 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
 
-        let xs = p.intersect_local(&r);
+        let xs = p.intersect(&r);
         assert!(xs.is_empty());
     }
 
@@ -95,7 +85,7 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, 1.0, 0.0), Vec3d::new(0.0, -1.0, 0.0));
 
-        let xs = is::test_utils::to_ts(p.intersect_local(&r));
+        let xs = is::test_utils::to_ts(p.intersect(&r));
         assert_eq!(xs, vec![1.0]);
     }
 
@@ -104,17 +94,7 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, -1.0, 0.0), Vec3d::new(0.0, 1.0, 0.0));
 
-        let xs = is::test_utils::to_ts(p.intersect_local(&r));
+        let xs = is::test_utils::to_ts(p.intersect(&r));
         assert_eq!(xs, vec![1.0]);
-    }
-
-    #[test]
-    fn transform_by_adds_a_transformation() {
-        let mut shape: Plane = Default::default();
-        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
-
-        shape.transform_by(&t);
-
-        assert_eq!(&t, &shape.transform);
     }
 }

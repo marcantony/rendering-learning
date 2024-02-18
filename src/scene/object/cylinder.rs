@@ -1,5 +1,5 @@
 use crate::{
-    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
+    math::{point::Point3d, vector::NormalizedVec3d},
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
@@ -10,7 +10,6 @@ const EPSILON: f64 = 1e-8;
 /// A cylinder, by default with radius 1 and infinite length around the y-axis
 pub struct Cylinder {
     pub material: Material,
-    pub transform: InvertibleMatrix<4>,
     pub minimum: Option<f64>,
     pub maximum: Option<f64>,
     pub closed: bool,
@@ -68,15 +67,7 @@ impl Object for Cylinder {
         &self.material
     }
 
-    fn transform(&self) -> &InvertibleMatrix<4> {
-        &self.transform
-    }
-
-    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
-        self.transform = t * &self.transform;
-    }
-
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let a = object_ray.direction.x().powi(2) + object_ray.direction.z().powi(2);
 
         // Ray is parallel to the y-axis
@@ -120,7 +111,7 @@ impl Object for Cylinder {
             .collect()
     }
 
-    fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
+    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
         let dist2 = object_point.x().powi(2) + object_point.z().powi(2);
 
         if dist2 < 1.0
@@ -145,7 +136,6 @@ impl Default for Cylinder {
     fn default() -> Self {
         Self {
             material: Default::default(),
-            transform: Default::default(),
             minimum: None,
             maximum: None,
             closed: false,
@@ -155,7 +145,7 @@ impl Default for Cylinder {
 
 #[cfg(test)]
 mod tests {
-    use crate::scene::{intersect as is, transformation};
+    use crate::scene::intersect as is;
 
     use super::*;
 
@@ -174,7 +164,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs = is::test_utils::to_ts(cyl.intersect_local(&r));
+                        let xs = is::test_utils::to_ts(cyl.intersect(&r));
 
                         assert_eq!(xs, expected);
                     }
@@ -203,7 +193,7 @@ mod tests {
                         let (point, expected) = $value;
                         let cyl: Cylinder = Default::default();
 
-                        let n = cyl.normal_at_local(&point);
+                        let n = cyl.normal_at(&point);
 
                         assert_eq!(n, expected);
                     }
@@ -246,7 +236,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs = cyl.intersect_local(&r);
+                        let xs = cyl.intersect(&r);
 
                         assert_eq!(xs.len(), expected);
                     }
@@ -291,7 +281,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs = cyl.intersect_local(&r);
+                        let xs = cyl.intersect(&r);
 
                         assert_eq!(xs.len(), expected);
                     }
@@ -319,7 +309,7 @@ mod tests {
                             closed: true,
                             ..Default::default()
                         };
-                        let n = cyl.normal_at_local(&point);
+                        let n = cyl.normal_at(&point);
 
                         assert_eq!(n, expected);
                     }
@@ -335,15 +325,5 @@ mod tests {
             cylinder_normal_max_cap_2: (Point3d::new(0.5, 2.0, 0.0), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()),
             cylinder_normal_max_cap_3: (Point3d::new(0.0, 2.0, 0.5), NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap())
         }
-    }
-
-    #[test]
-    fn transform_by_adds_a_transformation() {
-        let mut shape: Cylinder = Default::default();
-        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
-
-        shape.transform_by(&t);
-
-        assert_eq!(&t, &shape.transform);
     }
 }

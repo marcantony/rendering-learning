@@ -7,20 +7,23 @@ use crate::{
     },
 };
 
-use super::Object;
+use super::{transformed::Transformed, Object};
 
 /// A group of multiple sub-objects
 pub struct Group {
-    transform: InvertibleMatrix<4>,
     children: Vec<Box<dyn Object>>,
 }
 
 impl Group {
-    pub fn new(transform: InvertibleMatrix<4>, mut children: Vec<Box<dyn Object>>) -> Group {
-        children.iter_mut().for_each(|c| c.transform_by(&transform));
+    pub fn new(transform: InvertibleMatrix<4>, children: Vec<Box<dyn Object>>) -> Group {
+        let transformed_children = children.into_iter().map(|c| Transformed {
+            child: c,
+            transform: transform.clone(),
+        });
         Group {
-            transform,
-            children,
+            children: transformed_children
+                .map(|tc| Box::new(tc) as Box<dyn Object>)
+                .collect(),
         }
     }
 }
@@ -30,20 +33,7 @@ impl Object for Group {
         unimplemented!()
     }
 
-    fn transform(&self) -> &InvertibleMatrix<4> {
-        &self.transform
-    }
-
-    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
-        self.transform = t * &self.transform;
-        self.children.iter_mut().for_each(|c| c.transform_by(t));
-    }
-
-    fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<dyn Object>> {
-        self.intersect_local(world_ray)
-    }
-
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let mut intersections: Vec<_> = self
             .children
             .iter()
@@ -55,7 +45,7 @@ impl Object for Group {
         intersections
     }
 
-    fn normal_at_local(&self, _object_point: &Point3d) -> NormalizedVec3d {
+    fn normal_at(&self, _object_point: &Point3d) -> NormalizedVec3d {
         unimplemented!()
     }
 }
@@ -63,7 +53,6 @@ impl Object for Group {
 impl Default for Group {
     fn default() -> Self {
         Self {
-            transform: Default::default(),
             children: Default::default(),
         }
     }
@@ -80,7 +69,6 @@ mod tests {
     fn creating_a_new_group() {
         let g: Group = Default::default();
 
-        assert_eq!(g.transform, InvertibleMatrix::<4>::identity());
         assert!(g.children.is_empty());
     }
 
@@ -89,33 +77,6 @@ mod tests {
         let g = Group::new(Default::default(), vec![Box::new(Sphere::unit())]);
 
         assert_eq!(g.children.len(), 1);
-    }
-
-    #[test]
-    fn adding_a_child_to_a_transformed_group() {
-        let s: Sphere = Sphere::unit();
-        let g = Group::new(
-            InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
-            vec![Box::new(s)],
-        );
-
-        assert_eq!(
-            **g.children[0].transform(),
-            transformation::translation(1.0, 0.0, 0.0)
-        );
-    }
-
-    #[test]
-    fn transforming_an_existing_group() {
-        let mut g = Group::new(Default::default(), vec![Box::new(Sphere::unit())]);
-        g.transform_by(
-            &InvertibleMatrix::try_from(transformation::translation(0.0, 2.0, 0.0)).unwrap(),
-        );
-
-        assert_eq!(
-            **g.children[0].transform(),
-            transformation::translation(0.0, 2.0, 0.0)
-        );
     }
 
     mod intersect {
@@ -137,13 +98,17 @@ mod tests {
         fn intersecting_a_ray_with_a_nonempty_group() {
             let s1: Sphere = Default::default();
 
-            let mut s2: Sphere = Default::default();
-            s2.transform =
-                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, -3.0)).unwrap();
+            let s2 = Transformed {
+                child: Box::new(Sphere::unit()),
+                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, -3.0))
+                    .unwrap(),
+            };
 
-            let mut s3: Sphere = Default::default();
-            s3.transform =
-                InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap();
+            let s3 = Transformed {
+                child: Box::new(Sphere::unit()),
+                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
+                    .unwrap(),
+            };
 
             let g = Group::new(
                 Default::default(),
@@ -158,9 +123,11 @@ mod tests {
 
         #[test]
         fn intersecting_a_transformed_group() {
-            let mut s: Sphere = Default::default();
-            s.transform =
-                InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap();
+            let s = Transformed {
+                child: Box::new(Sphere::unit()),
+                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
+                    .unwrap(),
+            };
 
             let g = Group::new(
                 InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
@@ -179,10 +146,10 @@ mod tests {
 
         #[test]
         fn finding_the_normal_of_an_object_in_a_group() {
-            let s = Sphere {
+            let s = Transformed {
+                child: Box::new(Sphere::unit()),
                 transform: InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0))
                     .unwrap(),
-                ..Default::default()
             };
             let g = Group::new(
                 InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),

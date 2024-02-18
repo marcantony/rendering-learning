@@ -1,5 +1,5 @@
 use crate::{
-    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
+    math::{point::Point3d, vector::NormalizedVec3d},
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
@@ -10,7 +10,6 @@ const EPSILON: f64 = 1e-8;
 /// A double-napped cone with slope 1 aligned along the y-axis, whose vertex is at the origin
 pub struct Cone {
     pub material: Material,
-    pub transform: InvertibleMatrix<4>,
     pub minimum: Option<f64>,
     pub maximum: Option<f64>,
     pub closed: bool,
@@ -64,15 +63,7 @@ impl Object for Cone {
         &self.material
     }
 
-    fn transform(&self) -> &InvertibleMatrix<4> {
-        &self.transform
-    }
-
-    fn transform_by(&mut self, t: &InvertibleMatrix<4>) {
-        self.transform = t * &self.transform;
-    }
-
-    fn intersect_local(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
         let a = object_ray.direction.x().powi(2) - object_ray.direction.y().powi(2)
             + object_ray.direction.z().powi(2);
         let b = 2.0 * object_ray.origin.x() * object_ray.direction.x()
@@ -122,7 +113,7 @@ impl Object for Cone {
             .collect()
     }
 
-    fn normal_at_local(&self, object_point: &Point3d) -> NormalizedVec3d {
+    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
         let dist2 = object_point.x().powi(2) + object_point.z().powi(2);
 
         if self.maximum.map_or(false, |max| {
@@ -145,7 +136,6 @@ impl Default for Cone {
     fn default() -> Self {
         Self {
             material: Default::default(),
-            transform: Default::default(),
             minimum: None,
             maximum: None,
             closed: false,
@@ -155,7 +145,7 @@ impl Default for Cone {
 
 #[cfg(test)]
 mod tests {
-    use crate::scene::{intersect as is, transformation};
+    use crate::scene::intersect as is;
 
     use super::*;
 
@@ -174,7 +164,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs: Vec<f64> = is::test_utils::to_ts(cone.intersect_local(&r));
+                        let xs: Vec<f64> = is::test_utils::to_ts(cone.intersect(&r));
 
                         assert_eq!(xs, expected);
                     }
@@ -194,7 +184,7 @@ mod tests {
             let nd = Vec3d::new(0.0, 1.0, 1.0).norm().unwrap();
             let r = Ray::new(Point3d::new(0.0, 0.0, -1.0), nd);
 
-            let xs = is::test_utils::to_ts(shape.intersect_local(&r));
+            let xs = is::test_utils::to_ts(shape.intersect(&r));
 
             assert_eq!(xs, vec![0.3535533905932738]);
         }
@@ -214,7 +204,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs = cone.intersect_local(&r);
+                        let xs = cone.intersect(&r);
 
                         assert_eq!(xs.len(), expected);
                     }
@@ -240,7 +230,7 @@ mod tests {
                         let (point, expected) = $value;
                         let cone: Cone = Default::default();
 
-                        let n = cone.normal_at_local(&point);
+                        let n = cone.normal_at(&point);
 
                         assert_eq!(n, expected);
                     }
@@ -258,17 +248,7 @@ mod tests {
         fn no_normal_vector_at_vertex() {
             let cone: Cone = Default::default();
 
-            cone.normal_at_local(&Point3d::new(0.0, 0.0, 0.0));
+            cone.normal_at(&Point3d::new(0.0, 0.0, 0.0));
         }
-    }
-
-    #[test]
-    fn transform_by_adds_a_transformation() {
-        let mut shape: Cone = Default::default();
-        let t = InvertibleMatrix::try_from(transformation::translation(1.0, 2.0, 3.0)).unwrap();
-
-        shape.transform_by(&t);
-
-        assert_eq!(&t, &shape.transform);
     }
 }
