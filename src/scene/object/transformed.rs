@@ -51,6 +51,17 @@ mod tests {
 
     use super::*;
 
+    #[test]
+    fn material_of_transformed_object_is_material_of_child() {
+        let shape = MockObject::default();
+        let transformed = Transformed {
+            child: Box::new(shape),
+            transform: Default::default(),
+        };
+
+        assert!(transformed.material() == transformed.child.material());
+    }
+
     mod intersect {
         use crate::{math::vector::Vec3d, scene::transformation};
 

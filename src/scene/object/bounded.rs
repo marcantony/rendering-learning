@@ -135,6 +135,14 @@ mod tests {
         assert_eq!(bounded.intersect(&ray).len(), 1);
     }
 
+    #[test]
+    fn material_of_bounded_object_is_material_of_child() {
+        let shape = MockObject::default();
+        let bounded = Bounded::new(shape);
+
+        assert!(bounded.material() == bounded.child.material());
+    }
+
     mod boundary_test {
         use super::*;
 

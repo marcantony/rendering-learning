@@ -21,6 +21,12 @@ pub struct Material {
     pub refractive_index: f64,
 }
 
+impl PartialEq for Material {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self, other)
+    }
+}
+
 impl Default for Material {
     fn default() -> Self {
         Self {
@@ -97,6 +103,19 @@ mod tests {
         assert_eq!(m.reflectivity, 0.0);
         assert_eq!(m.transparency, 0.0);
         assert_eq!(m.refractive_index, 1.0);
+    }
+
+    #[test]
+    fn material_equality_is_referenced_based() {
+        let m1 = Material::default();
+        let m1_ref = &m1;
+        let m2_ref = &m1;
+
+        assert!(m1_ref == m2_ref);
+
+        let m2 = Material::default();
+
+        assert!(m1 != m2);
     }
 
     mod lighting {
