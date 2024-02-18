@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::Object;
+use super::{bounded::Bounds, Object};
 
 /// A sphere: by default, a unit sphere (of radius 1 and its origin at (0, 0, 0))
 pub struct Sphere {
@@ -53,8 +53,11 @@ impl Object for Sphere {
         NormalizedVec3d::try_from(object_point - &Point3d::new(0.0, 0.0, 0.0)).unwrap()
     }
 
-    fn bounds(&self) -> super::bounded::Bounds {
-        todo!()
+    fn bounds(&self) -> Bounds {
+        Bounds {
+            minimum: (-1.0, -1.0, -1.0),
+            maximum: (1.0, 1.0, 1.0),
+        }
     }
 }
 
