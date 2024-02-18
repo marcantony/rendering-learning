@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::Object;
+use super::{bounded::Bounds, Object};
 
 const EPSILON: f64 = 1e-8;
 
@@ -131,8 +131,16 @@ impl Object for Cone {
         }
     }
 
-    fn bounds(&self) -> super::bounded::Bounds {
-        todo!()
+    fn bounds(&self) -> Bounds {
+        let y_min = self.minimum.unwrap_or(f64::NEG_INFINITY);
+        let y_max = self.maximum.unwrap_or(f64::INFINITY);
+
+        // Slope is 1, so the radius at y_min/y_max is equal to y_min/y_max
+        let radius = y_max.abs().max(y_min.abs());
+        Bounds {
+            minimum: (-radius, y_min, -radius),
+            maximum: (radius, y_max, radius),
+        }
     }
 }
 
@@ -253,6 +261,38 @@ mod tests {
             let cone: Cone = Default::default();
 
             cone.normal_at(&Point3d::new(0.0, 0.0, 0.0));
+        }
+    }
+
+    mod bounds {
+        use super::*;
+
+        #[test]
+        fn bounds_of_an_infinite_cone() {
+            let cone = Cone::default();
+            assert_eq!(
+                cone.bounds(),
+                Bounds {
+                    minimum: (f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
+                    maximum: (f64::INFINITY, f64::INFINITY, f64::INFINITY),
+                }
+            );
+        }
+
+        #[test]
+        fn bounds_of_a_truncated_cone() {
+            let cone = Cone {
+                minimum: Some(-1.0),
+                maximum: Some(3.0),
+                ..Default::default()
+            };
+            assert_eq!(
+                cone.bounds(),
+                Bounds {
+                    minimum: (-3.0, -1.0, -3.0),
+                    maximum: (3.0, 3.0, 3.0)
+                }
+            );
         }
     }
 }
