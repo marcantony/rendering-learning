@@ -102,6 +102,29 @@ mod tests {
 
             s.intersect(&r);
         }
+
+        #[test]
+        fn a_twice_transformed_shape_should_apply_the_inner_transformation_first() {
+            let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
+            let t1 = Transformed {
+                child: Box::new(MockObject {
+                    intersect_local_arg_expectation: Some(Ray::new(
+                        Point3d::new(-10.0, 0.0, 0.0),
+                        Vec3d::new(0.0, 0.0, 0.5),
+                    )),
+                    ..Default::default()
+                }),
+                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
+                    .unwrap(),
+            };
+            let t2 = Transformed {
+                child: Box::new(t1),
+                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
+                    .unwrap()
+            };
+
+            t2.intersect(&r);
+        }
     }
 
     mod normal_at {
