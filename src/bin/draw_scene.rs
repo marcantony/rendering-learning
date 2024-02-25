@@ -9,6 +9,7 @@ use ray_tracer_challenge::{
         material::{Material, Surface},
         object::{
             cube::Cube, group::Group, plane::Plane, sphere::Sphere, transformed::Transformed,
+            Object,
         },
         pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
@@ -179,15 +180,15 @@ fn main() {
 
     let world = World {
         objects: vec![
-            Box::new(floor),
-            Box::new(left_wall),
-            Box::new(right_wall),
-            Box::new(middle_wall),
-            Box::new(ball),
-            Box::new(inner_air_pocket),
-            Box::new(behind_cube),
-            Box::new(behind_wall),
-            Box::new(sphere_group),
+            Object::Shape(Box::new(floor)),
+            Object::Shape(Box::new(left_wall)),
+            Object::Shape(Box::new(right_wall)),
+            Object::Shape(Box::new(middle_wall)),
+            Object::Shape(Box::new(ball)),
+            Object::Shape(Box::new(inner_air_pocket)),
+            Object::Shape(Box::new(behind_cube)),
+            Object::Shape(Box::new(behind_wall)),
+            Object::Shape(Box::new(sphere_group)),
         ],
         lights: vec![light_source],
         ..Default::default()
