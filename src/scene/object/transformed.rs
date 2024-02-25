@@ -120,7 +120,7 @@ mod tests {
             let t2 = Transformed {
                 child: Box::new(t1),
                 transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                    .unwrap()
+                    .unwrap(),
             };
 
             t2.intersect(&r);

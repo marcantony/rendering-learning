@@ -21,6 +21,60 @@ pub trait Shape {
     fn bounds(&self) -> Bounds;
 }
 
+pub enum Object<T: Shape + ?Sized> {
+    Shape(Box<T>),
+    Group,
+    Transformed,
+    Bounded,
+}
+
+impl<T: Shape + ?Sized> Object<T> {
+    pub fn material(&self) -> &Material {
+        match &self {
+            Object::Shape(s) => s.material(),
+            Object::Group => todo!(),
+            Object::Transformed => todo!(),
+            Object::Bounded => todo!(),
+        }
+    }
+
+    pub fn color_at(&self, point: &Point3d) -> Color {
+        match &self {
+            Object::Shape(s) => s.color_at(point),
+            Object::Group => todo!(),
+            Object::Transformed => todo!(),
+            Object::Bounded => todo!(),
+        }
+    }
+
+    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Shape>> {
+        match &self {
+            Object::Shape(s) => s.intersect(ray),
+            Object::Group => todo!(),
+            Object::Transformed => todo!(),
+            Object::Bounded => todo!(),
+        }
+    }
+
+    pub fn normal_at(&self, point: &Point3d) -> NormalizedVec3d {
+        match &self {
+            Object::Shape(s) => s.normal_at(point),
+            Object::Group => todo!(),
+            Object::Transformed => todo!(),
+            Object::Bounded => todo!(),
+        }
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        match &self {
+            Object::Shape(s) => s.bounds(),
+            Object::Group => todo!(),
+            Object::Transformed => todo!(),
+            Object::Bounded => todo!(),
+        }
+    }
+}
+
 pub mod bounded;
 pub mod cone;
 pub mod cube;
@@ -64,7 +118,7 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod tests {
+mod shape_tests {
     use super::test_utils::MockObject;
 
     use super::*;
@@ -91,6 +145,81 @@ mod tests {
             let c = shape.color_at(&Point3d::new(2.0, 3.0, 4.0));
 
             assert_eq!(c, Color::new(2.0, 3.0, 4.0));
+        }
+    }
+}
+
+#[cfg(test)]
+mod object_tests {
+    use super::*;
+
+    mod shape {
+        use crate::math::vector::Vec3d;
+        use crate::scene::intersect::test_utils as is;
+
+        use self::test_utils::MockObject;
+
+        use super::*;
+
+        #[test]
+        fn material_returns_material_of_underlying_shape() {
+            let object = Object::Shape(Box::new(MockObject::default()));
+
+            if let Object::Shape(s) = &object {
+                assert!(s.material() == object.material());
+            } else {
+                panic!("broke the test");
+            };
+        }
+
+        #[test]
+        fn color_at_returns_color_of_underlying_shape() {
+            let object = Object::Shape(Box::new(MockObject::default()));
+
+            if let Object::Shape(s) = &object {
+                let point = Point3d::new(1.0, 2.0, 3.0);
+                assert_eq!(s.color_at(&point), object.color_at(&point));
+            } else {
+                panic!("broke the test");
+            };
+        }
+
+        #[test]
+        fn intersect_returns_intersect_of_underlying_shape() {
+            let object = Object::Shape(Box::new(MockObject::default()));
+
+            if let Object::Shape(s) = &object {
+                let ray = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(1.0, 0.0, 0.0));
+                assert_eq!(
+                    is::to_ts(s.intersect(&ray)),
+                    is::to_ts(object.intersect(&ray))
+                );
+            } else {
+                panic!("broke the test");
+            };
+        }
+
+        #[test]
+        fn normal_at_returns_normal_of_underlying_shape() {
+            let object = Object::Shape(Box::new(MockObject::default()));
+
+            if let Object::Shape(s) = &object {
+                let point = Point3d::new(1.0, 0.0, 0.0);
+                assert_eq!(s.normal_at(&point), object.normal_at(&point));
+            } else {
+                panic!("broke the test");
+            };
+        }
+
+        #[test]
+        fn bounds_returns_bounds_of_underlying_shape() {
+            let object = Object::Shape(Box::new(MockObject::default()));
+
+            if let Object::Shape(s) = &object {
+                assert!(s.bounds() == object.bounds());
+            } else {
+                panic!("broke the test");
+            };
         }
     }
 }
