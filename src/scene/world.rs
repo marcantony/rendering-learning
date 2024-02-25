@@ -378,7 +378,7 @@ mod tests {
         let r = Ray::new(Point3d::new(0.0, 0.0, 0.75), Vec3d::new(0.0, 0.0, -1.0));
 
         let c = w.color_at_internal(&r, TEST_DEPTH);
-        let inner_surface = &w.objects[1].material().surface;
+        let inner_surface = &cast!(&w.objects[1], Object::Shape).material().surface;
 
         assert!(matches!(inner_surface, Surface::Color(col) if col == &c));
     }
