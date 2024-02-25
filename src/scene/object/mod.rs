@@ -29,6 +29,15 @@ pub enum Object<T: Shape + ?Sized> {
 }
 
 impl<T: Shape + ?Sized> Object<T> {
+    pub fn material(&self) -> &Material {
+        match &self {
+            Object::Shape(s) => s.material(),
+            Object::Group => todo!(),
+            Object::Transformed => todo!(),
+            Object::Bounded => todo!(),
+        }
+    }
+
     pub fn color_at(&self, point: &Point3d) -> Color {
         match &self {
             Object::Shape(s) => s.color_at(point),
@@ -151,6 +160,17 @@ mod object_tests {
         use self::test_utils::MockObject;
 
         use super::*;
+
+        #[test]
+        fn material_returns_material_of_underlying_shape() {
+            let object = Object::Shape(Box::new(MockObject::default()));
+
+            if let Object::Shape(s) = &object {
+                assert!(s.material() == object.material());
+            } else {
+                panic!("broke the test");
+            };
+        }
 
         #[test]
         fn color_at_returns_color_of_underlying_shape() {
