@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Shape};
 
 const EPSILON: f64 = 1e-8;
 
@@ -62,12 +62,12 @@ impl Cylinder {
     }
 }
 
-impl Object for Cylinder {
+impl Shape for Cylinder {
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         let a = object_ray.direction.x().powi(2) + object_ray.direction.z().powi(2);
 
         // Ray is parallel to the y-axis
@@ -107,7 +107,7 @@ impl Object for Cylinder {
 
         wall_xs
             .into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| Intersection::new(t, self as &dyn Shape))
             .collect()
     }
 

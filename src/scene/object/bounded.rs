@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::Object;
+use super::Shape;
 
 type Bound = (f64, f64, f64);
 #[derive(Debug, PartialEq, Clone)]
@@ -21,12 +21,12 @@ impl Default for Bounds {
     }
 }
 
-pub struct Bounded<T: Object> {
+pub struct Bounded<T: Shape> {
     bounds: Bounds,
     child: T,
 }
 
-impl<T: Object> Bounded<T> {
+impl<T: Shape> Bounded<T> {
     pub fn new(child: T) -> Self {
         Bounded {
             bounds: child.bounds(),
@@ -75,12 +75,12 @@ fn check_axis(min: f64, max: f64, origin: f64, speed: f64) -> (f64, f64) {
     }
 }
 
-impl<T: Object> Object for Bounded<T> {
+impl<T: Shape> Shape for Bounded<T> {
     fn material(&self) -> &Material {
         self.child.material()
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         if self.test(ray) {
             self.child.intersect(ray)
         } else {

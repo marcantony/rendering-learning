@@ -1,16 +1,16 @@
 use crate::math::{point::Point3d, util, vector::NormalizedVec3d};
 
-use super::{object::Object, ray::Ray};
+use super::{object::Shape, ray::Ray};
 
 const POINT_OFFSET_BIAS: f64 = 1e-5;
 
 #[derive(Debug, Clone)]
-pub struct Intersection<'a, T: Object + ?Sized> {
+pub struct Intersection<'a, T: Shape + ?Sized> {
     t: f64,
     object: &'a T,
 }
 
-impl<'a, T: Object + ?Sized> Intersection<'a, T> {
+impl<'a, T: Shape + ?Sized> Intersection<'a, T> {
     pub fn new(t: f64, object: &T) -> Intersection<T> {
         Intersection { t, object }
     }
@@ -88,14 +88,14 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
     }
 }
 
-impl<'a, T: Object + ?Sized> PartialEq for Intersection<'a, T> {
+impl<'a, T: Shape + ?Sized> PartialEq for Intersection<'a, T> {
     fn eq(&self, other: &Self) -> bool {
         util::are_equal(self.t, other.t) && std::ptr::eq(self.object, other.object)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Precomputation<'a, T: Object + ?Sized> {
+pub struct Precomputation<'a, T: Shape + ?Sized> {
     pub t: f64,
     pub object: &'a T,
     pub point: Point3d,
@@ -109,7 +109,7 @@ pub struct Precomputation<'a, T: Object + ?Sized> {
     pub refraction_entering: f64,
 }
 
-impl<'a, T: Object + ?Sized> Precomputation<'a, T> {
+impl<'a, T: Shape + ?Sized> Precomputation<'a, T> {
     pub fn schlick(&self) -> f64 {
         let cos = self.eye_v.dot(&self.normal_v);
         let n = self.refraction_exiting / self.refraction_entering;
@@ -129,7 +129,7 @@ impl<'a, T: Object + ?Sized> Precomputation<'a, T> {
     }
 }
 
-pub fn hit<'a, 'b, T: Object + ?Sized>(
+pub fn hit<'a, 'b, T: Shape + ?Sized>(
     intersections: &'a [Intersection<'b, T>],
 ) -> Option<&'a Intersection<'b, T>> {
     intersections.iter().fold(None, |acc, i| {
@@ -142,7 +142,7 @@ pub fn hit<'a, 'b, T: Object + ?Sized>(
     })
 }
 
-pub fn sort<T: Object + ?Sized>(xs: &mut Vec<Intersection<T>>) {
+pub fn sort<T: Shape + ?Sized>(xs: &mut Vec<Intersection<T>>) {
     xs.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap())
 }
 
@@ -150,7 +150,7 @@ pub fn sort<T: Object + ?Sized>(xs: &mut Vec<Intersection<T>>) {
 pub mod test_utils {
     use super::*;
 
-    pub fn to_ts<'a, T: Object + ?Sized>(ts: Vec<Intersection<'a, T>>) -> Vec<f64> {
+    pub fn to_ts<'a, T: Shape + ?Sized>(ts: Vec<Intersection<'a, T>>) -> Vec<f64> {
         ts.into_iter().map(|i| i.t()).collect()
     }
 }

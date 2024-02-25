@@ -3,7 +3,7 @@ use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
 };
 
-use super::{light::PointLight, object::Object, pattern::Pattern};
+use super::{light::PointLight, object::Shape, pattern::Pattern};
 
 pub enum Surface {
     Color(Color),
@@ -43,7 +43,7 @@ impl Default for Material {
 }
 
 pub fn lighting(
-    object: &dyn Object,
+    object: &dyn Shape,
     point: &Point3d,
     light: &PointLight,
     eyev: &NormalizedVec3d,
@@ -144,7 +144,7 @@ mod tests {
                 &Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Object,
+                } as &dyn Shape,
                 &position,
                 &light,
                 &eyev,
@@ -169,7 +169,7 @@ mod tests {
                 &Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Object,
+                } as &dyn Shape,
                 &position,
                 &light,
                 &eyev,
@@ -193,7 +193,7 @@ mod tests {
                 &Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Object,
+                } as &dyn Shape,
                 &position,
                 &light,
                 &eyev,
@@ -221,7 +221,7 @@ mod tests {
                 &Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Object,
+                } as &dyn Shape,
                 &position,
                 &light,
                 &eyev,
@@ -248,7 +248,7 @@ mod tests {
                 &Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Object,
+                } as &dyn Shape,
                 &position,
                 &light,
                 &eyev,
@@ -272,7 +272,7 @@ mod tests {
                 &Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Object,
+                } as &dyn Shape,
                 &position,
                 &light,
                 &eyev,
@@ -305,7 +305,7 @@ mod tests {
             };
 
             let c1 = lighting(
-                &object as &dyn Object,
+                &object as &dyn Shape,
                 &Point3d::new(0.9, 0.0, 0.0),
                 &light,
                 &eyev,
@@ -313,7 +313,7 @@ mod tests {
                 1.0,
             );
             let c2 = lighting(
-                &object as &dyn Object,
+                &object as &dyn Shape,
                 &Point3d::new(1.1, 0.0, 0.0),
                 &light,
                 &eyev,

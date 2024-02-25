@@ -18,12 +18,12 @@ use super::{
     intersect::{self, Intersection, Precomputation},
     light::PointLight,
     material::lighting,
-    object::{sphere::Sphere, transformed::Transformed, Object},
+    object::{sphere::Sphere, transformed::Transformed, Shape},
     ray::Ray,
 };
 
 pub struct World {
-    pub objects: Vec<Box<dyn Object>>,
+    pub objects: Vec<Box<dyn Shape>>,
     pub lights: Vec<PointLight>,
     pub max_reflection_depth: usize,
 }
@@ -33,14 +33,14 @@ impl World {
         World {
             objects: basic_spheres()
                 .into_iter()
-                .map(|s| Box::new(s) as Box<dyn Object>)
+                .map(|s| Box::new(s) as Box<dyn Shape>)
                 .collect(),
             lights: vec![basic_light()],
             max_reflection_depth: 5,
         }
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         let mut intersections = self
             .objects
             .iter()
@@ -52,7 +52,7 @@ impl World {
         intersections
     }
 
-    fn shade_hit(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Option<Color> {
+    fn shade_hit(&self, comps: &Precomputation<dyn Shape>, remaining: usize) -> Option<Color> {
         self.lights
             .iter()
             .map(|light| {
@@ -110,7 +110,7 @@ impl World {
                     direction: d,
                 };
                 let intersections = self.intersect(&r);
-                let mut seen = HashSet::<ByAddress<&dyn Object>>::new();
+                let mut seen = HashSet::<ByAddress<&dyn Shape>>::new();
                 intersections
                     .iter()
                     .filter(|i| i.t() > 0.0 && i.t() < distance)
@@ -121,7 +121,7 @@ impl World {
             .unwrap_or(1.0)
     }
 
-    fn reflected_color(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Color {
+    fn reflected_color(&self, comps: &Precomputation<dyn Shape>, remaining: usize) -> Color {
         if remaining == 0 || comps.object.material().reflectivity == 0.0 {
             color::black()
         } else {
@@ -131,7 +131,7 @@ impl World {
         }
     }
 
-    fn refracted_color(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Color {
+    fn refracted_color(&self, comps: &Precomputation<dyn Shape>, remaining: usize) -> Color {
         if remaining == 0 || comps.object.material().transparency == 0.0 {
             color::black()
         } else {
@@ -317,7 +317,7 @@ mod tests {
             origin: Point3d::new(0.0, 0.0, 5.0),
             direction: Vec3d::new(0.0, 0.0, 1.0),
         };
-        let i = Intersection::new(4.0, w.objects[1].as_ref() as &dyn Object);
+        let i = Intersection::new(4.0, w.objects[1].as_ref() as &dyn Shape);
 
         let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
@@ -354,7 +354,7 @@ mod tests {
         let w = World {
             objects: spheres
                 .into_iter()
-                .map(|s| Box::new(s) as Box<dyn Object>)
+                .map(|s| Box::new(s) as Box<dyn Shape>)
                 .collect(),
             lights: vec![basic_light()],
             ..Default::default()
@@ -406,7 +406,7 @@ mod tests {
             let w = World {
                 objects: spheres
                     .into_iter()
-                    .map(|s| Box::new(s) as Box<dyn Object>)
+                    .map(|s| Box::new(s) as Box<dyn Shape>)
                     .collect(),
                 lights: vec![basic_light()],
                 ..Default::default()
@@ -430,7 +430,7 @@ mod tests {
             let w = World {
                 objects: spheres
                     .into_iter()
-                    .map(|s| Box::new(s) as Box<dyn Object>)
+                    .map(|s| Box::new(s) as Box<dyn Shape>)
                     .collect(),
                 lights: vec![basic_light()],
                 ..Default::default()
@@ -619,7 +619,7 @@ mod tests {
             let mut w = World::basic();
             w.objects = spheres
                 .into_iter()
-                .map(|s| Box::new(s) as Box<dyn Object>)
+                .map(|s| Box::new(s) as Box<dyn Shape>)
                 .collect();
             let shape_ref = w.objects[0].as_ref();
 
@@ -650,7 +650,7 @@ mod tests {
             let mut w = World::basic();
             w.objects = spheres
                 .into_iter()
-                .map(|s| Box::new(s) as Box<dyn Object>)
+                .map(|s| Box::new(s) as Box<dyn Shape>)
                 .collect();
             let a_ref = w.objects[0].as_ref();
             let b_ref = w.objects[1].as_ref();

@@ -3,19 +3,19 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Shape};
 
 #[derive(Default)]
 pub struct Cube {
     pub material: Material,
 }
 
-impl Object for Cube {
+impl Shape for Cube {
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         let (xtmin, xtmax) = check_axis(object_ray.origin.x(), object_ray.direction.x());
         let (ytmin, ytmax) = check_axis(object_ray.origin.y(), object_ray.direction.y());
         let (ztmin, ztmax) = check_axis(object_ray.origin.z(), object_ray.direction.z());
@@ -30,7 +30,7 @@ impl Object for Cube {
         };
 
         ts.into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| Intersection::new(t, self as &dyn Shape))
             .collect()
     }
 

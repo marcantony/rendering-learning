@@ -3,7 +3,7 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Shape};
 
 /// A sphere: by default, a unit sphere (of radius 1 and its origin at (0, 0, 0))
 pub struct Sphere {
@@ -20,12 +20,12 @@ impl Sphere {
     }
 }
 
-impl Object for Sphere {
+impl Shape for Sphere {
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         let sphere_to_ray = &object_ray.origin - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = object_ray.direction.dot(&object_ray.direction);
@@ -45,7 +45,7 @@ impl Object for Sphere {
         };
 
         ts.into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| Intersection::new(t, self as &dyn Shape))
             .collect()
     }
 

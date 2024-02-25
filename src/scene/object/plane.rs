@@ -3,19 +3,19 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Shape};
 
 /// A plane: by default, a plane in xz
 pub struct Plane {
     pub material: Material,
 }
 
-impl Object for Plane {
+impl Shape for Plane {
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
         let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
             return Vec::new();
@@ -24,7 +24,7 @@ impl Object for Plane {
         };
 
         ts.into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| Intersection::new(t, self as &dyn Shape))
             .collect()
     }
 

@@ -7,33 +7,33 @@ use crate::{
     },
 };
 
-use super::{transformed::Transformed, Object};
+use super::{transformed::Transformed, Shape};
 
 /// A group of multiple sub-objects
 pub struct Group {
-    children: Vec<Box<dyn Object>>,
+    children: Vec<Box<dyn Shape>>,
 }
 
 impl Group {
-    pub fn new(transform: InvertibleMatrix<4>, children: Vec<Box<dyn Object>>) -> Group {
+    pub fn new(transform: InvertibleMatrix<4>, children: Vec<Box<dyn Shape>>) -> Group {
         let transformed_children = children.into_iter().map(|c| Transformed {
             child: c,
             transform: transform.clone(),
         });
         Group {
             children: transformed_children
-                .map(|tc| Box::new(tc) as Box<dyn Object>)
+                .map(|tc| Box::new(tc) as Box<dyn Shape>)
                 .collect(),
         }
     }
 }
 
-impl Object for Group {
+impl Shape for Group {
     fn material(&self) -> &Material {
         unimplemented!()
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         let mut intersections: Vec<_> = self
             .children
             .iter()

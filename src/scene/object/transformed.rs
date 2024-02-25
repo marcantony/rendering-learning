@@ -8,14 +8,14 @@ use crate::{
     },
 };
 
-use super::Object;
+use super::Shape;
 
-pub struct Transformed<T: Object + ?Sized + 'static> {
+pub struct Transformed<T: Shape + ?Sized + 'static> {
     pub child: Box<T>,
     pub transform: InvertibleMatrix<4>,
 }
 
-impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
+impl<T: Shape + ?Sized + 'static> Shape for Transformed<T> {
     fn material(&self) -> &Material {
         self.child.material()
     }
@@ -25,11 +25,11 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
         material::color_at(&self.material().surface, &object_point)
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>> {
         let local_ray = object_ray.transform(&self.transform.inverse());
         let xs = self.child.intersect(&local_ray);
         xs.into_iter()
-            .map(|x| Intersection::new(x.t(), self as &dyn Object))
+            .map(|x| Intersection::new(x.t(), self as &dyn Shape))
             .collect()
     }
 

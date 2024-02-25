@@ -11,12 +11,12 @@ use super::{
     ray::Ray,
 };
 
-pub trait Object {
+pub trait Shape {
     fn material(&self) -> &Material;
     fn color_at(&self, point: &Point3d) -> Color {
         material::color_at(&self.material().surface, point)
     }
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>>;
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>>;
     fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d;
     fn bounds(&self) -> Bounds;
 }
@@ -41,16 +41,16 @@ pub mod test_utils {
         pub bounds: Bounds,
     }
 
-    impl Object for MockObject {
+    impl Shape for MockObject {
         fn material(&self) -> &Material {
             &self.material
         }
 
-        fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+        fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Shape>> {
             if let Some(expected) = self.intersect_local_arg_expectation.as_ref() {
                 assert_eq!(object_ray, expected);
             }
-            vec![Intersection::new(1.0, self as &dyn Object)]
+            vec![Intersection::new(1.0, self as &dyn Shape)]
         }
 
         fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
