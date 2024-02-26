@@ -21,6 +21,7 @@ pub trait Shape {
     fn bounds(&self) -> Bounds;
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Object<T: Shape + ?Sized> {
     Shape(Box<T>),
     Group,
@@ -47,9 +48,13 @@ impl<T: Shape + ?Sized> Object<T> {
         }
     }
 
-    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Shape>> {
+    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<Object<T>>> {
         match &self {
-            Object::Shape(s) => s.intersect(ray),
+            Object::Shape(s) => s
+                .intersect(ray)
+                .into_iter()
+                .map(|i| Intersection::new(i.t(), self))
+                .collect(),
             Object::Group => todo!(),
             Object::Transformed => todo!(),
             Object::Bounded => todo!(),

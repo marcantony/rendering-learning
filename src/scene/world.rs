@@ -40,7 +40,7 @@ impl World {
         }
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Shape>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<Object<dyn Shape>>> {
         let mut intersections = self
             .objects
             .iter()
@@ -110,7 +110,7 @@ impl World {
                     direction: d,
                 };
                 let intersections = self.intersect(&r);
-                let mut seen = HashSet::<ByAddress<&dyn Shape>>::new();
+                let mut seen = HashSet::<ByAddress<&Object<dyn Shape>>>::new();
                 intersections
                     .iter()
                     .filter(|i| i.t() > 0.0 && i.t() < distance)
@@ -198,16 +198,6 @@ mod tests {
 
     use super::*;
 
-    macro_rules! cast {
-        ($target: expr, $pat: path) => {{
-            if let $pat(a) = &$target {
-                a
-            } else {
-                panic!("mismatch variant when cast to {}", stringify!($pat));
-            }
-        }};
-    }
-
     const TEST_DEPTH: usize = 5;
 
     #[test]
@@ -245,7 +235,7 @@ mod tests {
     fn shading_an_intersection() {
         let w = World::basic();
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-        let shape = cast!(w.objects.first().unwrap(), Object::Shape).as_ref();
+        let shape = w.objects.first().unwrap();
         let i = Intersection::new(4.0, shape);
 
         let comps = i.prepare_computations(&r, &vec![]);
@@ -265,7 +255,7 @@ mod tests {
             intensity: color::white(),
         }];
         let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
-        let shape = cast!(w.objects[1], Object::Shape).as_ref();
+        let shape = &w.objects[1];
         let i = Intersection::new(0.5, shape);
 
         let comps = i.prepare_computations(&r, &vec![]);
@@ -282,7 +272,7 @@ mod tests {
         let mut w = World::basic();
         w.lights = vec![];
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-        let shape = cast!(w.objects.first().unwrap(), Object::Shape).as_ref();
+        let shape = w.objects.first().unwrap();
         let i = Intersection::new(4.0, shape);
 
         let comps = i.prepare_computations(&r, &vec![]);
@@ -296,7 +286,7 @@ mod tests {
         let mut w = World::basic();
         w.lights = vec![w.lights[0].clone(), w.lights[0].clone()];
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-        let shape = cast!(w.objects.first().unwrap(), Object::Shape).as_ref();
+        let shape = w.objects.first().unwrap();
         let i = Intersection::new(4.0, shape);
 
         let comps = i.prepare_computations(&r, &vec![]);
@@ -330,10 +320,7 @@ mod tests {
             origin: Point3d::new(0.0, 0.0, 5.0),
             direction: Vec3d::new(0.0, 0.0, 1.0),
         };
-        let i = Intersection::new(
-            4.0,
-            cast!(w.objects[1], Object::Shape).as_ref() as &dyn Shape,
-        );
+        let i = Intersection::new(4.0, &w.objects[1]);
 
         let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
@@ -452,7 +439,7 @@ mod tests {
                 ..Default::default()
             };
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
-            let i = Intersection::new(1.0, cast!(w.objects[1], Object::Shape).as_ref());
+            let i = Intersection::new(1.0, &w.objects[1]);
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, TEST_DEPTH);
@@ -480,7 +467,7 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let i = Intersection::new(sqrt2, cast!(w.objects[2], Object::Shape).as_ref());
+            let i = Intersection::new(sqrt2, &w.objects[2]);
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, TEST_DEPTH);
@@ -511,7 +498,7 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let i = Intersection::new(sqrt2, cast!(w.objects[2], Object::Shape).as_ref());
+            let i = Intersection::new(sqrt2, &w.objects[2]);
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.shade_hit(&comps, TEST_DEPTH).unwrap();
@@ -581,7 +568,7 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let i = Intersection::new(sqrt2, cast!(w.objects[2], Object::Shape).as_ref());
+            let i = Intersection::new(sqrt2, &w.objects[2]);
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, 0);
@@ -601,7 +588,7 @@ mod tests {
         #[test]
         fn the_refracted_color_with_an_opaque_surface() {
             let w = World::basic();
-            let shape = cast!(w.objects[0], Object::Shape).as_ref();
+            let shape = &w.objects[0];
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let xs = vec![Intersection::new(4.0, shape), Intersection::new(6.0, shape)];
 
@@ -616,7 +603,7 @@ mod tests {
             let shape = sphere::glass_sphere();
             let mut w = World::basic();
             w.objects[0] = Object::Shape(Box::new(shape));
-            let shape_ref = cast!(w.objects[0], Object::Shape).as_ref();
+            let shape_ref = &w.objects[0];
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let xs = vec![
                 Intersection::new(4.0, shape_ref),
@@ -640,7 +627,7 @@ mod tests {
                 .into_iter()
                 .map(|s| Object::Shape(Box::new(s) as Box<dyn Shape>))
                 .collect();
-            let shape_ref = cast!(w.objects[0], Object::Shape).as_ref();
+            let shape_ref = &w.objects[0];
 
             let t = std::f64::consts::SQRT_2 / 2.0;
             let r = Ray::new(Point3d::new(0.0, 0.0, t), Vec3d::new(0.0, 1.0, 0.0));
@@ -671,8 +658,8 @@ mod tests {
                 .into_iter()
                 .map(|s| Object::Shape(Box::new(s) as Box<dyn Shape>))
                 .collect();
-            let a_ref = cast!(w.objects[0], Object::Shape).as_ref();
-            let b_ref = cast!(w.objects[1], Object::Shape).as_ref();
+            let a_ref = &w.objects[0];
+            let b_ref = &w.objects[1];
 
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.1), Vec3d::new(0.0, 1.0, 0.0));
             let xs: Vec<_> = vec![
@@ -724,10 +711,7 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let xs = vec![Intersection::new(
-                sqrt2,
-                cast!(w.objects[2], Object::Shape).as_ref(),
-            )];
+            let xs = vec![Intersection::new(sqrt2, &w.objects[2])];
 
             let comps = xs[0].prepare_computations(&r, &xs);
             let color = w.shade_hit(&comps, 5).unwrap();
@@ -773,10 +757,7 @@ mod tests {
             Point3d::new(0.0, 0.0, -3.0),
             Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
         );
-        let xs = vec![Intersection::new(
-            sqrt2,
-            cast!(w.objects[2], Object::Shape).as_ref(),
-        )];
+        let xs = vec![Intersection::new(sqrt2, &w.objects[2])];
 
         let comps = xs[0].prepare_computations(&r, &xs);
         let color = w.shade_hit(&comps, 5).unwrap();

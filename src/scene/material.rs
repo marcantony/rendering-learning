@@ -3,7 +3,11 @@ use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
 };
 
-use super::{light::PointLight, object::Shape, pattern::Pattern};
+use super::{
+    light::PointLight,
+    object::{Object, Shape},
+    pattern::Pattern,
+};
 
 pub enum Surface {
     Color(Color),
@@ -43,7 +47,7 @@ impl Default for Material {
 }
 
 pub fn lighting(
-    object: &dyn Shape,
+    object: &Object<dyn Shape>,
     point: &Point3d,
     light: &PointLight,
     eyev: &NormalizedVec3d,
@@ -141,10 +145,10 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
+                &Object::Shape(Box::new(Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Shape,
+                }) as Box<dyn Shape>),
                 &position,
                 &light,
                 &eyev,
@@ -166,10 +170,10 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
+                &Object::Shape(Box::new(Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Shape,
+                }) as Box<dyn Shape>),
                 &position,
                 &light,
                 &eyev,
@@ -190,10 +194,10 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
+                &Object::Shape(Box::new(Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Shape,
+                }) as Box<dyn Shape>),
                 &position,
                 &light,
                 &eyev,
@@ -218,10 +222,10 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
+                &Object::Shape(Box::new(Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Shape,
+                }) as Box<dyn Shape>),
                 &position,
                 &light,
                 &eyev,
@@ -245,10 +249,10 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
+                &Object::Shape(Box::new(Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Shape,
+                }) as Box<dyn Shape>),
                 &position,
                 &light,
                 &eyev,
@@ -269,10 +273,10 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
+                &Object::Shape(Box::new(Sphere {
                     material: m,
                     ..Default::default()
-                } as &dyn Shape,
+                }) as Box<dyn Shape>),
                 &position,
                 &light,
                 &eyev,
@@ -295,8 +299,9 @@ mod tests {
                 specular: 0.0,
                 ..Default::default()
             };
-            let mut object = Sphere::unit();
-            object.material = m;
+            let mut shape = Sphere::unit();
+            shape.material = m;
+            let object = Object::Shape(Box::new(shape) as Box<dyn Shape>);
             let eyev = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
             let normalv = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
             let light = PointLight {
@@ -305,7 +310,7 @@ mod tests {
             };
 
             let c1 = lighting(
-                &object as &dyn Shape,
+                &object,
                 &Point3d::new(0.9, 0.0, 0.0),
                 &light,
                 &eyev,
@@ -313,7 +318,7 @@ mod tests {
                 1.0,
             );
             let c2 = lighting(
-                &object as &dyn Shape,
+                &object,
                 &Point3d::new(1.1, 0.0, 0.0),
                 &light,
                 &eyev,

@@ -1,17 +1,20 @@
 use crate::math::{point::Point3d, util, vector::NormalizedVec3d};
 
-use super::{object::Shape, ray::Ray};
+use super::{
+    object::{Object, Shape},
+    ray::Ray,
+};
 
 const POINT_OFFSET_BIAS: f64 = 1e-5;
 
 #[derive(Debug, Clone)]
-pub struct Intersection<'a, T: Shape + ?Sized> {
+pub struct Intersection<'a, T: ?Sized> {
     t: f64,
     object: &'a T,
 }
 
-impl<'a, T: Shape + ?Sized> Intersection<'a, T> {
-    pub fn new(t: f64, object: &T) -> Intersection<T> {
+impl<'a, T: ?Sized> Intersection<'a, T> {
+    pub fn new(t: f64, object: &'a T) -> Self {
         Intersection { t, object }
     }
 
@@ -22,8 +25,10 @@ impl<'a, T: Shape + ?Sized> Intersection<'a, T> {
     pub fn object(&self) -> &T {
         self.object
     }
+}
 
-    pub fn prepare_computations(&self, ray: &Ray, xs: &[Intersection<T>]) -> Precomputation<T> {
+impl<'a, T: Shape + ?Sized> Intersection<'a, Object<T>> {
+    pub fn prepare_computations(&self, ray: &Ray, xs: &[Self]) -> Precomputation<T> {
         let t = self.t();
         let object = self.object();
         let point = ray.position(t);
@@ -43,7 +48,7 @@ impl<'a, T: Shape + ?Sized> Intersection<'a, T> {
         let reflect_v =
             NormalizedVec3d::try_from(ray.direction.reflect(&adjusted_normal_v)).unwrap();
 
-        let mut containers = Vec::<&T>::new();
+        let mut containers = Vec::<&Object<T>>::new();
         let mut n1: f64 = 1.0;
         let mut n2: f64 = 1.0;
         for i in xs {
@@ -88,7 +93,7 @@ impl<'a, T: Shape + ?Sized> Intersection<'a, T> {
     }
 }
 
-impl<'a, T: Shape + ?Sized> PartialEq for Intersection<'a, T> {
+impl<'a, T: ?Sized> PartialEq for Intersection<'a, T> {
     fn eq(&self, other: &Self) -> bool {
         util::are_equal(self.t, other.t) && std::ptr::eq(self.object, other.object)
     }
@@ -97,7 +102,7 @@ impl<'a, T: Shape + ?Sized> PartialEq for Intersection<'a, T> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Precomputation<'a, T: Shape + ?Sized> {
     pub t: f64,
-    pub object: &'a T,
+    pub object: &'a Object<T>,
     pub point: Point3d,
     pub eye_v: NormalizedVec3d,
     pub normal_v: NormalizedVec3d,
@@ -129,7 +134,7 @@ impl<'a, T: Shape + ?Sized> Precomputation<'a, T> {
     }
 }
 
-pub fn hit<'a, 'b, T: Shape + ?Sized>(
+pub fn hit<'a, 'b, T: ?Sized>(
     intersections: &'a [Intersection<'b, T>],
 ) -> Option<&'a Intersection<'b, T>> {
     intersections.iter().fold(None, |acc, i| {
@@ -142,7 +147,7 @@ pub fn hit<'a, 'b, T: Shape + ?Sized>(
     })
 }
 
-pub fn sort<T: Shape + ?Sized>(xs: &mut Vec<Intersection<T>>) {
+pub fn sort<T: ?Sized>(xs: &mut Vec<Intersection<T>>) {
     xs.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap())
 }
 
@@ -150,7 +155,7 @@ pub fn sort<T: Shape + ?Sized>(xs: &mut Vec<Intersection<T>>) {
 pub mod test_utils {
     use super::*;
 
-    pub fn to_ts<'a, T: Shape + ?Sized>(ts: Vec<Intersection<'a, T>>) -> Vec<f64> {
+    pub fn to_ts<'a, T: ?Sized>(ts: Vec<Intersection<'a, T>>) -> Vec<f64> {
         ts.into_iter().map(|i| i.t()).collect()
     }
 }
@@ -166,7 +171,7 @@ mod test {
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let s = Sphere::unit();
+        let s = Object::Shape(Box::new(Sphere::unit()));
 
         let i = Intersection::new(3.5, &s);
 
@@ -179,7 +184,7 @@ mod test {
 
         #[test]
         fn hit_when_all_intersections_have_positive_t() {
-            let s = Sphere::unit();
+            let s = Object::Shape(Box::new(Sphere::unit()));
             let i1 = Intersection::new(1.0, &s);
             let i2 = Intersection::new(2.0, &s);
             let xs = vec![i2, i1];
@@ -191,7 +196,7 @@ mod test {
 
         #[test]
         fn hit_when_some_intersections_have_negative_t() {
-            let s = Sphere::unit();
+            let s = Object::Shape(Box::new(Sphere::unit()));
             let i1 = Intersection::new(-1.0, &s);
             let i2 = Intersection::new(1.0, &s);
             let xs = vec![i2, i1];
@@ -203,7 +208,7 @@ mod test {
 
         #[test]
         fn hit_when_all_intersections_have_negative_t() {
-            let s = Sphere::unit();
+            let s = Object::Shape(Box::new(Sphere::unit()));
             let i1 = Intersection::new(-2.0, &s);
             let i2 = Intersection::new(-1.0, &s);
             let xs = vec![i2, i1];
@@ -215,7 +220,7 @@ mod test {
 
         #[test]
         fn hit_is_always_lowest_nonnegative_intersection() {
-            let s = Sphere::unit();
+            let s = Object::Shape(Box::new(Sphere::unit()));
             let i1 = Intersection::new(5.0, &s);
             let i2 = Intersection::new(7.0, &s);
             let i3 = Intersection::new(-3.0, &s);
@@ -246,7 +251,7 @@ mod test {
         #[test]
         fn precomputing_the_state_of_an_intersection() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let s: Sphere = Default::default();
+            let s = Object::Shape(Box::new(Sphere::default()));
             let i = Intersection::new(4.0, &s);
 
             let comps = i.prepare_computations(&r, &vec![]);
@@ -266,7 +271,7 @@ mod test {
 
         #[test]
         fn precomputing_the_reflection_vector() {
-            let shape: Plane = Default::default();
+            let shape = Object::Shape(Box::new(Plane::default()));
             let t = std::f64::consts::SQRT_2 / 2.0;
             let r = Ray::new(Point3d::new(0.0, 1.0, -1.0), Vec3d::new(0.0, -t, t));
             let i = Intersection::new(std::f64::consts::SQRT_2, &shape);
@@ -279,7 +284,7 @@ mod test {
         #[test]
         fn hit_when_an_intersection_occurs_on_the_outside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let s: Sphere = Default::default();
+            let s = Object::Shape(Box::new(Sphere::default()));
             let i = Intersection { t: 4.0, object: &s };
 
             let comps = i.prepare_computations(&r, &vec![]);
@@ -290,7 +295,7 @@ mod test {
         #[test]
         fn hit_when_an_intersection_occurs_on_the_inside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
-            let s: Sphere = Default::default();
+            let s = Object::Shape(Box::new(Sphere::default()));
             let i = Intersection { t: 1.0, object: &s };
 
             let comps = i.prepare_computations(&r, &vec![]);
@@ -313,11 +318,11 @@ mod test {
                 origin: Point3d::new(0.0, 0.0, -5.0),
                 direction: Vec3d::new(0.0, 0.0, 1.0),
             };
-            let shape = Transformed {
+            let shape = Object::Shape(Box::new(Transformed {
                 child: Box::new(Sphere::unit()),
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
                     .unwrap(),
-            };
+            }));
             let i = Intersection::new(5.0, &shape);
 
             let comps = i.prepare_computations(&r, &vec![]);
@@ -329,11 +334,11 @@ mod test {
         #[test]
         fn the_under_point_is_below_the_surface() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let shape = Transformed {
+            let shape = Object::Shape(Box::new(Transformed {
                 child: Box::new(glass_sphere()),
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
                     .unwrap(),
-            };
+            }));
             let i = Intersection::new(5.0, &shape);
             let xs = vec![i];
 
@@ -347,9 +352,9 @@ mod test {
             use super::*;
 
             fn get_objects() -> (
-                Transformed<Sphere>,
-                Transformed<Sphere>,
-                Transformed<Sphere>,
+                Object<Transformed<Sphere>>,
+                Object<Transformed<Sphere>>,
+                Object<Transformed<Sphere>>,
             ) {
                 let mut a_s = sphere::glass_sphere();
                 a_s.material.refractive_index = 1.5;
@@ -379,14 +384,18 @@ mod test {
                     .unwrap(),
                 };
 
-                (a, b, c)
+                (
+                    Object::Shape(Box::new(a)),
+                    Object::Shape(Box::new(b)),
+                    Object::Shape(Box::new(c)),
+                )
             }
 
             fn get_xs<'a>(
-                a: &'a Transformed<Sphere>,
-                b: &'a Transformed<Sphere>,
-                c: &'a Transformed<Sphere>,
-            ) -> Vec<Intersection<'a, Transformed<Sphere>>> {
+                a: &'a Object<Transformed<Sphere>>,
+                b: &'a Object<Transformed<Sphere>>,
+                c: &'a Object<Transformed<Sphere>>,
+            ) -> Vec<Intersection<'a, Object<Transformed<Sphere>>>> {
                 vec![
                     (2.0, a),
                     (2.75, b),
@@ -433,7 +442,7 @@ mod test {
 
             #[test]
             fn schlick_approximation_under_total_internal_reflection() {
-                let shape = sphere::glass_sphere();
+                let shape = Object::Shape(Box::new(sphere::glass_sphere()));
                 let t = std::f64::consts::SQRT_2 / 2.0;
                 let r = Ray::new(Point3d::new(0.0, 0.0, t), Vec3d::new(0.0, 1.0, 0.0));
                 let xs = vec![Intersection::new(-t, &shape), Intersection::new(t, &shape)];
@@ -446,7 +455,7 @@ mod test {
 
             #[test]
             fn schlick_approximation_with_a_perpendicular_viewing_angle() {
-                let shape = sphere::glass_sphere();
+                let shape = Object::Shape(Box::new(sphere::glass_sphere()));
                 let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 1.0, 0.0));
                 let xs = vec![
                     Intersection::new(-1.0, &shape),
@@ -465,7 +474,7 @@ mod test {
 
             #[test]
             fn schlick_approximation_with_a_small_angle_and_n2_greater_than_n1() {
-                let shape = sphere::glass_sphere();
+                let shape = Object::Shape(Box::new(sphere::glass_sphere()));
                 let r = Ray::new(Point3d::new(0.0, 0.99, -2.0), Vec3d::new(0.0, 0.0, 1.0));
                 let xs = vec![Intersection::new(1.8589, &shape)];
 
