@@ -351,7 +351,7 @@ mod object_tests {
                 let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
                 let t1 = Object::from(MockObject {
                     intersect_local_arg_expectation: Some(Ray::new(
-                        Point3d::new(-10.0, 0.0, 0.0),
+                        Point3d::new(-5.0, 0.0, 0.0),
                         Vec3d::new(0.0, 0.0, 0.5),
                     )),
                     ..Default::default()
