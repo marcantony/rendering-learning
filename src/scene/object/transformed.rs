@@ -63,7 +63,10 @@ mod tests {
     }
 
     mod intersect {
-        use crate::{math::vector::Vec3d, scene::transformation};
+        use crate::{
+            math::vector::Vec3d,
+            scene::{intersect as is, transformation},
+        };
 
         use super::*;
 
@@ -104,26 +107,39 @@ mod tests {
         }
 
         #[test]
-        fn a_twice_transformed_shape_should_apply_the_inner_transformation_first() {
+        fn multiple_transformations_apply_in_the_correct_order() {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
-            let t1 = Transformed {
-                child: Box::new(MockObject {
-                    intersect_local_arg_expectation: Some(Ray::new(
-                        Point3d::new(-10.0, 0.0, 0.0),
-                        Vec3d::new(0.0, 0.0, 0.5),
-                    )),
-                    ..Default::default()
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
-                    .unwrap(),
+            let t1 = transformation::translation(5.0, 0.0, 0.0);
+            let t2 = transformation::scaling(2.0, 2.0, 2.0);
+            let sequenced = transformation::sequence(&vec![t1.clone(), t2.clone()]);
+
+            let expectation = Ray::new(Point3d::new(-5.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 0.5));
+
+            let shape1 = MockObject {
+                intersect_local_arg_expectation: Some(expectation.clone()),
+                ..Default::default()
             };
-            let t2 = Transformed {
-                child: Box::new(t1),
-                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                    .unwrap()
+            let inner_transformed = Transformed {
+                child: Box::new(shape1),
+                transform: InvertibleMatrix::try_from(t1).unwrap(),
+            };
+            let outer_transformed = Transformed {
+                child: Box::new(inner_transformed),
+                transform: InvertibleMatrix::try_from(t2).unwrap(),
             };
 
-            t2.intersect(&r);
+            let transformed_at_once = Transformed {
+                child: Box::new(MockObject {
+                    intersect_local_arg_expectation: Some(expectation.clone()),
+                    ..Default::default()
+                }),
+                transform: InvertibleMatrix::try_from(sequenced).unwrap(),
+            };
+
+            assert_eq!(
+                is::test_utils::to_ts(outer_transformed.intersect(&r)),
+                is::test_utils::to_ts(transformed_at_once.intersect(&r))
+            );
         }
     }
 
