@@ -25,10 +25,7 @@ pub trait Shape {
 pub enum Object<T: Shape + ?Sized> {
     Shape(Box<T>),
     Group,
-    Transformed {
-        transform: InvertibleMatrix<4>,
-        object: Box<Self>,
-    },
+    Transformed(InvertibleMatrix<4>, Box<Self>),
     Bounded,
 }
 
@@ -37,24 +34,39 @@ impl<T: Shape + ?Sized> Object<T> {
         match &self {
             Object::Shape(s) => s.material(),
             Object::Group => todo!(),
-            Object::Transformed { object, .. } => object.material(),
+            Object::Transformed(_, object) => object.material(),
             Object::Bounded => todo!(),
         }
     }
 
     pub fn color_at(&self, point: &Point3d) -> Color {
+        self.color_at_internal(point, None)
+    }
+
+    fn color_at_internal(&self, point: &Point3d, transform: Option<InvertibleMatrix<4>>) -> Color {
         match &self {
-            Object::Shape(s) => s.color_at(point),
-            Object::Group => todo!(),
-            Object::Transformed { transform, object } => {
-                let transformed_point = transform.inverse() * point;
-                object.color_at(&transformed_point)
+            Object::Shape(s) => {
+                let p = transform.map_or_else(|| point.clone(), |t| t.inverse() * point);
+                s.color_at(&p)
             }
+            Object::Group => todo!(),
+            Object::Transformed(t, o) => o.color_at_internal(
+                point,
+                transform.map(|tf| &tf * t).or_else(|| Some(t.clone())),
+            ),
             Object::Bounded => todo!(),
         }
     }
 
     pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<Object<T>>> {
+        self.intersect_internal(ray, None)
+    }
+
+    fn intersect_internal(
+        &self,
+        ray: &Ray,
+        transform: Option<InvertibleMatrix<4>>,
+    ) -> Vec<Intersection<Object<T>>> {
         match &self {
             Object::Shape(s) => s
                 .intersect(ray)
@@ -62,9 +74,9 @@ impl<T: Shape + ?Sized> Object<T> {
                 .map(|i| Intersection::new(i.t(), self))
                 .collect(),
             Object::Group => todo!(),
-            Object::Transformed { transform, object } => {
-                let local_ray = ray.transform(&transform.inverse());
-                let xs = object.intersect(&local_ray);
+            Object::Transformed(t, o) => {
+                let local_ray = ray.transform(&t.inverse());
+                let xs = o.intersect(&local_ray);
                 xs.into_iter()
                     .map(|x| Intersection::new(x.t(), self))
                     .collect()
@@ -74,13 +86,21 @@ impl<T: Shape + ?Sized> Object<T> {
     }
 
     pub fn normal_at(&self, point: &Point3d) -> NormalizedVec3d {
+        self.normal_at_internal(point, None)
+    }
+
+    fn normal_at_internal(
+        &self,
+        point: &Point3d,
+        transform: Option<InvertibleMatrix<4>>,
+    ) -> NormalizedVec3d {
         match &self {
             Object::Shape(s) => s.normal_at(point),
             Object::Group => todo!(),
-            Object::Transformed { transform, object } => {
-                let local_point = transform.inverse() * point;
-                let local_normal = object.normal_at(&local_point);
-                let world_normal = &transform.inverse().transpose() * &*local_normal;
+            Object::Transformed(t, o) => {
+                let local_point = t.inverse() * point;
+                let local_normal = o.normal_at(&local_point);
+                let world_normal = &t.inverse().transpose() * &*local_normal;
                 NormalizedVec3d::try_from(world_normal).unwrap()
             }
             Object::Bounded => todo!(),
@@ -88,6 +108,10 @@ impl<T: Shape + ?Sized> Object<T> {
     }
 
     pub fn bounds(&self) -> Bounds {
+        self.bounds_internal(None)
+    }
+
+    fn bounds_internal(&self, transform: Option<InvertibleMatrix<4>>) -> Bounds {
         match &self {
             Object::Shape(s) => s.bounds(),
             Object::Group => todo!(),
@@ -97,10 +121,7 @@ impl<T: Shape + ?Sized> Object<T> {
     }
 
     pub fn transform(self, transform: InvertibleMatrix<4>) -> Self {
-        Object::Transformed {
-            transform,
-            object: Box::new(self),
-        }
+        Object::Transformed(transform, Box::new(self))
     }
 }
 
@@ -109,10 +130,7 @@ impl<T: Shape + 'static> Object<T> {
         match self {
             Object::Shape(s) => Object::Shape(s as Box<dyn Shape>),
             Object::Group => todo!(),
-            Object::Transformed { transform, object } => Object::Transformed {
-                transform,
-                object: Box::new(object.as_dyn()),
-            },
+            Object::Transformed(t, o) => Object::Transformed(t, Box::new(o.as_dyn())),
             Object::Bounded => todo!(),
         }
     }
@@ -282,7 +300,7 @@ mod object_tests {
             let object = Object::from(shape);
             let transformed = object.transform(Default::default());
 
-            if let Object::Transformed { object: o, .. } = &transformed {
+            if let Object::Transformed(_t, o) = &transformed {
                 assert!(transformed.material() == o.material());
             } else {
                 unreachable!();
@@ -389,6 +407,26 @@ mod object_tests {
                     &Vec3d::new(0.0, 0.97014, -0.24254),
                 );
             }
+
+            #[test]
+            fn a_twice_transformed_shape_should_apply_the_inner_transformation_first() {
+                let p = Point3d::new(1.0, 1.0, 1.0);
+                let t = Object::from(MockObject::default())
+                    .transform(
+                        InvertibleMatrix::try_from(transformation::rotation_y(
+                            std::f64::consts::FRAC_PI_2,
+                        ))
+                        .unwrap(),
+                    )
+                    .transform(
+                        InvertibleMatrix::try_from(transformation::scaling(1.0, 2.0, 4.0)).unwrap(),
+                    );
+
+                assert_eq!(
+                    t.normal_at(&p),
+                    NormalizedVec3d::new(0.87287, 0.43643, -0.21821).unwrap()
+                );
+            }
         }
 
         mod color_at {
@@ -440,6 +478,28 @@ mod object_tests {
                 let c = shape.color_at(&Point3d::new(2.5, 3.0, 3.5));
 
                 assert_eq!(c, Color::new(0.75, 0.5, 0.25));
+            }
+
+            #[test]
+            fn a_twice_transformed_shape_should_apply_the_inner_transformation_first() {
+                let p = Point3d::new(0.0, 0.0, 0.0);
+                let t = Object::from(MockObject {
+                    material: Material {
+                        surface: Surface::Pattern(Box::new(MockPattern {
+                            transform: Default::default(),
+                        })),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                })
+                .transform(
+                    InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap(),
+                )
+                .transform(
+                    InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
+                );
+
+                assert_eq!(t.color_at(&p), Color::new(-5.0, 0.0, 0.0));
             }
         }
     }
