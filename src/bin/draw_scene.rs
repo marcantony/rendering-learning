@@ -7,10 +7,7 @@ use ray_tracer_challenge::{
         camera::Camera,
         light::PointLight,
         material::{Material, Surface},
-        object::{
-            cube::Cube, group::Group, plane::Plane, sphere::Sphere, transformed::Transformed,
-            Object,
-        },
+        object::{cube::Cube, /*group::Group, */ plane::Plane, sphere::Sphere, Object},
         pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
         world::World,
@@ -25,20 +22,17 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let gs1 = Transformed {
-        child: Box::new(Sphere::unit()),
-        transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 0.0, 0.0)).unwrap(),
-    };
-    let gs2 = Transformed {
-        child: Box::new(Sphere::unit()),
-        transform: InvertibleMatrix::try_from(transformation::translation(0.5, 0.0, 0.0)).unwrap(),
-    };
-    let sphere_group = Group::new(
-        InvertibleMatrix::try_from(transformation::translation(-1.0, 0.0, 0.0)).unwrap(),
-        vec![Box::new(gs1), Box::new(gs2)],
-    );
+    // let gs1 = Object::from(Sphere::unit()).transform(
+    //     InvertibleMatrix::try_from(transformation::translation(-0.5, 0.0, 0.0)).unwrap(),
+    // );
+    // let gs2 = Object::from(Sphere::unit())
+    //     .transform(InvertibleMatrix::try_from(transformation::translation(0.5, 0.0, 0.0)).unwrap());
+    // let sphere_group = Group::new(
+    //     InvertibleMatrix::try_from(transformation::translation(-1.0, 0.0, 0.0)).unwrap(),
+    //     vec![Box::new(gs1), Box::new(gs2)],
+    // );
 
-    let floor = Plane {
+    let floor = Object::from(Plane {
         material: Material {
             surface: Surface::Pattern(Box::new(Checker3d {
                 a: color::white(),
@@ -50,128 +44,123 @@ fn main() {
             reflectivity: 0.02,
             ..Default::default()
         },
-    };
+    });
 
-    let left_wall = Transformed {
-        child: Box::new(Plane {
-            material: Material {
-                surface: Surface::Color(color::white()),
-                specular: 1.0,
-                reflectivity: 0.9,
-                shininess: 400.0,
-                diffuse: 0.0,
-                ..Default::default()
-            },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+    let left_wall = Object::from(Plane {
+        material: Material {
+            surface: Surface::Color(color::white()),
+            specular: 1.0,
+            reflectivity: 0.9,
+            shininess: 400.0,
+            diffuse: 0.0,
+            ..Default::default()
+        },
+    })
+    .transform(
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::rotation_y(-consts::FRAC_PI_3),
             transformation::translation(-8.0, 0.0, 0.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let right_wall = Transformed {
-        child: Box::new(Plane {
-            material: Material {
-                surface: Surface::Color(color::white()),
-                specular: 1.0,
-                reflectivity: 1.0,
-                shininess: 400.0,
-                diffuse: 0.0,
-                ..Default::default()
-            },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+    let right_wall = Object::from(Plane {
+        material: Material {
+            surface: Surface::Color(color::white()),
+            specular: 1.0,
+            reflectivity: 1.0,
+            shininess: 400.0,
+            diffuse: 0.0,
+            ..Default::default()
+        },
+    })
+    .transform(
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::rotation_y(consts::FRAC_PI_4),
             transformation::translation(10.0, 0.0, 0.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let middle_wall = Transformed {
-        child: Box::new(Plane {
-            material: Material {
-                surface: Surface::Color(Color::new(0.945, 0.788, 0.647)),
-                specular: 0.1,
-                shininess: 50.0,
-                ..Default::default()
-            },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+    let middle_wall = Object::from(Plane {
+        material: Material {
+            surface: Surface::Color(Color::new(0.945, 0.788, 0.647)),
+            specular: 0.1,
+            shininess: 50.0,
+            ..Default::default()
+        },
+    })
+    .transform(
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::translation(0.0, 0.0, 7.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let ball = Transformed {
-        child: Box::new(Sphere {
-            material: Material {
-                surface: Surface::Color(Color::new(0.059, 0.322, 0.729)),
-                diffuse: 0.3,
-                specular: 1.0,
-                reflectivity: 0.9,
-                transparency: 0.75,
-                refractive_index: 1.52,
-                ..Default::default()
-            },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::translation(0.0, 2.0, 0.0)).unwrap(),
-    };
+    let ball = Object::from(Sphere {
+        material: Material {
+            surface: Surface::Color(Color::new(0.059, 0.322, 0.729)),
+            diffuse: 0.3,
+            specular: 1.0,
+            reflectivity: 0.9,
+            transparency: 0.75,
+            refractive_index: 1.52,
+            ..Default::default()
+        },
+    })
+    .transform(InvertibleMatrix::try_from(transformation::translation(0.0, 2.0, 0.0)).unwrap());
 
-    let inner_air_pocket = Transformed {
-        child: Box::new(Sphere {
-            material: Material {
-                surface: Surface::Color(color::white()),
-                ambient: 0.0,
-                diffuse: 0.0,
-                specular: 0.0,
-                transparency: 1.0,
-                refractive_index: 1.0,
-                reflectivity: 1.0,
-                ..Default::default()
-            },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+    let inner_air_pocket = Object::from(Sphere {
+        material: Material {
+            surface: Surface::Color(color::white()),
+            ambient: 0.0,
+            diffuse: 0.0,
+            specular: 0.0,
+            transparency: 1.0,
+            refractive_index: 1.0,
+            reflectivity: 1.0,
+            ..Default::default()
+        },
+    })
+    .transform(
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::scaling(0.5, 0.5, 0.5),
             transformation::translation(0.0, 2.0, 0.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let behind_cube = Transformed {
-        child: Box::new(Cube {
-            material: Material {
-                surface: Surface::Pattern(Box::new(Stripe {
-                    a: Color::new(0.545, 0.0, 0.0),
-                    b: Color::new(0.0, 0.392, 0.0),
-                    transform: InvertibleMatrix::try_from(transformation::scaling(0.2, 1.0, 1.0))
-                        .unwrap(),
-                })),
-                ..Default::default()
-            },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::translation(3.0, 0.0, -10.0))
-            .unwrap(),
-    };
+    let behind_cube = Object::from(Cube {
+        material: Material {
+            surface: Surface::Pattern(Box::new(Stripe {
+                a: Color::new(0.545, 0.0, 0.0),
+                b: Color::new(0.0, 0.392, 0.0),
+                transform: InvertibleMatrix::try_from(transformation::scaling(0.2, 1.0, 1.0))
+                    .unwrap(),
+            })),
+            ..Default::default()
+        },
+    })
+    .transform(InvertibleMatrix::try_from(transformation::translation(3.0, 0.0, -10.0)).unwrap());
 
-    let behind_wall = Transformed {
-        child: Box::new(Plane {
-            material: Material {
-                surface: Surface::Color(Color::new(0.678, 0.847, 0.902)),
-                specular: 0.1,
-                shininess: 50.0,
-                ..Default::default()
-            },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+    let behind_wall = Object::from(Plane {
+        material: Material {
+            surface: Surface::Color(Color::new(0.678, 0.847, 0.902)),
+            specular: 0.1,
+            shininess: 50.0,
+            ..Default::default()
+        },
+    })
+    .transform(
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::translation(0.0, 0.0, -100.0),
         ]))
         .unwrap(),
-    };
+    );
 
     let light_source = PointLight {
         position: Point3d::new(-10.0, 10.0, -10.0),
@@ -180,15 +169,15 @@ fn main() {
 
     let world = World {
         objects: vec![
-            Object::Shape(Box::new(floor)),
-            Object::Shape(Box::new(left_wall)),
-            Object::Shape(Box::new(right_wall)),
-            Object::Shape(Box::new(middle_wall)),
-            Object::Shape(Box::new(ball)),
-            Object::Shape(Box::new(inner_air_pocket)),
-            Object::Shape(Box::new(behind_cube)),
-            Object::Shape(Box::new(behind_wall)),
-            Object::Shape(Box::new(sphere_group)),
+            floor.as_dyn(),
+            left_wall.as_dyn(),
+            right_wall.as_dyn(),
+            middle_wall.as_dyn(),
+            ball.as_dyn(),
+            inner_air_pocket.as_dyn(),
+            behind_cube.as_dyn(),
+            behind_wall.as_dyn(),
+            // sphere_group,
         ],
         lights: vec![light_source],
         ..Default::default()

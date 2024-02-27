@@ -104,6 +104,20 @@ impl<T: Shape + ?Sized> Object<T> {
     }
 }
 
+impl<T: Shape + 'static> Object<T> {
+    pub fn as_dyn(self) -> Object<dyn Shape> {
+        match self {
+            Object::Shape(s) => Object::Shape(s as Box<dyn Shape>),
+            Object::Group => todo!(),
+            Object::Transformed { transform, object } => Object::Transformed {
+                transform,
+                object: Box::new(object.as_dyn()),
+            },
+            Object::Bounded => todo!(),
+        }
+    }
+}
+
 impl<T: Shape> From<T> for Object<T> {
     fn from(value: T) -> Self {
         Object::Shape(Box::new(value))
@@ -117,7 +131,6 @@ pub mod cylinder;
 pub mod group;
 pub mod plane;
 pub mod sphere;
-pub mod transformed;
 
 #[cfg(test)]
 pub mod test_utils {

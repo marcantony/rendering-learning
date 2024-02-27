@@ -240,7 +240,6 @@ mod test {
                 object::{
                     plane::Plane,
                     sphere::{self, glass_sphere},
-                    transformed::Transformed,
                 },
                 transformation,
             },
@@ -318,11 +317,9 @@ mod test {
                 origin: Point3d::new(0.0, 0.0, -5.0),
                 direction: Vec3d::new(0.0, 0.0, 1.0),
             };
-            let shape = Object::Shape(Box::new(Transformed {
-                child: Box::new(Sphere::unit()),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
-                    .unwrap(),
-            }));
+            let shape = Object::from(Sphere::unit()).transform(
+                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0)).unwrap(),
+            );
             let i = Intersection::new(5.0, &shape);
 
             let comps = i.prepare_computations(&r, &vec![]);
@@ -334,11 +331,9 @@ mod test {
         #[test]
         fn the_under_point_is_below_the_surface() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let shape = Object::Shape(Box::new(Transformed {
-                child: Box::new(glass_sphere()),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
-                    .unwrap(),
-            }));
+            let shape = Object::from(glass_sphere()).transform(
+                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0)).unwrap(),
+            );
             let i = Intersection::new(5.0, &shape);
             let xs = vec![i];
 
@@ -351,51 +346,36 @@ mod test {
         mod refraction {
             use super::*;
 
-            fn get_objects() -> (
-                Object<Transformed<Sphere>>,
-                Object<Transformed<Sphere>>,
-                Object<Transformed<Sphere>>,
-            ) {
+            fn get_objects() -> (Object<Sphere>, Object<Sphere>, Object<Sphere>) {
                 let mut a_s = sphere::glass_sphere();
                 a_s.material.refractive_index = 1.5;
-                let a = Transformed {
-                    child: Box::new(a_s),
-                    transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                        .unwrap(),
-                };
+                let a_transform =
+                    InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap();
 
                 let mut b_s = sphere::glass_sphere();
                 b_s.material.refractive_index = 2.0;
-                let b = Transformed {
-                    child: Box::new(b_s),
-                    transform: InvertibleMatrix::try_from(transformation::translation(
-                        0.0, 0.0, -0.25,
-                    ))
-                    .unwrap(),
-                };
+                let b_transform =
+                    InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, -0.25))
+                        .unwrap();
 
                 let mut c_s = sphere::glass_sphere();
                 c_s.material.refractive_index = 2.5;
-                let c = Transformed {
-                    child: Box::new(c_s),
-                    transform: InvertibleMatrix::try_from(transformation::translation(
-                        0.0, 0.0, 0.25,
-                    ))
-                    .unwrap(),
-                };
+                let c_transform =
+                    InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 0.25))
+                        .unwrap();
 
                 (
-                    Object::Shape(Box::new(a)),
-                    Object::Shape(Box::new(b)),
-                    Object::Shape(Box::new(c)),
+                    Object::from(a_s).transform(a_transform),
+                    Object::from(b_s).transform(b_transform),
+                    Object::from(c_s).transform(c_transform),
                 )
             }
 
             fn get_xs<'a>(
-                a: &'a Object<Transformed<Sphere>>,
-                b: &'a Object<Transformed<Sphere>>,
-                c: &'a Object<Transformed<Sphere>>,
-            ) -> Vec<Intersection<'a, Object<Transformed<Sphere>>>> {
+                a: &'a Object<Sphere>,
+                b: &'a Object<Sphere>,
+                c: &'a Object<Sphere>,
+            ) -> Vec<Intersection<'a, Object<Sphere>>> {
                 vec![
                     (2.0, a),
                     (2.75, b),
