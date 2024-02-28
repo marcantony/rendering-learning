@@ -11,6 +11,15 @@ pub struct Transformed<T: Object + ?Sized + 'static> {
     pub transform: InvertibleMatrix<4>,
 }
 
+impl<T: Object> Transformed<T> {
+    pub fn new(child: T, transform: InvertibleMatrix<4>) -> Self {
+        Transformed {
+            child: Box::new(child),
+            transform,
+        }
+    }
+}
+
 impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
     fn material(&self) -> &Material {
         self.child.material()
