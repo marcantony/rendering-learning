@@ -1,11 +1,7 @@
 use crate::{
     draw::color::Color,
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{
-        intersect::Intersection,
-        material::{self, Material},
-        ray::Ray,
-    },
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -22,7 +18,7 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
 
     fn color_at(&self, point: &Point3d) -> Color {
         let object_point = self.transform.inverse() * point;
-        material::color_at(&self.material().surface, &object_point)
+        self.child.color_at(&object_point)
     }
 
     fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
@@ -180,6 +176,34 @@ mod tests {
 
             vector::test_utils::assert_vec_approx_equals(&n, &Vec3d::new(0.0, 0.97014, -0.24254));
         }
+
+        #[test]
+        fn multiple_transformations_apply_in_the_correct_order() {
+            let p = Point3d::new(1.0, 2.0, 3.0);
+            let t1 = transformation::rotation_y(std::f64::consts::FRAC_PI_2);
+            let t2 = transformation::scaling(2.0, 2.0, 2.0);
+            let sequenced = transformation::sequence(&vec![t1.clone(), t2.clone()]);
+
+            let shape1 = MockObject::default();
+            let inner_transformed = Transformed {
+                child: Box::new(shape1),
+                transform: InvertibleMatrix::try_from(t1).unwrap(),
+            };
+            let outer_transformed = Transformed {
+                child: Box::new(inner_transformed),
+                transform: InvertibleMatrix::try_from(t2).unwrap(),
+            };
+
+            let transformed_at_once = Transformed {
+                child: Box::new(MockObject::default()),
+                transform: InvertibleMatrix::try_from(sequenced).unwrap(),
+            };
+
+            assert_eq!(
+                outer_transformed.normal_at(&p),
+                transformed_at_once.normal_at(&p)
+            );
+        }
     }
 
     mod color_at {
@@ -231,6 +255,50 @@ mod tests {
             let c = shape.color_at(&Point3d::new(2.5, 3.0, 3.5));
 
             assert_eq!(c, Color::new(0.75, 0.5, 0.25));
+        }
+
+        #[test]
+        fn multiple_transformations_apply_in_the_correct_order() {
+            let p = Point3d::new(1.0, 2.0, 3.0);
+            let t1 = transformation::rotation_y(std::f64::consts::FRAC_PI_2);
+            let t2 = transformation::scaling(2.0, 2.0, 2.0);
+            let sequenced = transformation::sequence(&vec![t1.clone(), t2.clone()]);
+
+            let shape1 = MockObject {
+                material: Material {
+                    surface: Surface::Pattern(Box::new(MockPattern {
+                        transform: InvertibleMatrix::identity(),
+                    })),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let inner_transformed = Transformed {
+                child: Box::new(shape1),
+                transform: InvertibleMatrix::try_from(t1).unwrap(),
+            };
+            let outer_transformed = Transformed {
+                child: Box::new(inner_transformed),
+                transform: InvertibleMatrix::try_from(t2).unwrap(),
+            };
+
+            let transformed_at_once = Transformed {
+                child: Box::new(MockObject {
+                    material: Material {
+                        surface: Surface::Pattern(Box::new(MockPattern {
+                            transform: InvertibleMatrix::identity(),
+                        })),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }),
+                transform: InvertibleMatrix::try_from(sequenced).unwrap(),
+            };
+
+            assert_eq!(
+                outer_transformed.color_at(&p),
+                transformed_at_once.color_at(&p)
+            );
         }
     }
 }
