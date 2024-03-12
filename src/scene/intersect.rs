@@ -1,20 +1,35 @@
-use crate::math::{point::Point3d, util, vector::NormalizedVec3d};
+use crate::{
+    draw::color::{self, Color},
+    math::{point::Point3d, util, vector::NormalizedVec3d},
+};
 
 use super::{object::Object, ray::Ray};
 
 const POINT_OFFSET_BIAS: f64 = 1e-5;
 
+pub type ColorFn = Box<dyn Fn() -> Color>;
+pub type NormalFn = Box<dyn Fn() -> NormalizedVec3d>;
+
 #[derive(Debug, Clone)]
-pub struct Intersection<T> {
+pub struct Intersection<T, C, N> {
     t: f64,
     object: T,
+    color: C,
+    normal: N,
 }
 
-impl<T> Intersection<T> {
+impl<T> Intersection<T, ColorFn, NormalFn> {
     pub fn new(t: f64, object: T) -> Self {
-        Intersection { t, object }
+        Intersection {
+            t,
+            object,
+            color: Box::new(|| color::black()),
+            normal: Box::new(|| NormalizedVec3d::new(1.0, 1.0, 1.0).unwrap()),
+        }
     }
+}
 
+impl<T, C, N> Intersection<T, C, N> {
     pub fn t(&self) -> f64 {
         self.t
     }
@@ -24,8 +39,12 @@ impl<T> Intersection<T> {
     }
 }
 
-impl<T: Object + ?Sized> Intersection<&T> {
-    pub fn prepare_computations(&self, ray: &Ray, xs: &[Intersection<&T>]) -> Precomputation<&T> {
+impl<T: Object + ?Sized, C: Fn() -> Color, N: Fn() -> NormalizedVec3d> Intersection<&T, C, N> {
+    pub fn prepare_computations(
+        &self,
+        ray: &Ray,
+        xs: &[Intersection<&T, ColorFn, NormalFn>],
+    ) -> Precomputation<&T> {
         let t = self.t();
         let object = self.object();
         let point = ray.position(t);
@@ -90,8 +109,8 @@ impl<T: Object + ?Sized> Intersection<&T> {
     }
 }
 
-impl<'a, T: ?Sized> PartialEq for Intersection<&T> {
-    fn eq(&self, other: &Self) -> bool {
+impl<T: ?Sized, CL, NL, CR, NR> PartialEq<Intersection<&T, CR, NR>> for Intersection<&T, CL, NL> {
+    fn eq(&self, other: &Intersection<&T, CR, NR>) -> bool {
         util::are_equal(self.t, other.t) && std::ptr::eq(self.object, other.object)
     }
 }
@@ -131,7 +150,9 @@ impl<T> Precomputation<T> {
     }
 }
 
-pub fn hit<T>(intersections: &[Intersection<T>]) -> Option<&Intersection<T>> {
+pub fn hit<T>(
+    intersections: &[Intersection<T, ColorFn, NormalFn>],
+) -> Option<&Intersection<T, ColorFn, NormalFn>> {
     intersections.iter().fold(None, |acc, i| {
         if i.t() >= 0.0 {
             acc.map(|lowest| if lowest.t() < i.t() { lowest } else { i })
@@ -142,7 +163,7 @@ pub fn hit<T>(intersections: &[Intersection<T>]) -> Option<&Intersection<T>> {
     })
 }
 
-pub fn sort<T>(xs: &mut Vec<Intersection<T>>) {
+pub fn sort<T>(xs: &mut Vec<Intersection<T, ColorFn, NormalFn>>) {
     xs.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap())
 }
 
@@ -150,7 +171,7 @@ pub fn sort<T>(xs: &mut Vec<Intersection<T>>) {
 pub mod test_utils {
     use super::*;
 
-    pub fn to_ts<T>(ts: Vec<Intersection<T>>) -> Vec<f64> {
+    pub fn to_ts<T>(ts: Vec<Intersection<T, ColorFn, NormalFn>>) -> Vec<f64> {
         ts.into_iter().map(|i| i.t()).collect()
     }
 }
@@ -280,7 +301,7 @@ mod test {
         fn hit_when_an_intersection_occurs_on_the_outside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection { t: 4.0, object: &s };
+            let i = Intersection::new(4.0, &s);
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -291,7 +312,7 @@ mod test {
         fn hit_when_an_intersection_occurs_on_the_inside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection { t: 1.0, object: &s };
+            let i = Intersection::new(1.0, &s);
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -386,7 +407,7 @@ mod test {
                 a: &'a Transformed<Sphere>,
                 b: &'a Transformed<Sphere>,
                 c: &'a Transformed<Sphere>,
-            ) -> Vec<Intersection<&'a Transformed<Sphere>>> {
+            ) -> Vec<Intersection<&'a Transformed<Sphere>, ColorFn, NormalFn>> {
                 vec![
                     (2.0, a),
                     (2.75, b),

@@ -1,6 +1,10 @@
 use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::Intersection, material::Material, ray::Ray},
+    scene::{
+        intersect::{ColorFn, Intersection, NormalFn},
+        material::Material,
+        ray::Ray,
+    },
 };
 
 use super::{bounded::Bounds, Object};
@@ -25,7 +29,7 @@ impl Object for Sphere {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         let sphere_to_ray = &object_ray.origin - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = object_ray.direction.dot(&object_ray.direction);

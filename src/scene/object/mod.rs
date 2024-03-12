@@ -6,7 +6,7 @@ use crate::{
 use self::bounded::Bounds;
 
 use super::{
-    intersect::Intersection,
+    intersect::{ColorFn, Intersection, NormalFn},
     material::{self, Material},
     ray::Ray,
 };
@@ -16,7 +16,7 @@ pub trait Object {
     fn color_at(&self, point: &Point3d) -> Color {
         material::color_at(&self.material().surface, point)
     }
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>>;
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>>;
     fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d;
     fn bounds(&self) -> Bounds;
 }
@@ -46,7 +46,7 @@ pub mod test_utils {
             &self.material
         }
 
-        fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+        fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
             if let Some(expected) = self.intersect_local_arg_expectation.as_ref() {
                 assert_eq!(object_ray, expected);
             }

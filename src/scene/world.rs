@@ -15,7 +15,7 @@ use crate::{
 };
 
 use super::{
-    intersect::{self, Intersection, Precomputation},
+    intersect::{self, ColorFn, Intersection, NormalFn, Precomputation},
     light::PointLight,
     material::lighting,
     object::{sphere::Sphere, transformed::Transformed, Object},
@@ -40,7 +40,7 @@ impl World {
         }
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         let mut intersections = self
             .objects
             .iter()

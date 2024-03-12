@@ -1,6 +1,10 @@
 use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::Intersection, material::Material, ray::Ray},
+    scene::{
+        intersect::{ColorFn, Intersection, NormalFn},
+        material::Material,
+        ray::Ray,
+    },
 };
 
 use super::{bounded::Bounds, Object};
@@ -15,7 +19,7 @@ impl Object for Cube {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         let (xtmin, xtmax) = check_axis(object_ray.origin.x(), object_ray.direction.x());
         let (ytmin, ytmax) = check_axis(object_ray.origin.y(), object_ray.direction.y());
         let (ztmin, ztmax) = check_axis(object_ray.origin.z(), object_ray.direction.z());

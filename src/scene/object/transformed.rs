@@ -1,7 +1,11 @@
 use crate::{
     draw::color::Color,
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::Intersection, material::Material, ray::Ray},
+    scene::{
+        intersect::{ColorFn, Intersection, NormalFn},
+        material::Material,
+        ray::Ray,
+    },
 };
 
 use super::Object;
@@ -30,7 +34,7 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
         self.child.color_at(&object_point)
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         let local_ray = object_ray.transform(&self.transform.inverse());
         let xs = self.child.intersect(&local_ray);
         xs.into_iter()

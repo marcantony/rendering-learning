@@ -1,6 +1,10 @@
 use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::Intersection, material::Material, ray::Ray},
+    scene::{
+        intersect::{ColorFn, Intersection, NormalFn},
+        material::Material,
+        ray::Ray,
+    },
 };
 
 use super::{bounded::Bounds, Object};
@@ -63,7 +67,7 @@ impl Object for Cone {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         let a = object_ray.direction.x().powi(2) - object_ray.direction.y().powi(2)
             + object_ray.direction.z().powi(2);
         let b = 2.0 * object_ray.origin.x() * object_ray.direction.x()

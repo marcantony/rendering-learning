@@ -1,6 +1,10 @@
 use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::Intersection, material::Material, ray::Ray},
+    scene::{
+        intersect::{ColorFn, Intersection, NormalFn},
+        material::Material,
+        ray::Ray,
+    },
 };
 
 use super::{bounded::Bounds, Object};
@@ -15,7 +19,7 @@ impl Object for Plane {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
         let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
             return Vec::new();

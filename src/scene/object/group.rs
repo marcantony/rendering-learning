@@ -1,7 +1,7 @@
 use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
     scene::{
-        intersect::{self, Intersection},
+        intersect::{self, ColorFn, Intersection, NormalFn},
         material::Material,
         ray::Ray,
     },
@@ -33,7 +33,7 @@ impl Object for Group {
         unimplemented!()
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         let mut intersections: Vec<_> = self
             .children
             .iter()

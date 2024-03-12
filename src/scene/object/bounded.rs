@@ -1,6 +1,10 @@
 use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
-    scene::{intersect::Intersection, material::Material, ray::Ray},
+    scene::{
+        intersect::{ColorFn, Intersection, NormalFn},
+        material::Material,
+        ray::Ray,
+    },
 };
 
 use super::Object;
@@ -80,7 +84,7 @@ impl<T: Object> Object for Bounded<T> {
         self.child.material()
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
         if self.test(ray) {
             self.child.intersect(ray)
         } else {
