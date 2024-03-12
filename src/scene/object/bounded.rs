@@ -80,7 +80,7 @@ impl<T: Object> Object for Bounded<T> {
         self.child.material()
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object>> {
         if self.test(ray) {
             self.child.intersect(ray)
         } else {

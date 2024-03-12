@@ -30,7 +30,7 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
         self.child.color_at(&object_point)
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
         let local_ray = object_ray.transform(&self.transform.inverse());
         let xs = self.child.intersect(&local_ray);
         xs.into_iter()

@@ -15,7 +15,7 @@ impl Object for Cube {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
         let (xtmin, xtmax) = check_axis(object_ray.origin.x(), object_ray.direction.x());
         let (ytmin, ytmax) = check_axis(object_ray.origin.y(), object_ray.direction.y());
         let (ztmin, ztmax) = check_axis(object_ray.origin.z(), object_ray.direction.z());

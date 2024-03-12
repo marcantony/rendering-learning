@@ -15,7 +15,7 @@ impl Object for Plane {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
         let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
             return Vec::new();

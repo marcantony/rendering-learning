@@ -5,13 +5,13 @@ use super::{object::Object, ray::Ray};
 const POINT_OFFSET_BIAS: f64 = 1e-5;
 
 #[derive(Debug, Clone)]
-pub struct Intersection<'a, T: Object + ?Sized> {
+pub struct Intersection<T> {
     t: f64,
-    object: &'a T,
+    object: T,
 }
 
-impl<'a, T: Object + ?Sized> Intersection<'a, T> {
-    pub fn new(t: f64, object: &T) -> Intersection<T> {
+impl<T> Intersection<T> {
+    pub fn new(t: f64, object: T) -> Self {
         Intersection { t, object }
     }
 
@@ -20,10 +20,12 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
     }
 
     pub fn object(&self) -> &T {
-        self.object
+        &self.object
     }
+}
 
-    pub fn prepare_computations(&self, ray: &Ray, xs: &[Intersection<T>]) -> Precomputation<T> {
+impl<T: Object + ?Sized> Intersection<&T> {
+    pub fn prepare_computations(&self, ray: &Ray, xs: &[Intersection<&T>]) -> Precomputation<&T> {
         let t = self.t();
         let object = self.object();
         let point = ray.position(t);
@@ -56,7 +58,7 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
 
             if let Some(index) = containers
                 .iter()
-                .position(|&obj| std::ptr::eq(obj, i.object()))
+                .position(|&obj| std::ptr::eq(obj, *i.object()))
             {
                 containers.remove(index);
             } else {
@@ -88,16 +90,16 @@ impl<'a, T: Object + ?Sized> Intersection<'a, T> {
     }
 }
 
-impl<'a, T: Object + ?Sized> PartialEq for Intersection<'a, T> {
+impl<'a, T: ?Sized> PartialEq for Intersection<&T> {
     fn eq(&self, other: &Self) -> bool {
         util::are_equal(self.t, other.t) && std::ptr::eq(self.object, other.object)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Precomputation<'a, T: Object + ?Sized> {
+pub struct Precomputation<T> {
     pub t: f64,
-    pub object: &'a T,
+    pub object: T,
     pub point: Point3d,
     pub eye_v: NormalizedVec3d,
     pub normal_v: NormalizedVec3d,
@@ -109,7 +111,7 @@ pub struct Precomputation<'a, T: Object + ?Sized> {
     pub refraction_entering: f64,
 }
 
-impl<'a, T: Object + ?Sized> Precomputation<'a, T> {
+impl<T> Precomputation<T> {
     pub fn schlick(&self) -> f64 {
         let cos = self.eye_v.dot(&self.normal_v);
         let n = self.refraction_exiting / self.refraction_entering;
@@ -129,9 +131,7 @@ impl<'a, T: Object + ?Sized> Precomputation<'a, T> {
     }
 }
 
-pub fn hit<'a, 'b, T: Object + ?Sized>(
-    intersections: &'a [Intersection<'b, T>],
-) -> Option<&'a Intersection<'b, T>> {
+pub fn hit<T>(intersections: &[Intersection<T>]) -> Option<&Intersection<T>> {
     intersections.iter().fold(None, |acc, i| {
         if i.t() >= 0.0 {
             acc.map(|lowest| if lowest.t() < i.t() { lowest } else { i })
@@ -142,7 +142,7 @@ pub fn hit<'a, 'b, T: Object + ?Sized>(
     })
 }
 
-pub fn sort<T: Object + ?Sized>(xs: &mut Vec<Intersection<T>>) {
+pub fn sort<T>(xs: &mut Vec<Intersection<T>>) {
     xs.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap())
 }
 
@@ -150,7 +150,7 @@ pub fn sort<T: Object + ?Sized>(xs: &mut Vec<Intersection<T>>) {
 pub mod test_utils {
     use super::*;
 
-    pub fn to_ts<'a, T: Object + ?Sized>(ts: Vec<Intersection<'a, T>>) -> Vec<f64> {
+    pub fn to_ts<T>(ts: Vec<Intersection<T>>) -> Vec<f64> {
         ts.into_iter().map(|i| i.t()).collect()
     }
 }
@@ -171,7 +171,7 @@ mod test {
         let i = Intersection::new(3.5, &s);
 
         assert_eq!(i.t(), 3.5);
-        assert!(std::ptr::eq(i.object(), &s));
+        assert!(std::ptr::eq(*i.object(), &s));
     }
 
     mod hit {
@@ -252,7 +252,7 @@ mod test {
             let comps = i.prepare_computations(&r, &vec![]);
 
             assert_eq!(comps.t, i.t());
-            assert!(std::ptr::eq(comps.object, i.object()));
+            assert!(std::ptr::eq(comps.object, *i.object()));
             assert_eq!(comps.point, Point3d::new(0.0, 0.0, -1.0));
             assert_eq!(
                 comps.eye_v,
@@ -386,7 +386,7 @@ mod test {
                 a: &'a Transformed<Sphere>,
                 b: &'a Transformed<Sphere>,
                 c: &'a Transformed<Sphere>,
-            ) -> Vec<Intersection<'a, Transformed<Sphere>>> {
+            ) -> Vec<Intersection<&'a Transformed<Sphere>>> {
                 vec![
                     (2.0, a),
                     (2.75, b),

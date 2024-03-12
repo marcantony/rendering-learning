@@ -33,7 +33,7 @@ impl Object for Group {
         unimplemented!()
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object>> {
         let mut intersections: Vec<_> = self
             .children
             .iter()

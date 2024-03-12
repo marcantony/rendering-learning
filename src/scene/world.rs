@@ -40,7 +40,7 @@ impl World {
         }
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<dyn Object>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object>> {
         let mut intersections = self
             .objects
             .iter()
@@ -52,7 +52,7 @@ impl World {
         intersections
     }
 
-    fn shade_hit(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Option<Color> {
+    fn shade_hit(&self, comps: &Precomputation<&dyn Object>, remaining: usize) -> Option<Color> {
         self.lights
             .iter()
             .map(|light| {
@@ -114,14 +114,14 @@ impl World {
                 intersections
                     .iter()
                     .filter(|i| i.t() > 0.0 && i.t() < distance)
-                    .take_while(|i| seen.insert(ByAddress(i.object())))
+                    .take_while(|i| seen.insert(ByAddress(*i.object())))
                     .map(|i| i.object().material().transparency)
                     .product()
             })
             .unwrap_or(1.0)
     }
 
-    fn reflected_color(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Color {
+    fn reflected_color(&self, comps: &Precomputation<&dyn Object>, remaining: usize) -> Color {
         if remaining == 0 || comps.object.material().reflectivity == 0.0 {
             color::black()
         } else {
@@ -131,7 +131,7 @@ impl World {
         }
     }
 
-    fn refracted_color(&self, comps: &Precomputation<dyn Object>, remaining: usize) -> Color {
+    fn refracted_color(&self, comps: &Precomputation<&dyn Object>, remaining: usize) -> Color {
         if remaining == 0 || comps.object.material().transparency == 0.0 {
             color::black()
         } else {
