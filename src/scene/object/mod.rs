@@ -7,14 +7,14 @@ use self::bounded::Bounds;
 
 use super::{
     intersect::{ColorFn, Intersection, NormalFn},
-    material::{self, Material},
+    material::Material,
     ray::Ray,
 };
 
 pub trait Object {
     fn material(&self) -> &Material;
     fn color_at(&self, point: &Point3d) -> Color {
-        material::color_at(&self.material().surface, point)
+        self.material().surface.color_at(point)
     }
     fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>>;
     fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d;

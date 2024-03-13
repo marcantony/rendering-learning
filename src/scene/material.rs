@@ -10,6 +10,15 @@ pub enum Surface {
     Pattern(Box<dyn Pattern>),
 }
 
+impl Surface {
+    pub fn color_at(&self, point: &Point3d) -> Color {
+        match self {
+            Surface::Color(c) => c.clone(),
+            Surface::Pattern(p) => p.at(point),
+        }
+    }
+}
+
 pub struct Material {
     pub surface: Surface,
     pub ambient: f64,
@@ -78,13 +87,6 @@ pub fn lighting(
     };
 
     return &(&ambient + &diffuse) + &specular;
-}
-
-pub fn color_at(surface: &Surface, point: &Point3d) -> Color {
-    match surface {
-        Surface::Color(c) => c.clone(),
-        Surface::Pattern(p) => p.at(point),
-    }
 }
 
 #[cfg(test)]
