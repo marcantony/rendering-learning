@@ -32,9 +32,9 @@ fn main() {
         child: Box::new(Sphere::unit()),
         transform: InvertibleMatrix::try_from(transformation::translation(0.5, 0.0, 0.0)).unwrap(),
     };
-    let sphere_group = Group::new(
+    let sphere_group = Transformed::new(
+        Group::new(vec![Box::new(gs1), Box::new(gs2)]),
         InvertibleMatrix::try_from(transformation::translation(-1.0, 0.0, 0.0)).unwrap(),
-        vec![Box::new(gs1), Box::new(gs2)],
     );
 
     let floor = Plane {

@@ -1,6 +1,6 @@
 use crate::{
     draw::color::Color,
-    math::{matrix::InvertibleMatrix, vector::NormalizedVec3d},
+    math::vector::NormalizedVec3d,
     scene::{
         intersect::{self, Intersection},
         material::Material,
@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{transformed::Transformed, Object};
+use super::Object;
 
 /// A group of multiple sub-objects
 pub struct Group {
@@ -16,16 +16,8 @@ pub struct Group {
 }
 
 impl Group {
-    pub fn new(transform: InvertibleMatrix<4>, children: Vec<Box<dyn Object>>) -> Group {
-        let transformed_children = children.into_iter().map(|c| Transformed {
-            child: c,
-            transform: transform.clone(),
-        });
-        Group {
-            children: transformed_children
-                .map(|tc| Box::new(tc) as Box<dyn Object>)
-                .collect(),
-        }
+    pub fn new(children: Vec<Box<dyn Object>>) -> Group {
+        Group { children }
     }
 }
 
@@ -78,15 +70,15 @@ mod tests {
 
     #[test]
     fn adding_a_child_to_a_group() {
-        let g = Group::new(Default::default(), vec![Box::new(Sphere::unit())]);
+        let g = Group::new(vec![Box::new(Sphere::unit())]);
 
         assert_eq!(g.children.len(), 1);
     }
 
     mod intersect {
         use crate::{
-            math::{point::Point3d, vector::Vec3d},
-            scene::transformation,
+            math::{matrix::InvertibleMatrix, point::Point3d, vector::Vec3d},
+            scene::{object::transformed::Transformed, transformation},
         };
 
         use super::*;
@@ -117,10 +109,7 @@ mod tests {
                     .unwrap(),
             };
 
-            let g = Group::new(
-                Default::default(),
-                vec![Box::new(s1), Box::new(s2), Box::new(s3)],
-            );
+            let g = Group::new(vec![Box::new(s1), Box::new(s2), Box::new(s3)]);
 
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let xs = is::test_utils::to_ts(&g.intersect(&r));
@@ -136,9 +125,9 @@ mod tests {
                     .unwrap(),
             };
 
-            let g = Group::new(
+            let g = Transformed::new(
+                Group::new(vec![Box::new(s)]),
                 InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
-                vec![Box::new(s)],
             );
 
             let r = Ray::new(Point3d::new(10.0, 0.0, -10.0), Vec3d::new(0.0, 0.0, 1.0));
@@ -150,7 +139,7 @@ mod tests {
         #[test]
         fn intersecting_a_group_returns_intersection_of_child() {
             let s1: Sphere = Default::default();
-            let g = Group::new(Default::default(), vec![Box::new(s1)]);
+            let g = Group::new(vec![Box::new(s1)]);
 
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let group_xs = g.intersect(&r);
