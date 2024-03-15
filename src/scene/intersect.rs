@@ -203,12 +203,12 @@ mod test {
 
     use super::*;
 
-    fn default_color() -> ColorFn<'static> {
-        Box::new(|| color::black())
+    fn default_color() -> Color {
+        color::black()
     }
 
-    fn default_normal() -> NormalFn<'static> {
-        Box::new(|| NormalizedVec3d::new(1.0, 1.0, 1.0).unwrap())
+    fn default_normal() -> NormalizedVec3d {
+        NormalizedVec3d::new(1.0, 1.0, 1.0).unwrap()
     }
 
     #[test]
@@ -294,7 +294,8 @@ mod test {
         fn precomputing_the_state_of_an_intersection() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection::new(4.0, &s, default_color(), default_normal());
+            let is = s.intersect(&r);
+            let i = &is[0];
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -316,14 +317,9 @@ mod test {
             let shape: Plane = Default::default();
             let t = std::f64::consts::SQRT_2 / 2.0;
             let r = Ray::new(Point3d::new(0.0, 1.0, -1.0), Vec3d::new(0.0, -t, t));
-            let i = Intersection::new(
-                std::f64::consts::SQRT_2,
-                &shape,
-                default_color(),
-                default_normal(),
-            );
+            let is = shape.intersect(&r);
 
-            let comps = i.prepare_computations(&r, &vec![]);
+            let comps = is[0].prepare_computations(&r, &vec![]);
 
             assert_eq!(*comps.reflect_v, Vec3d::new(0.0, t, t));
         }
@@ -332,9 +328,9 @@ mod test {
         fn hit_when_an_intersection_occurs_on_the_outside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection::new(4.0, &s, default_color(), default_normal());
+            let is = s.intersect(&r);
 
-            let comps = i.prepare_computations(&r, &vec![]);
+            let comps = is[0].prepare_computations(&r, &vec![]);
 
             assert_eq!(comps.inside, false);
         }
@@ -343,9 +339,9 @@ mod test {
         fn hit_when_an_intersection_occurs_on_the_inside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection::new(1.0, &s, default_color(), default_normal());
+            let is = s.intersect(&r);
 
-            let comps = i.prepare_computations(&r, &vec![]);
+            let comps = is[1].prepare_computations(&r, &vec![]);
 
             assert_eq!(comps.point, Point3d::new(0.0, 0.0, 1.0));
             assert_eq!(
@@ -370,7 +366,8 @@ mod test {
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
                     .unwrap(),
             };
-            let i = Intersection::new(5.0, &shape, default_color(), default_normal());
+            let is = shape.intersect(&r);
+            let i = &is[0];
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -386,8 +383,7 @@ mod test {
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
                     .unwrap(),
             };
-            let i = Intersection::new(5.0, &shape, default_color(), default_normal());
-            let xs = vec![i];
+            let xs = shape.intersect(&r);
 
             let comps = xs[0].prepare_computations(&r, &xs);
 
@@ -438,7 +434,7 @@ mod test {
                 a: &'a Transformed<Sphere>,
                 b: &'a Transformed<Sphere>,
                 c: &'a Transformed<Sphere>,
-            ) -> Vec<Intersection<&'a Transformed<Sphere>, ColorFn<'a>, NormalFn<'a>>> {
+            ) -> Vec<Intersection<&'a Transformed<Sphere>, Color, NormalizedVec3d>> {
                 vec![
                     (2.0, a),
                     (2.75, b),
@@ -488,10 +484,7 @@ mod test {
                 let shape = sphere::glass_sphere();
                 let t = std::f64::consts::SQRT_2 / 2.0;
                 let r = Ray::new(Point3d::new(0.0, 0.0, t), Vec3d::new(0.0, 1.0, 0.0));
-                let xs = vec![
-                    Intersection::new(-t, &shape, default_color(), default_normal()),
-                    Intersection::new(t, &shape, default_color(), default_normal()),
-                ];
+                let xs = shape.intersect(&r);
 
                 let comps = xs[1].prepare_computations(&r, &xs);
                 let reflectance = comps.schlick();
@@ -503,10 +496,7 @@ mod test {
             fn schlick_approximation_with_a_perpendicular_viewing_angle() {
                 let shape = sphere::glass_sphere();
                 let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 1.0, 0.0));
-                let xs = vec![
-                    Intersection::new(-1.0, &shape, default_color(), default_normal()),
-                    Intersection::new(1.0, &shape, default_color(), default_normal()),
-                ];
+                let xs = shape.intersect(&r);
 
                 let comps = xs[1].prepare_computations(&r, &xs);
                 let reflectance = comps.schlick();
@@ -522,19 +512,14 @@ mod test {
             fn schlick_approximation_with_a_small_angle_and_n2_greater_than_n1() {
                 let shape = sphere::glass_sphere();
                 let r = Ray::new(Point3d::new(0.0, 0.99, -2.0), Vec3d::new(0.0, 0.0, 1.0));
-                let xs = vec![Intersection::new(
-                    1.8589,
-                    &shape,
-                    default_color(),
-                    default_normal(),
-                )];
+                let xs = shape.intersect(&r);
 
                 let comps = xs[0].prepare_computations(&r, &xs);
                 let reflectance = comps.schlick();
 
                 assert!(util::test_utils::are_within_tolerance(
                     reflectance,
-                    0.49010,
+                    0.49018,
                     1e-5
                 ));
             }
