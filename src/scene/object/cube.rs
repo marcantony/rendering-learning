@@ -59,8 +59,8 @@ impl Object for Cube {
 
     fn bounds(&self) -> Bounds {
         Bounds {
-            minimum: [-1.0, -1.0, -1.0],
-            maximum: [1.0, 1.0, 1.0],
+            minimum: Point3d::new(-1.0, -1.0, -1.0),
+            maximum: Point3d::new(1.0, 1.0, 1.0),
         }
     }
 }

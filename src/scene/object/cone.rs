@@ -144,8 +144,8 @@ impl Object for Cone {
         // Slope is 1, so the radius at y_min/y_max is equal to y_min/y_max
         let radius = y_max.abs().max(y_min.abs());
         Bounds {
-            minimum: [-radius, y_min, -radius],
-            maximum: [radius, y_max, radius],
+            minimum: Point3d::new(-radius, y_min, -radius),
+            maximum: Point3d::new(radius, y_max, radius),
         }
     }
 }
@@ -295,8 +295,8 @@ mod tests {
             assert_eq!(
                 cone.bounds(),
                 Bounds {
-                    minimum: [f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY],
-                    maximum: [f64::INFINITY, f64::INFINITY, f64::INFINITY],
+                    minimum: Point3d::new(f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
+                    maximum: Point3d::new(f64::INFINITY, f64::INFINITY, f64::INFINITY),
                 }
             );
         }
@@ -311,8 +311,8 @@ mod tests {
             assert_eq!(
                 cone.bounds(),
                 Bounds {
-                    minimum: [-3.0, -1.0, -3.0],
-                    maximum: [3.0, 3.0, 3.0]
+                    minimum: Point3d::new(-3.0, -1.0, -3.0),
+                    maximum: Point3d::new(3.0, 3.0, 3.0)
                 }
             );
         }

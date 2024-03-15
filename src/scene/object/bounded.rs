@@ -1,32 +1,31 @@
 use crate::{
     draw::color::Color,
-    math::vector::NormalizedVec3d,
+    math::{point::Point3d, vector::NormalizedVec3d},
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
 
-type Bound = [f64; 3];
 #[derive(Debug, PartialEq, Clone)]
 pub struct Bounds {
-    pub minimum: Bound,
-    pub maximum: Bound,
+    pub minimum: Point3d,
+    pub maximum: Point3d,
 }
 
 impl Bounds {
-    pub fn enumerate(&self) -> [Bound; 8] {
+    pub fn enumerate(&self) -> [Point3d; 8] {
         let min = &self.minimum;
         let max = &self.maximum;
 
         [
-            [min[0], min[1], min[2]],
-            [min[0], min[1], max[2]],
-            [min[0], max[1], min[2]],
-            [min[0], max[1], max[2]],
-            [max[0], min[1], min[2]],
-            [max[0], min[1], max[2]],
-            [max[0], max[1], min[2]],
-            [max[0], max[1], max[2]],
+            Point3d::new(min.x(), min.y(), min.z()),
+            Point3d::new(min.x(), min.y(), max.z()),
+            Point3d::new(min.x(), max.y(), min.z()),
+            Point3d::new(min.x(), max.y(), max.z()),
+            Point3d::new(max.x(), min.y(), min.z()),
+            Point3d::new(max.x(), min.y(), max.z()),
+            Point3d::new(max.x(), max.y(), min.z()),
+            Point3d::new(max.x(), max.y(), max.z()),
         ]
     }
 }
@@ -34,8 +33,8 @@ impl Bounds {
 impl Default for Bounds {
     fn default() -> Self {
         Self {
-            minimum: [f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY],
-            maximum: [f64::INFINITY, f64::INFINITY, f64::INFINITY],
+            minimum: Point3d::new(f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
+            maximum: Point3d::new(f64::INFINITY, f64::INFINITY, f64::INFINITY),
         }
     }
 }
@@ -55,20 +54,20 @@ impl<T: Object> Bounded<T> {
 
     fn test(&self, ray: &Ray) -> bool {
         let (xtmin, xtmax) = check_axis(
-            self.bounds.minimum[0],
-            self.bounds.maximum[0],
+            self.bounds.minimum.x(),
+            self.bounds.maximum.x(),
             ray.origin.x(),
             ray.direction.x(),
         );
         let (ytmin, ytmax) = check_axis(
-            self.bounds.minimum[1],
-            self.bounds.maximum[1],
+            self.bounds.minimum.y(),
+            self.bounds.maximum.y(),
             ray.origin.y(),
             ray.direction.y(),
         );
         let (ztmin, ztmax) = check_axis(
-            self.bounds.minimum[2],
-            self.bounds.maximum[2],
+            self.bounds.minimum.z(),
+            self.bounds.maximum.z(),
             ray.origin.z(),
             ray.direction.z(),
         );
@@ -119,20 +118,20 @@ mod bounds_tests {
     #[test]
     fn bounds_can_enumerate_all_points() {
         let b = Bounds {
-            minimum: [0.0, 0.0, 0.0],
-            maximum: [1.0, 1.0, 1.0]
+            minimum: Point3d::new(0.0, 0.0, 0.0),
+            maximum: Point3d::new(1.0, 1.0, 1.0),
         };
 
         let points = b.enumerate();
         let expected = [
-            [0.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 1.0],
-            [1.0, 0.0, 0.0],
-            [1.0, 0.0, 1.0],
-            [1.0, 1.0, 0.0],
-            [1.0, 1.0, 1.0],
+            Point3d::new(0.0, 0.0, 0.0),
+            Point3d::new(0.0, 0.0, 1.0),
+            Point3d::new(0.0, 1.0, 0.0),
+            Point3d::new(0.0, 1.0, 1.0),
+            Point3d::new(1.0, 0.0, 0.0),
+            Point3d::new(1.0, 0.0, 1.0),
+            Point3d::new(1.0, 1.0, 0.0),
+            Point3d::new(1.0, 1.0, 1.0),
         ];
 
         assert_eq!(points, expected);
@@ -196,8 +195,8 @@ mod tests {
 
                         let shape = MockObject {
                             bounds: Bounds {
-                                minimum: [2.0, 2.0, 2.0],
-                                maximum: [4.0, 4.0, 4.0],
+                                minimum: Point3d::new(2.0, 2.0, 2.0),
+                                maximum: Point3d::new(4.0, 4.0, 4.0),
                             },
                             ..Default::default()
                         };
@@ -253,8 +252,8 @@ mod tests {
         fn a_ray_intersects_a_bounding_box_going_to_infinity() {
             let shape = MockObject {
                 bounds: Bounds {
-                    minimum: [-1.0, f64::NEG_INFINITY, -1.0],
-                    maximum: [1.0, f64::INFINITY, 1.0],
+                    minimum: Point3d::new(-1.0, f64::NEG_INFINITY, -1.0),
+                    maximum: Point3d::new(1.0, f64::INFINITY, 1.0),
                 },
                 ..Default::default()
             };

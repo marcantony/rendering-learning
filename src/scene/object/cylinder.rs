@@ -139,8 +139,8 @@ impl Object for Cylinder {
 
     fn bounds(&self) -> Bounds {
         Bounds {
-            minimum: [-1.0, self.minimum.unwrap_or(f64::NEG_INFINITY), -1.0],
-            maximum: [1.0, self.maximum.unwrap_or(f64::INFINITY), 1.0],
+            minimum: Point3d::new(-1.0, self.minimum.unwrap_or(f64::NEG_INFINITY), -1.0),
+            maximum: Point3d::new(1.0, self.maximum.unwrap_or(f64::INFINITY), 1.0),
         }
     }
 }
@@ -365,8 +365,8 @@ mod tests {
             assert_eq!(
                 cylinder.bounds(),
                 Bounds {
-                    minimum: [-1.0, f64::NEG_INFINITY, -1.0],
-                    maximum: [1.0, f64::INFINITY, 1.0]
+                    minimum: Point3d::new(-1.0, f64::NEG_INFINITY, -1.0),
+                    maximum: Point3d::new(1.0, f64::INFINITY, 1.0)
                 }
             );
         }
@@ -381,8 +381,8 @@ mod tests {
             assert_eq!(
                 cylinder.bounds(),
                 Bounds {
-                    minimum: [-1.0, 1.0, -1.0],
-                    maximum: [1.0, 3.0, 1.0]
+                    minimum: Point3d::new(-1.0, 1.0, -1.0),
+                    maximum: Point3d::new(1.0, 3.0, 1.0)
                 }
             );
         }
