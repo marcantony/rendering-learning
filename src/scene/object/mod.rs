@@ -13,12 +13,27 @@ use super::{
 
 pub trait Object {
     fn material(&self) -> &Material;
-    fn color_at(&self, point: &Point3d) -> Color {
-        self.material().surface.color_at(point)
-    }
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>>;
-    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d;
+    fn intersect(&self, object_ray: &Ray)
+        -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>>;
     fn bounds(&self) -> Bounds;
+}
+
+trait PhysicalObject: Object {
+    fn normal_at(&self, point: &Point3d) -> NormalizedVec3d;
+}
+
+fn build_basic_intersection<'a, T: PhysicalObject>(
+    ray: &Ray,
+    t: f64,
+    object: &'a T,
+) -> Intersection<&'a dyn Object, Color, NormalizedVec3d> {
+    let p = ray.position(t);
+    Intersection::new(
+        t,
+        object,
+        object.material().surface.color_at(&p),
+        object.normal_at(&p),
+    )
 }
 
 pub mod bounded;
@@ -32,6 +47,8 @@ pub mod transformed;
 
 #[cfg(test)]
 pub mod test_utils {
+    use crate::math::{point::Point3d, vector::NormalizedVec3d};
+
     use super::*;
 
     #[derive(Default)]
@@ -41,56 +58,32 @@ pub mod test_utils {
         pub bounds: Bounds,
     }
 
+    impl PhysicalObject for MockObject {
+        fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
+            NormalizedVec3d::new(object_point.x(), object_point.y(), object_point.z()).unwrap()
+        }
+    }
+
     impl Object for MockObject {
         fn material(&self) -> &Material {
             &self.material
         }
 
-        fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+        fn intersect(
+            &self,
+            object_ray: &Ray,
+        ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
             if let Some(expected) = self.intersect_local_arg_expectation.as_ref() {
                 assert_eq!(object_ray, expected);
             }
-            vec![Intersection::new(1.0, self as &dyn Object)]
-        }
-
-        fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
-            NormalizedVec3d::new(object_point.x(), object_point.y(), object_point.z()).unwrap()
+            let t = 1.0;
+            let color = self.material().surface.color_at(&object_ray.origin);
+            let normal = self.normal_at(&object_ray.origin);
+            vec![Intersection::new(t, self, color, normal)]
         }
 
         fn bounds(&self) -> Bounds {
             self.bounds.clone()
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::test_utils::MockObject;
-
-    use super::*;
-
-    mod color_at {
-        use crate::scene::material::Surface;
-        use crate::scene::pattern::test_utils::MockPattern;
-
-        use super::*;
-
-        #[test]
-        fn color_at_untransformed() {
-            let pattern = MockPattern {
-                transform: Default::default(),
-            };
-            let shape = MockObject {
-                material: Material {
-                    surface: Surface::Pattern(Box::new(pattern)),
-                    ..Default::default()
-                },
-                ..Default::default()
-            };
-
-            let c = shape.color_at(&Point3d::new(2.0, 3.0, 4.0));
-
-            assert_eq!(c, Color::new(2.0, 3.0, 4.0));
         }
     }
 }

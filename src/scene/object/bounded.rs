@@ -1,5 +1,6 @@
 use crate::{
-    math::{point::Point3d, vector::NormalizedVec3d},
+    draw::color::Color,
+    math::vector::NormalizedVec3d,
     scene::{
         intersect::{ColorFn, Intersection, NormalFn},
         material::Material,
@@ -84,16 +85,12 @@ impl<T: Object> Object for Bounded<T> {
         self.child.material()
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         if self.test(ray) {
             self.child.intersect(ray)
         } else {
             Vec::new()
         }
-    }
-
-    fn normal_at(&self, point: &Point3d) -> NormalizedVec3d {
-        self.child.normal_at(point)
     }
 
     fn bounds(&self) -> Bounds {
@@ -103,20 +100,12 @@ impl<T: Object> Object for Bounded<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{math::vector::Vec3d, scene::object::test_utils::MockObject};
+    use crate::{
+        math::{point::Point3d, vector::Vec3d},
+        scene::object::test_utils::MockObject,
+    };
 
     use super::*;
-
-    #[test]
-    fn normal_of_a_bounded_object_is_normal_of_child() {
-        let shape = MockObject::default();
-        let bounded = Bounded::new(shape);
-
-        assert_eq!(
-            bounded.normal_at(&Point3d::new(1.0, 2.0, 3.0)),
-            NormalizedVec3d::new(1.0, 2.0, 3.0).unwrap()
-        )
-    }
 
     #[test]
     fn bounds_of_bounded_object_are_bounds_of_child() {
@@ -129,14 +118,21 @@ mod tests {
 
     #[test]
     fn return_child_intersection_when_boundary_test_passes() {
-        let ray = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(1.0, 2.0, 3.0));
+        let ray = Ray::new(Point3d::new(1.0, 0.0, 0.0), Vec3d::new(1.0, 2.0, 3.0));
         let shape = MockObject {
             intersect_local_arg_expectation: Some(ray.clone()),
             ..Default::default()
         };
         let bounded = Bounded::new(shape);
 
-        assert_eq!(bounded.intersect(&ray).len(), 1);
+        let bounded_intersect = bounded.intersect(&ray);
+        let child_intersect = bounded.child.intersect(&ray);
+
+        assert_eq!(bounded_intersect.len(), 1);
+        assert_eq!(bounded_intersect.len(), child_intersect.len());
+        assert!(bounded_intersect[0] == child_intersect[0]);
+        assert_eq!(bounded_intersect[0].color, child_intersect[0].color);
+        assert_eq!(bounded_intersect[0].normal, child_intersect[0].normal);
     }
 
     #[test]

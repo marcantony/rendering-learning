@@ -1,4 +1,5 @@
 use crate::{
+    draw::color::Color,
     math::{point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect::{ColorFn, Intersection, NormalFn},
@@ -7,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Object, PhysicalObject};
 
 /// A sphere: by default, a unit sphere (of radius 1 and its origin at (0, 0, 0))
 pub struct Sphere {
@@ -24,12 +25,21 @@ impl Sphere {
     }
 }
 
+impl PhysicalObject for Sphere {
+    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
+        NormalizedVec3d::try_from(object_point - &Point3d::new(0.0, 0.0, 0.0)).unwrap()
+    }
+}
+
 impl Object for Sphere {
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+    fn intersect(
+        &self,
+        object_ray: &Ray,
+    ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         let sphere_to_ray = &object_ray.origin - &Point3d::new(0.0, 0.0, 0.0);
 
         let a = object_ray.direction.dot(&object_ray.direction);
@@ -49,12 +59,8 @@ impl Object for Sphere {
         };
 
         ts.into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| super::build_basic_intersection(object_ray, t, self))
             .collect()
-    }
-
-    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
-        NormalizedVec3d::try_from(object_point - &Point3d::new(0.0, 0.0, 0.0)).unwrap()
     }
 
     fn bounds(&self) -> Bounds {
@@ -100,7 +106,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect(&r));
+            let xs = is::test_utils::to_ts(&s.intersect(&r));
 
             assert_eq!(xs, vec![4.0, 6.0]);
         }
@@ -110,7 +116,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 1.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect(&r));
+            let xs = is::test_utils::to_ts(&s.intersect(&r));
 
             assert_eq!(xs, vec![5.0, 5.0]);
         }
@@ -130,7 +136,7 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect(&r));
+            let xs = is::test_utils::to_ts(&s.intersect(&r));
 
             assert_eq!(xs, vec![-1.0, 1.0]);
         }
@@ -140,9 +146,25 @@ mod tests {
             let r = Ray::new(Point3d::new(0.0, 0.0, 5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s = Sphere::unit();
 
-            let xs = is::test_utils::to_ts(s.intersect(&r));
+            let xs = is::test_utils::to_ts(&s.intersect(&r));
 
             assert_eq!(xs, vec![-6.0, -4.0]);
+        }
+
+        #[test]
+        fn intersection_returns_color_and_normal_at_point() {
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+            let s = Sphere::unit();
+
+            let xs = s.intersect(&r);
+
+            for x in xs {
+                let p = r.position(x.t());
+                let n = s.normal_at(&p);
+                let c = s.material().surface.color_at(&p);
+                assert_eq!(x.normal, n);
+                assert_eq!(x.color, c);
+            }
         }
     }
 

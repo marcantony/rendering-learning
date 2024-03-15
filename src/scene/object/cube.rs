@@ -1,4 +1,5 @@
 use crate::{
+    draw::color::Color,
     math::{point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect::{ColorFn, Intersection, NormalFn},
@@ -7,37 +8,14 @@ use crate::{
     },
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Object, PhysicalObject};
 
 #[derive(Default)]
 pub struct Cube {
     pub material: Material,
 }
 
-impl Object for Cube {
-    fn material(&self) -> &Material {
-        &self.material
-    }
-
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
-        let (xtmin, xtmax) = check_axis(object_ray.origin.x(), object_ray.direction.x());
-        let (ytmin, ytmax) = check_axis(object_ray.origin.y(), object_ray.direction.y());
-        let (ztmin, ztmax) = check_axis(object_ray.origin.z(), object_ray.direction.z());
-
-        let tmin = xtmin.max(ytmin).max(ztmin);
-        let tmax = xtmax.min(ytmax).min(ztmax);
-
-        let ts = if tmin > tmax {
-            Vec::new()
-        } else {
-            vec![tmin, tmax]
-        };
-
-        ts.into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
-            .collect()
-    }
-
+impl PhysicalObject for Cube {
     fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
         let max_component = object_point
             .x()
@@ -53,6 +31,34 @@ impl Object for Cube {
             NormalizedVec3d::new(0.0, 0.0, object_point.z())
         }
         .unwrap()
+    }
+}
+
+impl Object for Cube {
+    fn material(&self) -> &Material {
+        &self.material
+    }
+
+    fn intersect(
+        &self,
+        object_ray: &Ray,
+    ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
+        let (xtmin, xtmax) = check_axis(object_ray.origin.x(), object_ray.direction.x());
+        let (ytmin, ytmax) = check_axis(object_ray.origin.y(), object_ray.direction.y());
+        let (ztmin, ztmax) = check_axis(object_ray.origin.z(), object_ray.direction.z());
+
+        let tmin = xtmin.max(ytmin).max(ztmin);
+        let tmax = xtmax.min(ytmax).min(ztmax);
+
+        let ts = if tmin > tmax {
+            Vec::new()
+        } else {
+            vec![tmin, tmax]
+        };
+
+        ts.into_iter()
+            .map(|t| super::build_basic_intersection(object_ray, t, self))
+            .collect()
     }
 
     fn bounds(&self) -> Bounds {
@@ -97,7 +103,7 @@ mod tests {
                         let c: Cube = Default::default();
                         let r = Ray::new(origin, direction);
 
-                        let xs = is::test_utils::to_ts(c.intersect(&r));
+                        let xs = is::test_utils::to_ts(&c.intersect(&r));
 
                         assert_eq!(xs, expected);
                     }
@@ -122,6 +128,22 @@ mod tests {
             a_ray_misses_a_cube_4: (Point3d::new(2.0, 0.0, 2.0), Vec3d::new(0.0, 0.0, -1.0), vec![]),
             a_ray_misses_a_cube_5: (Point3d::new(0.0, 2.0, 2.0), Vec3d::new(0.0, -1.0, 0.0), vec![]),
             a_ray_misses_a_cube_6: (Point3d::new(2.0, 2.0, 0.0), Vec3d::new(-1.0, 0.0, 0.0), vec![])
+        }
+
+        #[test]
+        fn intersection_returns_color_and_normal_at_point() {
+            let r = Ray::new(Point3d::new(5.0, 0.5, 0.0), Vec3d::new(-1.0, 0.0, 0.0));
+            let cube = Cube::default();
+
+            let xs = cube.intersect(&r);
+
+            for x in xs {
+                let p = r.position(x.t());
+                let n = cube.normal_at(&p);
+                let c = cube.material().surface.color_at(&p);
+                assert_eq!(x.normal, n);
+                assert_eq!(x.color, c);
+            }
         }
     }
 

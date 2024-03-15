@@ -1,4 +1,5 @@
 use crate::{
+    draw::color::Color,
     math::{point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect::{ColorFn, Intersection, NormalFn},
@@ -7,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Object, PhysicalObject};
 
 const EPSILON: f64 = 1e-8;
 
@@ -66,12 +67,37 @@ impl Cylinder {
     }
 }
 
+impl PhysicalObject for Cylinder {
+    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
+        let dist2 = object_point.x().powi(2) + object_point.z().powi(2);
+
+        if dist2 < 1.0
+            && self
+                .maximum
+                .map_or(false, |max| object_point.y() >= max - EPSILON)
+        {
+            NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
+        } else if dist2 < 1.0
+            && self
+                .minimum
+                .map_or(false, |min| object_point.y() <= min + EPSILON)
+        {
+            NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()
+        } else {
+            NormalizedVec3d::new(object_point.x(), 0.0, object_point.z()).unwrap()
+        }
+    }
+}
+
 impl Object for Cylinder {
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+    fn intersect(
+        &self,
+        object_ray: &Ray,
+    ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         let a = object_ray.direction.x().powi(2) + object_ray.direction.z().powi(2);
 
         // Ray is parallel to the y-axis
@@ -111,28 +137,8 @@ impl Object for Cylinder {
 
         wall_xs
             .into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| super::build_basic_intersection(object_ray, t, self))
             .collect()
-    }
-
-    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
-        let dist2 = object_point.x().powi(2) + object_point.z().powi(2);
-
-        if dist2 < 1.0
-            && self
-                .maximum
-                .map_or(false, |max| object_point.y() >= max - EPSILON)
-        {
-            NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
-        } else if dist2 < 1.0
-            && self
-                .minimum
-                .map_or(false, |min| object_point.y() <= min + EPSILON)
-        {
-            NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()
-        } else {
-            NormalizedVec3d::new(object_point.x(), 0.0, object_point.z()).unwrap()
-        }
     }
 
     fn bounds(&self) -> Bounds {
@@ -175,7 +181,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs = is::test_utils::to_ts(cyl.intersect(&r));
+                        let xs = is::test_utils::to_ts(&cyl.intersect(&r));
 
                         assert_eq!(xs, expected);
                     }
@@ -190,6 +196,22 @@ mod tests {
             ray_hits_1: (Point3d::new(1.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), vec![5.0, 5.0]),
             ray_hits_2: (Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), vec![4.0, 6.0]),
             ray_hits_3: (Point3d::new(0.5, 0.0, -5.0), Vec3d::new(0.1, 1.0, 1.0), vec![6.80798191702732, 7.088723439378861])
+        }
+
+        #[test]
+        fn intersection_returns_color_and_normal_at_point() {
+            let r = Ray::new(Point3d::new(1.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+            let cylinder = Cylinder::default();
+
+            let xs = cylinder.intersect(&r);
+
+            for x in xs {
+                let p = r.position(x.t());
+                let n = cylinder.normal_at(&p);
+                let c = cylinder.material().surface.color_at(&p);
+                assert_eq!(x.normal, n);
+                assert_eq!(x.color, c);
+            }
         }
     }
 

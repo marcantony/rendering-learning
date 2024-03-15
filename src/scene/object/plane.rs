@@ -1,4 +1,5 @@
 use crate::{
+    draw::color::Color,
     math::{point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect::{ColorFn, Intersection, NormalFn},
@@ -7,11 +8,17 @@ use crate::{
     },
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Object, PhysicalObject};
 
 /// A plane: by default, a plane in xz
 pub struct Plane {
     pub material: Material,
+}
+
+impl PhysicalObject for Plane {
+    fn normal_at(&self, _: &Point3d) -> NormalizedVec3d {
+        NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
+    }
 }
 
 impl Object for Plane {
@@ -19,7 +26,10 @@ impl Object for Plane {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+    fn intersect(
+        &self,
+        object_ray: &Ray,
+    ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
         let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
             return Vec::new();
@@ -28,12 +38,8 @@ impl Object for Plane {
         };
 
         ts.into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| super::build_basic_intersection(object_ray, t, self))
             .collect()
-    }
-
-    fn normal_at(&self, _: &Point3d) -> NormalizedVec3d {
-        NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
     }
 
     fn bounds(&self) -> Bounds {
@@ -97,7 +103,7 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, 1.0, 0.0), Vec3d::new(0.0, -1.0, 0.0));
 
-        let xs = is::test_utils::to_ts(p.intersect(&r));
+        let xs = is::test_utils::to_ts(&p.intersect(&r));
         assert_eq!(xs, vec![1.0]);
     }
 
@@ -106,7 +112,23 @@ mod tests {
         let p: Plane = Default::default();
         let r = Ray::new(Point3d::new(0.0, -1.0, 0.0), Vec3d::new(0.0, 1.0, 0.0));
 
-        let xs = is::test_utils::to_ts(p.intersect(&r));
+        let xs = is::test_utils::to_ts(&p.intersect(&r));
         assert_eq!(xs, vec![1.0]);
+    }
+
+    #[test]
+    fn intersection_returns_color_and_normal_at_point() {
+        let r = Ray::new(Point3d::new(0.0, 1.0, 0.0), Vec3d::new(0.0, -1.0, 0.0));
+        let plane = Plane::default();
+
+        let xs = plane.intersect(&r);
+
+        for x in xs {
+            let p = r.position(x.t());
+            let n = plane.normal_at(&p);
+            let c = plane.material().surface.color_at(&p);
+            assert_eq!(x.normal, n);
+            assert_eq!(x.color, c);
+        }
     }
 }

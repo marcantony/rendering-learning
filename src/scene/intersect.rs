@@ -1,5 +1,5 @@
 use crate::{
-    draw::color::{self, Color},
+    draw::color::Color,
     math::{point::Point3d, util, vector::NormalizedVec3d},
 };
 
@@ -7,29 +7,27 @@ use super::{object::Object, ray::Ray};
 
 const POINT_OFFSET_BIAS: f64 = 1e-5;
 
-pub type ColorFn = Box<dyn Fn() -> Color>;
-pub type NormalFn = Box<dyn Fn() -> NormalizedVec3d>;
+pub type ColorFn<'a> = Box<dyn Fn() -> Color + 'a>;
+pub type NormalFn<'a> = Box<dyn Fn() -> NormalizedVec3d>;
 
 #[derive(Debug, Clone)]
 pub struct Intersection<T, C, N> {
     t: f64,
     object: T,
-    color: C,
-    normal: N,
-}
-
-impl<T> Intersection<T, ColorFn, NormalFn> {
-    pub fn new(t: f64, object: T) -> Self {
-        Intersection {
-            t,
-            object,
-            color: Box::new(|| color::black()),
-            normal: Box::new(|| NormalizedVec3d::new(1.0, 1.0, 1.0).unwrap()),
-        }
-    }
+    pub color: C,
+    pub normal: N,
 }
 
 impl<T, C, N> Intersection<T, C, N> {
+    pub fn new(t: f64, object: T, color: C, normal: N) -> Self {
+        Intersection {
+            t,
+            object,
+            color,
+            normal,
+        }
+    }
+
     pub fn t(&self) -> f64 {
         self.t
     }
@@ -45,67 +43,87 @@ impl<T: Object + ?Sized, C: Fn() -> Color, N: Fn() -> NormalizedVec3d> Intersect
         ray: &Ray,
         xs: &[Intersection<&T, ColorFn, NormalFn>],
     ) -> Precomputation<&T> {
-        let t = self.t();
-        let object = self.object();
-        let point = ray.position(t);
-        let eye_v = NormalizedVec3d::try_from(-&ray.direction).unwrap();
-        let normal_v = object.normal_at(&point);
+        prepare_computations_helper(self, ray, (self.normal)(), (self.color)(), xs)
+    }
+}
 
-        let normal_dot_eye = normal_v.dot(&eye_v);
-        let (adjusted_normal_v, inside) = if normal_dot_eye < 0.0 {
-            (-normal_v, true)
+impl<'a, T: Object + ?Sized> Intersection<&'a T, Color, NormalizedVec3d> {
+    pub fn prepare_computations(
+        &self,
+        ray: &Ray,
+        xs: &[Intersection<&T, Color, NormalizedVec3d>],
+    ) -> Precomputation<&T> {
+        prepare_computations_helper(self, ray, self.normal.clone(), self.color.clone(), xs)
+    }
+}
+
+fn prepare_computations_helper<'a, T: Object + ?Sized, C1, N1, C2, N2>(
+    intersection: &'a Intersection<&T, C1, N1>,
+    ray: &Ray,
+    normal: NormalizedVec3d,
+    color: Color,
+    xs: &[Intersection<&T, C2, N2>],
+) -> Precomputation<&'a T> {
+    let t = intersection.t();
+    let object = intersection.object();
+    let point = ray.position(t);
+    let eye_v = NormalizedVec3d::try_from(-&ray.direction).unwrap();
+    let normal_v = normal;
+
+    let normal_dot_eye = normal_v.dot(&eye_v);
+    let (adjusted_normal_v, inside) = if normal_dot_eye < 0.0 {
+        (-normal_v, true)
+    } else {
+        (normal_v, false)
+    };
+
+    let over_point = &point + &(&*adjusted_normal_v * POINT_OFFSET_BIAS);
+    let under_point = &point - &(&*adjusted_normal_v * POINT_OFFSET_BIAS);
+
+    let reflect_v = NormalizedVec3d::try_from(ray.direction.reflect(&adjusted_normal_v)).unwrap();
+
+    let mut containers = Vec::<&T>::new();
+    let mut n1: f64 = 1.0;
+    let mut n2: f64 = 1.0;
+    for i in xs {
+        if i == intersection {
+            n1 = match containers.last() {
+                Some(o) => o.material().refractive_index,
+                None => 1.0,
+            };
+        }
+
+        if let Some(index) = containers
+            .iter()
+            .position(|&obj| std::ptr::eq(obj, *i.object()))
+        {
+            containers.remove(index);
         } else {
-            (normal_v, false)
-        };
-
-        let over_point = &point + &(&*adjusted_normal_v * POINT_OFFSET_BIAS);
-        let under_point = &point - &(&*adjusted_normal_v * POINT_OFFSET_BIAS);
-
-        let reflect_v =
-            NormalizedVec3d::try_from(ray.direction.reflect(&adjusted_normal_v)).unwrap();
-
-        let mut containers = Vec::<&T>::new();
-        let mut n1: f64 = 1.0;
-        let mut n2: f64 = 1.0;
-        for i in xs {
-            if i == self {
-                n1 = match containers.last() {
-                    Some(o) => o.material().refractive_index,
-                    None => 1.0,
-                };
-            }
-
-            if let Some(index) = containers
-                .iter()
-                .position(|&obj| std::ptr::eq(obj, *i.object()))
-            {
-                containers.remove(index);
-            } else {
-                containers.push(i.object());
-            }
-
-            if i == self {
-                n2 = match containers.last() {
-                    Some(o) => o.material().refractive_index,
-                    None => 1.0,
-                };
-                break;
-            }
+            containers.push(i.object());
         }
 
-        Precomputation {
-            t,
-            object,
-            point,
-            eye_v,
-            normal_v: adjusted_normal_v,
-            inside,
-            over_point,
-            under_point,
-            reflect_v,
-            refraction_exiting: n1,
-            refraction_entering: n2,
+        if i == intersection {
+            n2 = match containers.last() {
+                Some(o) => o.material().refractive_index,
+                None => 1.0,
+            };
+            break;
         }
+    }
+
+    Precomputation {
+        t,
+        object,
+        point,
+        eye_v,
+        normal_v: adjusted_normal_v,
+        inside,
+        over_point,
+        under_point,
+        reflect_v,
+        refraction_exiting: n1,
+        refraction_entering: n2,
+        object_color: color,
     }
 }
 
@@ -128,6 +146,7 @@ pub struct Precomputation<T> {
     pub reflect_v: NormalizedVec3d,
     pub refraction_exiting: f64,
     pub refraction_entering: f64,
+    pub object_color: Color,
 }
 
 impl<T> Precomputation<T> {
@@ -150,9 +169,7 @@ impl<T> Precomputation<T> {
     }
 }
 
-pub fn hit<T>(
-    intersections: &[Intersection<T, ColorFn, NormalFn>],
-) -> Option<&Intersection<T, ColorFn, NormalFn>> {
+pub fn hit<T, C, N>(intersections: &[Intersection<T, C, N>]) -> Option<&Intersection<T, C, N>> {
     intersections.iter().fold(None, |acc, i| {
         if i.t() >= 0.0 {
             acc.map(|lowest| if lowest.t() < i.t() { lowest } else { i })
@@ -163,7 +180,7 @@ pub fn hit<T>(
     })
 }
 
-pub fn sort<T>(xs: &mut Vec<Intersection<T, ColorFn, NormalFn>>) {
+pub fn sort<T, C, N>(xs: &mut Vec<Intersection<T, C, N>>) {
     xs.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap())
 }
 
@@ -171,7 +188,7 @@ pub fn sort<T>(xs: &mut Vec<Intersection<T, ColorFn, NormalFn>>) {
 pub mod test_utils {
     use super::*;
 
-    pub fn to_ts<T>(ts: Vec<Intersection<T, ColorFn, NormalFn>>) -> Vec<f64> {
+    pub fn to_ts<T, C, N>(ts: &[Intersection<T, C, N>]) -> Vec<f64> {
         ts.into_iter().map(|i| i.t()).collect()
     }
 }
@@ -179,17 +196,26 @@ pub mod test_utils {
 #[cfg(test)]
 mod test {
     use crate::{
+        draw::color,
         math::{point::Point3d, vector::Vec3d},
         scene::object::sphere::Sphere,
     };
 
     use super::*;
 
+    fn default_color() -> ColorFn<'static> {
+        Box::new(|| color::black())
+    }
+
+    fn default_normal() -> NormalFn<'static> {
+        Box::new(|| NormalizedVec3d::new(1.0, 1.0, 1.0).unwrap())
+    }
+
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
         let s = Sphere::unit();
 
-        let i = Intersection::new(3.5, &s);
+        let i = Intersection::new(3.5, &s, default_color(), default_normal());
 
         assert_eq!(i.t(), 3.5);
         assert!(std::ptr::eq(*i.object(), &s));
@@ -201,8 +227,8 @@ mod test {
         #[test]
         fn hit_when_all_intersections_have_positive_t() {
             let s = Sphere::unit();
-            let i1 = Intersection::new(1.0, &s);
-            let i2 = Intersection::new(2.0, &s);
+            let i1 = Intersection::new(1.0, &s, default_color(), default_normal());
+            let i2 = Intersection::new(2.0, &s, default_color(), default_normal());
             let xs = vec![i2, i1];
 
             let i = hit(&xs);
@@ -213,8 +239,8 @@ mod test {
         #[test]
         fn hit_when_some_intersections_have_negative_t() {
             let s = Sphere::unit();
-            let i1 = Intersection::new(-1.0, &s);
-            let i2 = Intersection::new(1.0, &s);
+            let i1 = Intersection::new(-1.0, &s, default_color(), default_normal());
+            let i2 = Intersection::new(1.0, &s, default_color(), default_normal());
             let xs = vec![i2, i1];
 
             let i = hit(&xs);
@@ -225,8 +251,8 @@ mod test {
         #[test]
         fn hit_when_all_intersections_have_negative_t() {
             let s = Sphere::unit();
-            let i1 = Intersection::new(-2.0, &s);
-            let i2 = Intersection::new(-1.0, &s);
+            let i1 = Intersection::new(-2.0, &s, default_color(), default_normal());
+            let i2 = Intersection::new(-1.0, &s, default_color(), default_normal());
             let xs = vec![i2, i1];
 
             let i = hit(&xs);
@@ -237,10 +263,10 @@ mod test {
         #[test]
         fn hit_is_always_lowest_nonnegative_intersection() {
             let s = Sphere::unit();
-            let i1 = Intersection::new(5.0, &s);
-            let i2 = Intersection::new(7.0, &s);
-            let i3 = Intersection::new(-3.0, &s);
-            let i4 = Intersection::new(2.0, &s);
+            let i1 = Intersection::new(5.0, &s, default_color(), default_normal());
+            let i2 = Intersection::new(7.0, &s, default_color(), default_normal());
+            let i3 = Intersection::new(-3.0, &s, default_color(), default_normal());
+            let i4 = Intersection::new(2.0, &s, default_color(), default_normal());
             let xs = vec![i1, i2, i3, i4];
 
             let i = hit(&xs);
@@ -268,7 +294,7 @@ mod test {
         fn precomputing_the_state_of_an_intersection() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection::new(4.0, &s);
+            let i = Intersection::new(4.0, &s, default_color(), default_normal());
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -290,7 +316,12 @@ mod test {
             let shape: Plane = Default::default();
             let t = std::f64::consts::SQRT_2 / 2.0;
             let r = Ray::new(Point3d::new(0.0, 1.0, -1.0), Vec3d::new(0.0, -t, t));
-            let i = Intersection::new(std::f64::consts::SQRT_2, &shape);
+            let i = Intersection::new(
+                std::f64::consts::SQRT_2,
+                &shape,
+                default_color(),
+                default_normal(),
+            );
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -301,7 +332,7 @@ mod test {
         fn hit_when_an_intersection_occurs_on_the_outside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection::new(4.0, &s);
+            let i = Intersection::new(4.0, &s, default_color(), default_normal());
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -312,7 +343,7 @@ mod test {
         fn hit_when_an_intersection_occurs_on_the_inside() {
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
             let s: Sphere = Default::default();
-            let i = Intersection::new(1.0, &s);
+            let i = Intersection::new(1.0, &s, default_color(), default_normal());
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -339,7 +370,7 @@ mod test {
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
                     .unwrap(),
             };
-            let i = Intersection::new(5.0, &shape);
+            let i = Intersection::new(5.0, &shape, default_color(), default_normal());
 
             let comps = i.prepare_computations(&r, &vec![]);
 
@@ -355,7 +386,7 @@ mod test {
                 transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
                     .unwrap(),
             };
-            let i = Intersection::new(5.0, &shape);
+            let i = Intersection::new(5.0, &shape, default_color(), default_normal());
             let xs = vec![i];
 
             let comps = xs[0].prepare_computations(&r, &xs);
@@ -407,7 +438,7 @@ mod test {
                 a: &'a Transformed<Sphere>,
                 b: &'a Transformed<Sphere>,
                 c: &'a Transformed<Sphere>,
-            ) -> Vec<Intersection<&'a Transformed<Sphere>, ColorFn, NormalFn>> {
+            ) -> Vec<Intersection<&'a Transformed<Sphere>, ColorFn<'a>, NormalFn<'a>>> {
                 vec![
                     (2.0, a),
                     (2.75, b),
@@ -417,7 +448,7 @@ mod test {
                     (6.0, a),
                 ]
                 .into_iter()
-                .map(|(t, o)| Intersection::new(t, o))
+                .map(|(t, o)| Intersection::new(t, o, default_color(), default_normal()))
                 .collect()
             }
 
@@ -457,7 +488,10 @@ mod test {
                 let shape = sphere::glass_sphere();
                 let t = std::f64::consts::SQRT_2 / 2.0;
                 let r = Ray::new(Point3d::new(0.0, 0.0, t), Vec3d::new(0.0, 1.0, 0.0));
-                let xs = vec![Intersection::new(-t, &shape), Intersection::new(t, &shape)];
+                let xs = vec![
+                    Intersection::new(-t, &shape, default_color(), default_normal()),
+                    Intersection::new(t, &shape, default_color(), default_normal()),
+                ];
 
                 let comps = xs[1].prepare_computations(&r, &xs);
                 let reflectance = comps.schlick();
@@ -470,8 +504,8 @@ mod test {
                 let shape = sphere::glass_sphere();
                 let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 1.0, 0.0));
                 let xs = vec![
-                    Intersection::new(-1.0, &shape),
-                    Intersection::new(1.0, &shape),
+                    Intersection::new(-1.0, &shape, default_color(), default_normal()),
+                    Intersection::new(1.0, &shape, default_color(), default_normal()),
                 ];
 
                 let comps = xs[1].prepare_computations(&r, &xs);
@@ -488,7 +522,12 @@ mod test {
             fn schlick_approximation_with_a_small_angle_and_n2_greater_than_n1() {
                 let shape = sphere::glass_sphere();
                 let r = Ray::new(Point3d::new(0.0, 0.99, -2.0), Vec3d::new(0.0, 0.0, 1.0));
-                let xs = vec![Intersection::new(1.8589, &shape)];
+                let xs = vec![Intersection::new(
+                    1.8589,
+                    &shape,
+                    default_color(),
+                    default_normal(),
+                )];
 
                 let comps = xs[0].prepare_computations(&r, &xs);
                 let reflectance = comps.schlick();

@@ -7,6 +7,7 @@ use crate::{
     math::{
         matrix::{InvertibleMatrix, SquareMatrix},
         point::Point3d,
+        vector::NormalizedVec3d,
     },
     scene::{
         material::{Material, Surface},
@@ -40,7 +41,7 @@ impl World {
         }
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         let mut intersections = self
             .objects
             .iter()
@@ -59,8 +60,9 @@ impl World {
                 let shadow_attenuation = self.shadow_attenuation(&comps.over_point, light);
 
                 let surface_color = lighting(
-                    comps.object,
+                    comps.object.material(),
                     &comps.point,
+                    &comps.object_color,
                     light,
                     &comps.eye_v,
                     &comps.normal_v,
@@ -194,11 +196,23 @@ fn basic_spheres() -> Vec<Transformed<Sphere>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{draw::color, math::vector::Vec3d, scene::object::plane::Plane};
+    use crate::{
+        draw::color,
+        math::vector::{NormalizedVec3d, Vec3d},
+        scene::object::plane::Plane,
+    };
 
     use super::*;
 
     const TEST_DEPTH: usize = 5;
+
+    fn default_color() -> ColorFn<'static> {
+        Box::new(|| color::black())
+    }
+
+    fn default_normal() -> NormalFn<'static> {
+        Box::new(|| NormalizedVec3d::new(1.0, 1.0, 1.0).unwrap())
+    }
 
     #[test]
     fn create_a_world() {
@@ -236,7 +250,7 @@ mod tests {
         let w = World::basic();
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
         let shape = w.objects.first().unwrap().as_ref();
-        let i = Intersection::new(4.0, shape);
+        let i = Intersection::new(4.0, shape, default_color(), default_normal());
 
         let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
@@ -256,7 +270,7 @@ mod tests {
         }];
         let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
         let shape = w.objects[1].as_ref();
-        let i = Intersection::new(0.5, shape);
+        let i = Intersection::new(0.5, shape, default_color(), default_normal());
 
         let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
@@ -273,7 +287,7 @@ mod tests {
         w.lights = vec![];
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
         let shape = w.objects.first().unwrap().as_ref();
-        let i = Intersection::new(4.0, shape);
+        let i = Intersection::new(4.0, shape, default_color(), default_normal());
 
         let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
@@ -287,7 +301,7 @@ mod tests {
         w.lights = vec![w.lights[0].clone(), w.lights[0].clone()];
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
         let shape = w.objects.first().unwrap().as_ref();
-        let i = Intersection::new(4.0, shape);
+        let i = Intersection::new(4.0, shape, default_color(), default_normal());
 
         let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
@@ -317,7 +331,12 @@ mod tests {
             origin: Point3d::new(0.0, 0.0, 5.0),
             direction: Vec3d::new(0.0, 0.0, 1.0),
         };
-        let i = Intersection::new(4.0, w.objects[1].as_ref() as &dyn Object);
+        let i = Intersection::new(
+            4.0,
+            w.objects[1].as_ref() as &dyn Object,
+            default_color(),
+            default_normal(),
+        );
 
         let comps = i.prepare_computations(&r, &vec![]);
         let c = w.shade_hit(&comps, TEST_DEPTH);
@@ -436,7 +455,12 @@ mod tests {
                 ..Default::default()
             };
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
-            let i = Intersection::new(1.0, w.objects[1].as_ref());
+            let i = Intersection::new(
+                1.0,
+                w.objects[1].as_ref(),
+                default_color(),
+                default_normal(),
+            );
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, TEST_DEPTH);
@@ -464,7 +488,12 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let i = Intersection::new(sqrt2, w.objects[2].as_ref());
+            let i = Intersection::new(
+                sqrt2,
+                w.objects[2].as_ref(),
+                default_color(),
+                default_normal(),
+            );
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, TEST_DEPTH);
@@ -495,7 +524,12 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let i = Intersection::new(sqrt2, w.objects[2].as_ref());
+            let i = Intersection::new(
+                sqrt2,
+                w.objects[2].as_ref(),
+                default_color(),
+                default_normal(),
+            );
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.shade_hit(&comps, TEST_DEPTH).unwrap();
@@ -562,7 +596,12 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let i = Intersection::new(sqrt2, w.objects[2].as_ref());
+            let i = Intersection::new(
+                sqrt2,
+                w.objects[2].as_ref(),
+                default_color(),
+                default_normal(),
+            );
 
             let comps = i.prepare_computations(&r, &vec![]);
             let color = w.reflected_color(&comps, 0);
@@ -584,7 +623,10 @@ mod tests {
             let w = World::basic();
             let shape = w.objects[0].as_ref();
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let xs = vec![Intersection::new(4.0, shape), Intersection::new(6.0, shape)];
+            let xs = vec![
+                Intersection::new(4.0, shape, default_color(), default_normal()),
+                Intersection::new(6.0, shape, default_color(), default_normal()),
+            ];
 
             let comps = xs[0].prepare_computations(&r, &xs);
             let c = w.refracted_color(&comps, 5);
@@ -600,8 +642,8 @@ mod tests {
             let shape_ref = w.objects[0].as_ref();
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let xs = vec![
-                Intersection::new(4.0, shape_ref),
-                Intersection::new(6.0, shape_ref),
+                Intersection::new(4.0, shape_ref, default_color(), default_normal()),
+                Intersection::new(6.0, shape_ref, default_color(), default_normal()),
             ];
 
             let comps = xs[0].prepare_computations(&r, &xs);
@@ -626,8 +668,8 @@ mod tests {
             let t = std::f64::consts::SQRT_2 / 2.0;
             let r = Ray::new(Point3d::new(0.0, 0.0, t), Vec3d::new(0.0, 1.0, 0.0));
             let xs = vec![
-                Intersection::new(-t, shape_ref),
-                Intersection::new(t, shape_ref),
+                Intersection::new(-t, shape_ref, default_color(), default_normal()),
+                Intersection::new(t, shape_ref, default_color(), default_normal()),
             ];
 
             let comps = xs[1].prepare_computations(&r, &xs);
@@ -663,7 +705,7 @@ mod tests {
                 (0.9899, a_ref),
             ]
             .into_iter()
-            .map(|(t, o)| Intersection::new(t, o))
+            .map(|(t, o)| Intersection::new(t, o, default_color(), default_normal()))
             .collect();
 
             let comps = xs[2].prepare_computations(&r, &xs);
@@ -705,7 +747,12 @@ mod tests {
                 Point3d::new(0.0, 0.0, -3.0),
                 Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
             );
-            let xs = vec![Intersection::new(sqrt2, w.objects[2].as_ref())];
+            let xs = vec![Intersection::new(
+                sqrt2,
+                w.objects[2].as_ref(),
+                default_color(),
+                default_normal(),
+            )];
 
             let comps = xs[0].prepare_computations(&r, &xs);
             let color = w.shade_hit(&comps, 5).unwrap();
@@ -751,7 +798,12 @@ mod tests {
             Point3d::new(0.0, 0.0, -3.0),
             Vec3d::new(0.0, -sqrt2 / 2.0, sqrt2 / 2.0),
         );
-        let xs = vec![Intersection::new(sqrt2, w.objects[2].as_ref())];
+        let xs = vec![Intersection::new(
+            sqrt2,
+            w.objects[2].as_ref(),
+            default_color(),
+            default_normal(),
+        )];
 
         let comps = xs[0].prepare_computations(&r, &xs);
         let color = w.shade_hit(&comps, 5).unwrap();

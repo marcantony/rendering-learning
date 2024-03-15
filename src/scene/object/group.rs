@@ -1,5 +1,6 @@
 use crate::{
-    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
+    draw::color::Color,
+    math::{matrix::InvertibleMatrix, vector::NormalizedVec3d},
     scene::{
         intersect::{self, ColorFn, Intersection, NormalFn},
         material::Material,
@@ -33,7 +34,10 @@ impl Object for Group {
         unimplemented!()
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+    fn intersect(
+        &self,
+        object_ray: &Ray,
+    ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         let mut intersections: Vec<_> = self
             .children
             .iter()
@@ -43,10 +47,6 @@ impl Object for Group {
         intersect::sort(&mut intersections);
 
         intersections
-    }
-
-    fn normal_at(&self, _object_point: &Point3d) -> NormalizedVec3d {
-        unimplemented!()
     }
 
     fn bounds(&self) -> super::bounded::Bounds {
@@ -64,8 +64,8 @@ impl Default for Group {
 
 #[cfg(test)]
 mod tests {
+    use crate::scene::intersect as is;
     use crate::scene::object::sphere::Sphere;
-    use crate::scene::{intersect as is, transformation};
 
     use super::*;
 
@@ -84,7 +84,10 @@ mod tests {
     }
 
     mod intersect {
-        use crate::{math::vector::Vec3d, scene::transformation};
+        use crate::{
+            math::{point::Point3d, vector::Vec3d},
+            scene::transformation,
+        };
 
         use super::*;
 
@@ -120,7 +123,7 @@ mod tests {
             );
 
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let xs = is::test_utils::to_ts(g.intersect(&r));
+            let xs = is::test_utils::to_ts(&g.intersect(&r));
 
             assert_eq!(xs, vec![1.0, 3.0, 4.0, 6.0]);
         }
@@ -143,41 +146,19 @@ mod tests {
 
             assert_eq!(xs.len(), 2);
         }
-    }
-
-    mod normal {
-        use super::*;
 
         #[test]
-        fn finding_the_normal_of_an_object_in_a_group() {
-            let s = Transformed {
-                child: Box::new(Sphere::unit()),
-                transform: InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0))
-                    .unwrap(),
-            };
-            let g = Group::new(
-                InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
-                vec![Box::new(s)],
-            );
+        fn intersecting_a_group_returns_intersection_of_child() {
+            let s1: Sphere = Default::default();
+            let g = Group::new(Default::default(), vec![Box::new(s1)]);
 
-            let s = g.children[0].as_ref();
+            let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+            let group_xs = g.intersect(&r);
+            let child_xs = g.children[0].intersect(&r);
 
-            assert_eq!(
-                NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap(),
-                s.normal_at(&Point3d::new(2.0, 1.0, 0.0))
-            );
-            assert_eq!(
-                NormalizedVec3d::new(-1.0, 0.0, 0.0).unwrap(),
-                s.normal_at(&Point3d::new(1.0, 0.0, 0.0))
-            );
-            assert_eq!(
-                NormalizedVec3d::new(1.0, 0.0, 0.0).unwrap(),
-                s.normal_at(&Point3d::new(3.0, 0.0, 0.0))
-            );
-            assert_eq!(
-                NormalizedVec3d::new(0.0, 0.0, 1.0).unwrap(),
-                s.normal_at(&Point3d::new(2.0, 0.0, 1.0))
-            );
+            assert!(group_xs == child_xs);
+            assert_eq!(group_xs[0].color, child_xs[0].color);
+            assert_eq!(group_xs[0].normal, child_xs[0].normal);
         }
     }
 }

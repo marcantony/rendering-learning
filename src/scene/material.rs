@@ -3,7 +3,7 @@ use crate::{
     math::{point::Point3d, vector::NormalizedVec3d},
 };
 
-use super::{light::PointLight, object::Object, pattern::Pattern};
+use super::{light::PointLight, pattern::Pattern};
 
 pub enum Surface {
     Color(Color),
@@ -52,17 +52,17 @@ impl Default for Material {
 }
 
 pub fn lighting(
-    object: &dyn Object,
+    material: &Material,
     point: &Point3d,
+    object_color: &Color,
     light: &PointLight,
     eyev: &NormalizedVec3d,
     normalv: &NormalizedVec3d,
     shadow_attenuation: f64,
 ) -> Color {
-    let effective_color = &object.color_at(point) * &light.intensity;
+    let effective_color = object_color * &light.intensity;
     let lightv = (&light.position - point).norm().unwrap();
 
-    let material = object.material();
     let ambient = &effective_color * material.ambient;
 
     let light_dot_normal = lightv.dot(normalv);
@@ -143,11 +143,9 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
-                    material: m,
-                    ..Default::default()
-                } as &dyn Object,
+                &m,
                 &position,
+                &m.surface.color_at(&position),
                 &light,
                 &eyev,
                 &normalv,
@@ -168,11 +166,9 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
-                    material: m,
-                    ..Default::default()
-                } as &dyn Object,
+                &m,
                 &position,
+                &m.surface.color_at(&position),
                 &light,
                 &eyev,
                 &normalv,
@@ -192,11 +188,9 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
-                    material: m,
-                    ..Default::default()
-                } as &dyn Object,
+                &m,
                 &position,
+                &m.surface.color_at(&position),
                 &light,
                 &eyev,
                 &normalv,
@@ -220,11 +214,9 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
-                    material: m,
-                    ..Default::default()
-                } as &dyn Object,
+                &m,
                 &position,
+                &m.surface.color_at(&position),
                 &light,
                 &eyev,
                 &normalv,
@@ -247,11 +239,9 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
-                    material: m,
-                    ..Default::default()
-                } as &dyn Object,
+                &m,
                 &position,
+                &m.surface.color_at(&position),
                 &light,
                 &eyev,
                 &normalv,
@@ -271,11 +261,9 @@ mod tests {
             };
 
             let result = lighting(
-                &Sphere {
-                    material: m,
-                    ..Default::default()
-                } as &dyn Object,
+                &m,
                 &position,
+                &m.surface.color_at(&position),
                 &light,
                 &eyev,
                 &normalv,
@@ -297,8 +285,6 @@ mod tests {
                 specular: 0.0,
                 ..Default::default()
             };
-            let mut object = Sphere::unit();
-            object.material = m;
             let eyev = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
             let normalv = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
             let light = PointLight {
@@ -306,17 +292,21 @@ mod tests {
                 intensity: color::white(),
             };
 
+            let p1 = Point3d::new(0.9, 0.0, 0.0);
             let c1 = lighting(
-                &object as &dyn Object,
-                &Point3d::new(0.9, 0.0, 0.0),
+                &m,
+                &p1,
+                &m.surface.color_at(&p1),
                 &light,
                 &eyev,
                 &normalv,
                 1.0,
             );
+            let p2 = Point3d::new(1.1, 0.0, 0.0);
             let c2 = lighting(
-                &object as &dyn Object,
-                &Point3d::new(1.1, 0.0, 0.0),
+                &m,
+                &p2,
+                &m.surface.color_at(&p2),
                 &light,
                 &eyev,
                 &normalv,

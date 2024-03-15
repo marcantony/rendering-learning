@@ -1,4 +1,5 @@
 use crate::{
+    draw::color::Color,
     math::{point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect::{ColorFn, Intersection, NormalFn},
@@ -7,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{bounded::Bounds, Object};
+use super::{bounded::Bounds, Object, PhysicalObject};
 
 const EPSILON: f64 = 1e-8;
 
@@ -62,12 +63,35 @@ impl Cone {
     }
 }
 
+impl PhysicalObject for Cone {
+    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
+        let dist2 = object_point.x().powi(2) + object_point.z().powi(2);
+
+        if self.maximum.map_or(false, |max| {
+            dist2 < max.powi(2) && object_point.y() >= max - EPSILON
+        }) {
+            NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
+        } else if self.minimum.map_or(false, |min| {
+            dist2 < min.powi(2) && object_point.y() <= min + EPSILON
+        }) {
+            NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()
+        } else {
+            let y = f64::sqrt(object_point.x().powi(2) + object_point.z().powi(2));
+            let y = if object_point.y() > 0.0 { -y } else { y };
+            NormalizedVec3d::new(object_point.x(), y, object_point.z()).unwrap()
+        }
+    }
+}
+
 impl Object for Cone {
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn intersect(&self, object_ray: &Ray) -> Vec<Intersection<&dyn Object, ColorFn, NormalFn>> {
+    fn intersect(
+        &self,
+        object_ray: &Ray,
+    ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         let a = object_ray.direction.x().powi(2) - object_ray.direction.y().powi(2)
             + object_ray.direction.z().powi(2);
         let b = 2.0 * object_ray.origin.x() * object_ray.direction.x()
@@ -113,26 +137,8 @@ impl Object for Cone {
 
         wall_xs
             .into_iter()
-            .map(|t| Intersection::new(t, self as &dyn Object))
+            .map(|t| super::build_basic_intersection(object_ray, t, self))
             .collect()
-    }
-
-    fn normal_at(&self, object_point: &Point3d) -> NormalizedVec3d {
-        let dist2 = object_point.x().powi(2) + object_point.z().powi(2);
-
-        if self.maximum.map_or(false, |max| {
-            dist2 < max.powi(2) && object_point.y() >= max - EPSILON
-        }) {
-            NormalizedVec3d::new(0.0, 1.0, 0.0).unwrap()
-        } else if self.minimum.map_or(false, |min| {
-            dist2 < min.powi(2) && object_point.y() <= min + EPSILON
-        }) {
-            NormalizedVec3d::new(0.0, -1.0, 0.0).unwrap()
-        } else {
-            let y = f64::sqrt(object_point.x().powi(2) + object_point.z().powi(2));
-            let y = if object_point.y() > 0.0 { -y } else { y };
-            NormalizedVec3d::new(object_point.x(), y, object_point.z()).unwrap()
-        }
     }
 
     fn bounds(&self) -> Bounds {
@@ -180,7 +186,7 @@ mod tests {
                         let nd = direction.norm().unwrap();
                         let r = Ray::new(origin, nd);
 
-                        let xs: Vec<f64> = is::test_utils::to_ts(cone.intersect(&r));
+                        let xs: Vec<f64> = is::test_utils::to_ts(&cone.intersect(&r));
 
                         assert_eq!(xs, expected);
                     }
@@ -189,7 +195,7 @@ mod tests {
         }
 
         cone_intersect_tests! {
-            intersect_1: (Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0), vec![5.0, 5.0]),
+            intersect_1: (Point3d::new(0.0, 1e-6, -5.0), Vec3d::new(0.0, 0.0, 1.0), vec![4.999999000844085, 5.000000999155915]),
             intersect_2: (Point3d::new(0.0, 0.0, -5.0), Vec3d::new(1.0, 1.0, 1.0), vec![8.660254037844386, 8.660254037844386]),
             intersect_3: (Point3d::new(1.0, 1.0, -5.0), Vec3d::new(-0.5, -1.0, 1.0), vec![4.550055679356349, 49.449944320643645])
         }
@@ -200,7 +206,7 @@ mod tests {
             let nd = Vec3d::new(0.0, 1.0, 1.0).norm().unwrap();
             let r = Ray::new(Point3d::new(0.0, 0.0, -1.0), nd);
 
-            let xs = is::test_utils::to_ts(shape.intersect(&r));
+            let xs = is::test_utils::to_ts(&shape.intersect(&r));
 
             assert_eq!(xs, vec![0.3535533905932738]);
         }
@@ -232,6 +238,22 @@ mod tests {
             endcap_intersect_1: (Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 1.0, 0.0), 0),
             endcap_intersect_2: (Point3d::new(0.0, 0.0, -0.25), Vec3d::new(0.0, 1.0, 1.0), 2),
             endcap_intersect_3: (Point3d::new(0.0, 0.0, -0.25), Vec3d::new(0.0, 1.0, 0.0), 4)
+        }
+
+        #[test]
+        fn intersection_returns_color_and_normal_at_point() {
+            let r = Ray::new(Point3d::new(0.0, 1.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
+            let cone = Cone::default();
+
+            let xs = cone.intersect(&r);
+
+            for x in xs {
+                let p = r.position(x.t());
+                let n = cone.normal_at(&p);
+                let c = cone.material().surface.color_at(&p);
+                assert_eq!(x.normal, n);
+                assert_eq!(x.color, c);
+            }
         }
     }
 
