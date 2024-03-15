@@ -1,10 +1,10 @@
 use crate::{
     draw::color::Color,
-    math::{matrix::InvertibleMatrix, vector::NormalizedVec3d},
+    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::Object;
+use super::{bounded::Bounds, Object};
 
 pub struct Transformed<T: Object + ?Sized + 'static> {
     pub child: Box<T>,
@@ -39,8 +39,27 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
         xs
     }
 
-    fn bounds(&self) -> super::bounded::Bounds {
-        todo!()
+    fn bounds(&self) -> Bounds {
+        let enumerated_points = self.child.bounds().enumerate();
+        let transformed_points = enumerated_points.map(|p| &*self.transform * &p);
+        let first = &transformed_points[0];
+        let (min, max) = transformed_points.iter().fold(
+            (
+                [first.x(), first.y(), first.z()],
+                [first.x(), first.y(), first.z()],
+            ),
+            |(mn, mx), p| {
+                (
+                    [mn[0].min(p.x()), mn[1].min(p.y()), mn[2].min(p.z())],
+                    [mx[0].max(p.x()), mx[1].max(p.y()), mx[2].max(p.z())],
+                )
+            },
+        );
+
+        Bounds {
+            minimum: Point3d::new(min[0], min[1], min[2]),
+            maximum: Point3d::new(max[0], max[1], max[2]),
+        }
     }
 }
 
@@ -275,5 +294,77 @@ mod tests {
                 assert_eq!(outer.normal, at_once.normal);
                 assert_eq!(outer.color, at_once.color);
             })
+    }
+
+    mod bounds {
+        use super::*;
+
+        #[test]
+        fn bounds_of_a_translated_object() {
+            let shape = MockObject {
+                bounds: Bounds {
+                    minimum: Point3d::new(0.0, 0.0, 0.0),
+                    maximum: Point3d::new(1.0, 1.0, 1.0),
+                },
+                ..Default::default()
+            };
+            let transform =
+                InvertibleMatrix::try_from(transformation::translation(1.0, 1.0, 1.0)).unwrap();
+            let transformed = Transformed::new(shape, transform);
+
+            assert_eq!(
+                transformed.bounds(),
+                Bounds {
+                    minimum: Point3d::new(1.0, 1.0, 1.0),
+                    maximum: Point3d::new(2.0, 2.0, 2.0),
+                }
+            );
+        }
+
+        #[test]
+        fn bounds_of_a_scaled_object() {
+            let shape = MockObject {
+                bounds: Bounds {
+                    minimum: Point3d::new(0.0, 0.0, 0.0),
+                    maximum: Point3d::new(1.0, 1.0, 1.0),
+                },
+                ..Default::default()
+            };
+            let transform =
+                InvertibleMatrix::try_from(transformation::scaling(2.0, 0.5, 1.0)).unwrap();
+            let transformed = Transformed::new(shape, transform);
+
+            assert_eq!(
+                transformed.bounds(),
+                Bounds {
+                    minimum: Point3d::new(0.0, 0.0, 0.0),
+                    maximum: Point3d::new(2.0, 0.5, 1.0),
+                }
+            );
+        }
+
+        #[test]
+        fn bounds_of_a_rotated_object() {
+            let shape = MockObject {
+                bounds: Bounds {
+                    minimum: Point3d::new(0.0, 0.0, 0.0),
+                    maximum: Point3d::new(1.0, 1.0, 1.0),
+                },
+                ..Default::default()
+            };
+            let transform = InvertibleMatrix::try_from(transformation::rotation_y(
+                -std::f64::consts::FRAC_PI_2,
+            ))
+            .unwrap();
+            let transformed = Transformed::new(shape, transform);
+
+            assert_eq!(
+                transformed.bounds(),
+                Bounds {
+                    minimum: Point3d::new(-1.0, 0.0, 0.0),
+                    maximum: Point3d::new(0.0, 1.0, 1.0),
+                }
+            );
+        }
     }
 }
