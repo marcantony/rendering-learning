@@ -41,8 +41,8 @@ impl Object for Plane {
     fn bounds(&self) -> Bounds {
         Bounds {
             // Use an epsilon for -y/+y to avoid any floating point wonkiness
-            minimum: (f64::NEG_INFINITY, -1e8, f64::NEG_INFINITY),
-            maximum: (f64::INFINITY, 1e8, f64::INFINITY),
+            minimum: [f64::NEG_INFINITY, -1e8, f64::NEG_INFINITY],
+            maximum: [f64::INFINITY, 1e8, f64::INFINITY],
         }
     }
 }

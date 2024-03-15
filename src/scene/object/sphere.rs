@@ -61,8 +61,8 @@ impl Object for Sphere {
 
     fn bounds(&self) -> Bounds {
         Bounds {
-            minimum: (-1.0, -1.0, -1.0),
-            maximum: (1.0, 1.0, 1.0),
+            minimum: [-1.0, -1.0, -1.0],
+            maximum: [1.0, 1.0, 1.0],
         }
     }
 }

@@ -6,7 +6,7 @@ use crate::{
 
 use super::Object;
 
-type Bound = (f64, f64, f64);
+type Bound = [f64; 3];
 #[derive(Debug, PartialEq, Clone)]
 pub struct Bounds {
     pub minimum: Bound,
@@ -16,8 +16,8 @@ pub struct Bounds {
 impl Default for Bounds {
     fn default() -> Self {
         Self {
-            minimum: (f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
-            maximum: (f64::INFINITY, f64::INFINITY, f64::INFINITY),
+            minimum: [f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY],
+            maximum: [f64::INFINITY, f64::INFINITY, f64::INFINITY],
         }
     }
 }
@@ -37,20 +37,20 @@ impl<T: Object> Bounded<T> {
 
     fn test(&self, ray: &Ray) -> bool {
         let (xtmin, xtmax) = check_axis(
-            self.bounds.minimum.0,
-            self.bounds.maximum.0,
+            self.bounds.minimum[0],
+            self.bounds.maximum[0],
             ray.origin.x(),
             ray.direction.x(),
         );
         let (ytmin, ytmax) = check_axis(
-            self.bounds.minimum.1,
-            self.bounds.maximum.1,
+            self.bounds.minimum[1],
+            self.bounds.maximum[1],
             ray.origin.y(),
             ray.direction.y(),
         );
         let (ztmin, ztmax) = check_axis(
-            self.bounds.minimum.2,
-            self.bounds.maximum.2,
+            self.bounds.minimum[2],
+            self.bounds.maximum[2],
             ray.origin.z(),
             ray.direction.z(),
         );
@@ -151,8 +151,8 @@ mod tests {
 
                         let shape = MockObject {
                             bounds: Bounds {
-                                minimum: (2.0, 2.0, 2.0),
-                                maximum: (4.0, 4.0, 4.0),
+                                minimum: [2.0, 2.0, 2.0],
+                                maximum: [4.0, 4.0, 4.0],
                             },
                             ..Default::default()
                         };
@@ -208,8 +208,8 @@ mod tests {
         fn a_ray_intersects_a_bounding_box_going_to_infinity() {
             let shape = MockObject {
                 bounds: Bounds {
-                    minimum: (-1.0, f64::NEG_INFINITY, -1.0),
-                    maximum: (1.0, f64::INFINITY, 1.0),
+                    minimum: [-1.0, f64::NEG_INFINITY, -1.0],
+                    maximum: [1.0, f64::INFINITY, 1.0],
                 },
                 ..Default::default()
             };
