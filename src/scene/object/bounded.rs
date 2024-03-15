@@ -13,6 +13,24 @@ pub struct Bounds {
     pub maximum: Bound,
 }
 
+impl Bounds {
+    pub fn enumerate(&self) -> [Bound; 8] {
+        let min = &self.minimum;
+        let max = &self.maximum;
+
+        [
+            [min[0], min[1], min[2]],
+            [min[0], min[1], max[2]],
+            [min[0], max[1], min[2]],
+            [min[0], max[1], max[2]],
+            [max[0], min[1], min[2]],
+            [max[0], min[1], max[2]],
+            [max[0], max[1], min[2]],
+            [max[0], max[1], max[2]],
+        ]
+    }
+}
+
 impl Default for Bounds {
     fn default() -> Self {
         Self {
@@ -91,6 +109,33 @@ impl<T: Object> Object for Bounded<T> {
 
     fn bounds(&self) -> Bounds {
         self.bounds.clone()
+    }
+}
+
+#[cfg(test)]
+mod bounds_tests {
+    use super::*;
+
+    #[test]
+    fn bounds_can_enumerate_all_points() {
+        let b = Bounds {
+            minimum: [0.0, 0.0, 0.0],
+            maximum: [1.0, 1.0, 1.0]
+        };
+
+        let points = b.enumerate();
+        let expected = [
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 1.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 0.0, 1.0],
+            [1.0, 1.0, 0.0],
+            [1.0, 1.0, 1.0],
+        ];
+
+        assert_eq!(points, expected);
     }
 }
 
