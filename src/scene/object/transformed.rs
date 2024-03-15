@@ -1,11 +1,7 @@
 use crate::{
     draw::color::Color,
-    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
-    scene::{
-        intersect::{ColorFn, Intersection, NormalFn},
-        material::Material,
-        ray::Ray,
-    },
+    math::{matrix::InvertibleMatrix, vector::NormalizedVec3d},
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;
@@ -51,7 +47,7 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        math::vector::Vec3d,
+        math::{point::Point3d, vector::Vec3d},
         scene::{
             intersect as is, material::Surface, object::test_utils::MockObject,
             pattern::test_utils::MockPattern, transformation,
@@ -72,10 +68,7 @@ mod tests {
     }
 
     mod intersect {
-        use crate::{
-            math::vector::Vec3d,
-            scene::{intersect as is, transformation},
-        };
+        use crate::{math::vector::Vec3d, scene::transformation};
 
         use super::*;
 

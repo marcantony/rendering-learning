@@ -1,11 +1,7 @@
 use crate::{
     draw::color::Color,
     math::vector::NormalizedVec3d,
-    scene::{
-        intersect::{ColorFn, Intersection, NormalFn},
-        material::Material,
-        ray::Ray,
-    },
+    scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
 use super::Object;

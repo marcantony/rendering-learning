@@ -16,7 +16,7 @@ use crate::{
 };
 
 use super::{
-    intersect::{self, ColorFn, Intersection, NormalFn, Precomputation},
+    intersect::{self, Intersection, Precomputation},
     light::PointLight,
     material::lighting,
     object::{sphere::Sphere, transformed::Transformed, Object},
@@ -201,6 +201,8 @@ mod tests {
         math::vector::{NormalizedVec3d, Vec3d},
         scene::object::plane::Plane,
     };
+
+    use self::intersect::{ColorFn, NormalFn};
 
     use super::*;
 

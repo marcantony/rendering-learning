@@ -2,7 +2,7 @@ use crate::{
     draw::color::Color,
     math::{matrix::InvertibleMatrix, vector::NormalizedVec3d},
     scene::{
-        intersect::{self, ColorFn, Intersection, NormalFn},
+        intersect::{self, Intersection},
         material::Material,
         ray::Ray,
     },

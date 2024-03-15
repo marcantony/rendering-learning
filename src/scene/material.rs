@@ -123,7 +123,7 @@ mod tests {
     mod lighting {
         use crate::{
             math::{matrix::InvertibleMatrix, vector::Vec3d},
-            scene::{light::PointLight, object::sphere::Sphere, pattern::stripe::Stripe},
+            scene::{light::PointLight, pattern::stripe::Stripe},
         };
 
         use super::*;

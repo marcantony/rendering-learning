@@ -5,11 +5,7 @@ use crate::{
 
 use self::bounded::Bounds;
 
-use super::{
-    intersect::{ColorFn, Intersection, NormalFn},
-    material::Material,
-    ray::Ray,
-};
+use super::{intersect::Intersection, material::Material, ray::Ray};
 
 pub trait Object {
     fn material(&self) -> &Material;
