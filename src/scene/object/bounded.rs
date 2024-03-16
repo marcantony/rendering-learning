@@ -28,6 +28,31 @@ impl Bounds {
             Point3d::new(max.x(), max.y(), max.z()),
         ]
     }
+
+    pub fn from_points(points: &[Point3d]) -> Option<Self> {
+        if points.len() < 2 {
+            None
+        } else {
+            let first = &points[0];
+            let (min, max) = points.iter().fold(
+                (
+                    [first.x(), first.y(), first.z()],
+                    [first.x(), first.y(), first.z()],
+                ),
+                |(mn, mx), p| {
+                    (
+                        [mn[0].min(p.x()), mn[1].min(p.y()), mn[2].min(p.z())],
+                        [mx[0].max(p.x()), mx[1].max(p.y()), mx[2].max(p.z())],
+                    )
+                },
+            );
+
+            Some(Bounds {
+                minimum: Point3d::new(min[0], min[1], min[2]),
+                maximum: Point3d::new(max[0], max[1], max[2]),
+            })
+        }
+    }
 }
 
 impl Default for Bounds {
@@ -135,6 +160,32 @@ mod bounds_tests {
         ];
 
         assert_eq!(points, expected);
+    }
+
+    #[test]
+    fn trying_to_create_bounds_from_less_than_2_points() {
+        assert_eq!(
+            None,
+            Bounds::from_points(&vec![Point3d::new(0.0, 0.0, 0.0)])
+        );
+    }
+
+    #[test]
+    fn creating_bounds_from_many_points() {
+        let points = vec![
+            Point3d::new(-1.0, 0.0, 0.2),
+            Point3d::new(0.0, 5.0, 2.0),
+            Point3d::new(-10.0, 0.0, 0.5),
+            Point3d::new(0.0, 0.0, 1.0),
+        ];
+
+        assert_eq!(
+            Bounds::from_points(&points),
+            Some(Bounds {
+                minimum: Point3d::new(-10.0, 0.0, 0.2),
+                maximum: Point3d::new(0.0, 5.0, 2.0),
+            })
+        );
     }
 }
 

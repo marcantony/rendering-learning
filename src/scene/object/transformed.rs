@@ -1,6 +1,6 @@
 use crate::{
     draw::color::Color,
-    math::{matrix::InvertibleMatrix, point::Point3d, vector::NormalizedVec3d},
+    math::{matrix::InvertibleMatrix, vector::NormalizedVec3d},
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
@@ -31,24 +31,7 @@ impl<T: Object> Transformed<T> {
 fn calculate_bounds(transform: &InvertibleMatrix<4>, child_bounds: &Bounds) -> Bounds {
     let enumerated_points = child_bounds.enumerate();
     let transformed_points = enumerated_points.map(|p| &**transform * &p);
-    let first = &transformed_points[0];
-    let (min, max) = transformed_points.iter().fold(
-        (
-            [first.x(), first.y(), first.z()],
-            [first.x(), first.y(), first.z()],
-        ),
-        |(mn, mx), p| {
-            (
-                [mn[0].min(p.x()), mn[1].min(p.y()), mn[2].min(p.z())],
-                [mx[0].max(p.x()), mx[1].max(p.y()), mx[2].max(p.z())],
-            )
-        },
-    );
-
-    Bounds {
-        minimum: Point3d::new(min[0], min[1], min[2]),
-        maximum: Point3d::new(max[0], max[1], max[2]),
-    }
+    Bounds::from_points(&transformed_points).expect("should have been 8 transformed points")
 }
 
 impl<T: Object + ?Sized + 'static> Object for Transformed<T> {

@@ -1,6 +1,6 @@
 use crate::{
     draw::color::Color,
-    math::vector::NormalizedVec3d,
+    math::{point::Point3d, vector::NormalizedVec3d},
     scene::{
         intersect::{self, Intersection},
         material::Material,
@@ -8,17 +8,30 @@ use crate::{
     },
 };
 
-use super::Object;
+use super::{bounded::Bounds, Object};
 
 /// A group of multiple sub-objects
 pub struct Group {
     children: Vec<Box<dyn Object>>,
+    bounds: Bounds,
 }
 
 impl Group {
     pub fn new(children: Vec<Box<dyn Object>>) -> Group {
-        Group { children }
+        let bounds = calculate_bounds(&children);
+        Group { children, bounds }
     }
+}
+
+fn calculate_bounds(children: &[Box<dyn Object>]) -> Bounds {
+    let points: Vec<_> = children
+        .iter()
+        .flat_map(|c| [c.bounds().minimum, c.bounds().maximum].into_iter())
+        .collect();
+    Bounds::from_points(&points).unwrap_or(Bounds {
+        minimum: Point3d::new(0.0, 0.0, 0.0),
+        maximum: Point3d::new(0.0, 0.0, 0.0),
+    })
 }
 
 impl Object for Group {
@@ -41,16 +54,8 @@ impl Object for Group {
         intersections
     }
 
-    fn bounds(&self) -> super::bounded::Bounds {
-        todo!()
-    }
-}
-
-impl Default for Group {
-    fn default() -> Self {
-        Self {
-            children: Default::default(),
-        }
+    fn bounds(&self) -> Bounds {
+        self.bounds.clone()
     }
 }
 
@@ -60,13 +65,6 @@ mod tests {
     use crate::scene::object::sphere::Sphere;
 
     use super::*;
-
-    #[test]
-    fn creating_a_new_group() {
-        let g: Group = Default::default();
-
-        assert!(g.children.is_empty());
-    }
 
     #[test]
     fn adding_a_child_to_a_group() {
@@ -85,7 +83,7 @@ mod tests {
 
         #[test]
         fn intersecting_a_ray_with_an_empty_group() {
-            let g: Group = Default::default();
+            let g: Group = Group::new(vec![]);
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
 
             let xs = g.intersect(&r);
@@ -145,6 +143,60 @@ mod tests {
             assert!(group_xs == child_xs);
             assert_eq!(group_xs[0].color, child_xs[0].color);
             assert_eq!(group_xs[0].normal, child_xs[0].normal);
+        }
+    }
+
+    mod bounds {
+        use crate::{math::point::Point3d, scene::object::test_utils::MockObject};
+
+        use super::*;
+
+        #[test]
+        fn bounds_of_a_group_covers_bounds_of_all_children() {
+            let c1 = MockObject {
+                bounds: Bounds {
+                    minimum: Point3d::new(0.0, 0.0, 0.0),
+                    maximum: Point3d::new(2.0, 1.0, 1.0),
+                },
+                ..Default::default()
+            };
+            let c2 = MockObject {
+                bounds: Bounds {
+                    minimum: Point3d::new(-1.0, -1.0, 0.0),
+                    maximum: Point3d::new(1.0, 1.0, 1.0),
+                },
+                ..Default::default()
+            };
+            let c3 = MockObject {
+                bounds: Bounds {
+                    minimum: Point3d::new(0.5, 0.5, 0.5),
+                    maximum: Point3d::new(1.0, 1.0, 10.0),
+                },
+                ..Default::default()
+            };
+
+            let group = Group::new(vec![Box::new(c1), Box::new(c2), Box::new(c3)]);
+
+            assert_eq!(
+                group.bounds(),
+                Bounds {
+                    minimum: Point3d::new(-1.0, -1.0, 0.0),
+                    maximum: Point3d::new(2.0, 1.0, 10.0),
+                }
+            )
+        }
+
+        #[test]
+        fn bounds_of_an_empty_group_are_minimal() {
+            let g = Group::new(vec![]);
+
+            assert_eq!(
+                g.bounds(),
+                Bounds {
+                    minimum: Point3d::new(0.0, 0.0, 0.0),
+                    maximum: Point3d::new(0.0, 0.0, 0.0),
+                }
+            )
         }
     }
 }
