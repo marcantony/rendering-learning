@@ -64,7 +64,7 @@ impl Default for Bounds {
     }
 }
 
-pub struct Bounded<T: Object> {
+pub struct Bounded<T> {
     bounds: Bounds,
     child: T,
 }
