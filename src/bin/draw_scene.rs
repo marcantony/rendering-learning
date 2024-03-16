@@ -24,14 +24,14 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let gs1 = Transformed {
-        child: Box::new(Sphere::unit()),
-        transform: InvertibleMatrix::try_from(transformation::translation(-0.5, 0.0, 0.0)).unwrap(),
-    };
-    let gs2 = Transformed {
-        child: Box::new(Sphere::unit()),
-        transform: InvertibleMatrix::try_from(transformation::translation(0.5, 0.0, 0.0)).unwrap(),
-    };
+    let gs1 = Transformed::new(
+        Sphere::unit(),
+        InvertibleMatrix::try_from(transformation::translation(-0.5, 0.0, 0.0)).unwrap(),
+    );
+    let gs2 = Transformed::new(
+        Sphere::unit(),
+        InvertibleMatrix::try_from(transformation::translation(0.5, 0.0, 0.0)).unwrap(),
+    );
     let sphere_group = Transformed::new(
         Group::new(vec![Box::new(gs1), Box::new(gs2)]),
         InvertibleMatrix::try_from(transformation::translation(-1.0, 0.0, 0.0)).unwrap(),
@@ -51,8 +51,8 @@ fn main() {
         },
     };
 
-    let left_wall = Transformed {
-        child: Box::new(Plane {
+    let left_wall = Transformed::new(
+        Plane {
             material: Material {
                 surface: Surface::Color(color::white()),
                 specular: 1.0,
@@ -61,17 +61,17 @@ fn main() {
                 diffuse: 0.0,
                 ..Default::default()
             },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+        },
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::rotation_y(-consts::FRAC_PI_3),
             transformation::translation(-8.0, 0.0, 0.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let right_wall = Transformed {
-        child: Box::new(Plane {
+    let right_wall = Transformed::new(
+        Plane {
             material: Material {
                 surface: Surface::Color(color::white()),
                 specular: 1.0,
@@ -80,33 +80,33 @@ fn main() {
                 diffuse: 0.0,
                 ..Default::default()
             },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+        },
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::rotation_y(consts::FRAC_PI_4),
             transformation::translation(10.0, 0.0, 0.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let middle_wall = Transformed {
-        child: Box::new(Plane {
+    let middle_wall = Transformed::new(
+        Plane {
             material: Material {
                 surface: Surface::Color(Color::new(0.945, 0.788, 0.647)),
                 specular: 0.1,
                 shininess: 50.0,
                 ..Default::default()
             },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+        },
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::translation(0.0, 0.0, 7.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let ball = Transformed {
-        child: Box::new(Sphere {
+    let ball = Transformed::new(
+        Sphere {
             material: Material {
                 surface: Surface::Color(Color::new(0.059, 0.322, 0.729)),
                 diffuse: 0.3,
@@ -116,12 +116,12 @@ fn main() {
                 refractive_index: 1.52,
                 ..Default::default()
             },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::translation(0.0, 2.0, 0.0)).unwrap(),
-    };
+        },
+        InvertibleMatrix::try_from(transformation::translation(0.0, 2.0, 0.0)).unwrap(),
+    );
 
-    let inner_air_pocket = Transformed {
-        child: Box::new(Sphere {
+    let inner_air_pocket = Transformed::new(
+        Sphere {
             material: Material {
                 surface: Surface::Color(color::white()),
                 ambient: 0.0,
@@ -132,16 +132,16 @@ fn main() {
                 reflectivity: 1.0,
                 ..Default::default()
             },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+        },
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::scaling(0.5, 0.5, 0.5),
             transformation::translation(0.0, 2.0, 0.0),
         ]))
         .unwrap(),
-    };
+    );
 
-    let behind_cube = Transformed {
-        child: Box::new(Cube {
+    let behind_cube = Transformed::new(
+        Cube {
             material: Material {
                 surface: Surface::Pattern(Box::new(Stripe {
                     a: Color::new(0.545, 0.0, 0.0),
@@ -151,26 +151,25 @@ fn main() {
                 })),
                 ..Default::default()
             },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::translation(3.0, 0.0, -10.0))
-            .unwrap(),
-    };
+        },
+        InvertibleMatrix::try_from(transformation::translation(3.0, 0.0, -10.0)).unwrap(),
+    );
 
-    let behind_wall = Transformed {
-        child: Box::new(Plane {
+    let behind_wall = Transformed::new(
+        Plane {
             material: Material {
                 surface: Surface::Color(Color::new(0.678, 0.847, 0.902)),
                 specular: 0.1,
                 shininess: 50.0,
                 ..Default::default()
             },
-        }),
-        transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+        },
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
             transformation::rotation_x(consts::FRAC_PI_2),
             transformation::translation(0.0, 0.0, -100.0),
         ]))
         .unwrap(),
-    };
+    );
 
     let light_source = PointLight {
         position: Point3d::new(-10.0, 10.0, -10.0),

@@ -7,8 +7,8 @@ use crate::{
 use super::{bounded::Bounds, Object};
 
 pub struct Transformed<T: Object + ?Sized + 'static> {
-    pub child: Box<T>,
-    pub transform: InvertibleMatrix<4>,
+    child: Box<T>,
+    transform: InvertibleMatrix<4>,
 }
 
 impl<T: Object> Transformed<T> {
@@ -17,6 +17,10 @@ impl<T: Object> Transformed<T> {
             child: Box::new(child),
             transform,
         }
+    }
+
+    pub fn child(&mut self) -> &mut T {
+        &mut self.child
     }
 }
 

@@ -97,17 +97,15 @@ mod tests {
         fn intersecting_a_ray_with_a_nonempty_group() {
             let s1: Sphere = Default::default();
 
-            let s2 = Transformed {
-                child: Box::new(Sphere::unit()),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, -3.0))
-                    .unwrap(),
-            };
+            let s2 = Transformed::new(
+                Sphere::unit(),
+                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, -3.0)).unwrap(),
+            );
 
-            let s3 = Transformed {
-                child: Box::new(Sphere::unit()),
-                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
-                    .unwrap(),
-            };
+            let s3 = Transformed::new(
+                Sphere::unit(),
+                InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap(),
+            );
 
             let g = Group::new(vec![Box::new(s1), Box::new(s2), Box::new(s3)]);
 
@@ -119,11 +117,10 @@ mod tests {
 
         #[test]
         fn intersecting_a_transformed_group() {
-            let s = Transformed {
-                child: Box::new(Sphere::unit()),
-                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
-                    .unwrap(),
-            };
+            let s = Transformed::new(
+                Sphere::unit(),
+                InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap(),
+            );
 
             let g = Transformed::new(
                 Group::new(vec![Box::new(s)]),

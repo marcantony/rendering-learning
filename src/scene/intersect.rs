@@ -361,11 +361,10 @@ mod test {
                 origin: Point3d::new(0.0, 0.0, -5.0),
                 direction: Vec3d::new(0.0, 0.0, 1.0),
             };
-            let shape = Transformed {
-                child: Box::new(Sphere::unit()),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
-                    .unwrap(),
-            };
+            let shape = Transformed::new(
+                Sphere::unit(),
+                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0)).unwrap(),
+            );
             let is = shape.intersect(&r);
             let i = &is[0];
 
@@ -378,11 +377,10 @@ mod test {
         #[test]
         fn the_under_point_is_below_the_surface() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let shape = Transformed {
-                child: Box::new(glass_sphere()),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0))
-                    .unwrap(),
-            };
+            let shape = Transformed::new(
+                glass_sphere(),
+                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 1.0)).unwrap(),
+            );
             let xs = shape.intersect(&r);
 
             let comps = xs[0].prepare_computations(&r, &xs);
@@ -401,31 +399,26 @@ mod test {
             ) {
                 let mut a_s = sphere::glass_sphere();
                 a_s.material.refractive_index = 1.5;
-                let a = Transformed {
-                    child: Box::new(a_s),
-                    transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                        .unwrap(),
-                };
+                let a = Transformed::new(
+                    a_s,
+                    InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
+                );
 
                 let mut b_s = sphere::glass_sphere();
                 b_s.material.refractive_index = 2.0;
-                let b = Transformed {
-                    child: Box::new(b_s),
-                    transform: InvertibleMatrix::try_from(transformation::translation(
-                        0.0, 0.0, -0.25,
-                    ))
-                    .unwrap(),
-                };
+                let b = Transformed::new(
+                    b_s,
+                    InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, -0.25))
+                        .unwrap(),
+                );
 
                 let mut c_s = sphere::glass_sphere();
                 c_s.material.refractive_index = 2.5;
-                let c = Transformed {
-                    child: Box::new(c_s),
-                    transform: InvertibleMatrix::try_from(transformation::translation(
-                        0.0, 0.0, 0.25,
-                    ))
-                    .unwrap(),
-                };
+                let c = Transformed::new(
+                    c_s,
+                    InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 0.25))
+                        .unwrap(),
+                );
 
                 (a, b, c)
             }

@@ -181,15 +181,15 @@ fn basic_spheres() -> Vec<Transformed<Sphere>> {
         specular: 0.2,
         ..Default::default()
     });
-    let t1 = Transformed {
-        child: Box::new(s1),
-        transform: InvertibleMatrix::try_from(SquareMatrix::<4>::identity()).unwrap(),
-    };
+    let t1 = Transformed::new(
+        s1,
+        InvertibleMatrix::try_from(SquareMatrix::<4>::identity()).unwrap(),
+    );
     let s2 = Sphere::new(Default::default());
-    let t2 = Transformed {
-        child: Box::new(s2),
-        transform: InvertibleMatrix::try_from(transformation::scaling(0.5, 0.5, 0.5)).unwrap(),
-    };
+    let t2 = Transformed::new(
+        s2,
+        InvertibleMatrix::try_from(transformation::scaling(0.5, 0.5, 0.5)).unwrap(),
+    );
 
     vec![t1, t2]
 }
@@ -302,11 +302,10 @@ mod tests {
 
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
-        let shape = Transformed {
-            child: Box::new(Sphere::unit()),
-            transform: InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 10.0))
-                .unwrap(),
-        };
+        let shape = Transformed::new(
+            Sphere::unit(),
+            InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 10.0)).unwrap(),
+        );
         let w = World {
             lights: vec![PointLight {
                 position: Point3d::new(0.0, 0.0, -10.0),
@@ -350,9 +349,9 @@ mod tests {
     fn color_with_an_intersection_behind_the_ray() {
         let mut spheres = basic_spheres();
         let outer = &mut spheres[0];
-        outer.child.material.ambient = 1.0;
+        outer.child().material.ambient = 1.0;
         let inner = &mut spheres[1];
-        inner.child.material.ambient = 1.0;
+        inner.child().material.ambient = 1.0;
 
         let w = World {
             objects: spheres
@@ -404,8 +403,8 @@ mod tests {
         #[test]
         fn partial_shadow_when_somewhat_transparent_objects_are_between_point_and_light() {
             let mut spheres = basic_spheres();
-            spheres[0].child.material.transparency = 0.5;
-            spheres[1].child.material.transparency = 1.0;
+            spheres[0].child().material.transparency = 0.5;
+            spheres[1].child().material.transparency = 1.0;
             let w = World {
                 objects: spheres
                     .into_iter()
@@ -428,7 +427,7 @@ mod tests {
         fn reflected_color_for_a_nonreflective_material() {
             let mut spheres = basic_spheres();
             let inner = &mut spheres[1];
-            inner.child.material.ambient = 1.0;
+            inner.child().material.ambient = 1.0;
 
             let w = World {
                 objects: spheres
@@ -450,16 +449,15 @@ mod tests {
 
         #[test]
         fn reflected_color_for_reflective_material() {
-            let shape = Transformed {
-                child: Box::new(Plane {
+            let shape = Transformed::new(
+                Plane {
                     material: Material {
                         reflectivity: 0.5,
                         ..Default::default()
                     },
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0)).unwrap(),
+            );
             let mut w = World::basic();
             w.objects.push(Box::new(shape));
 
@@ -482,16 +480,15 @@ mod tests {
 
         #[test]
         fn shade_hit_with_a_reflective_material() {
-            let shape = Transformed {
-                child: Box::new(Plane {
+            let shape = Transformed::new(
+                Plane {
                     material: Material {
                         reflectivity: 0.5,
                         ..Default::default()
                     },
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0)).unwrap(),
+            );
             let mut w = World::basic();
             w.objects.push(Box::new(shape));
 
@@ -518,26 +515,24 @@ mod tests {
                 position: Point3d::new(0.0, 0.0, 0.0),
                 intensity: color::white(),
             };
-            let lower = Transformed {
-                child: Box::new(Plane {
+            let lower = Transformed::new(
+                Plane {
                     material: Material {
                         reflectivity: 1.0,
                         ..Default::default()
                     },
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
-                    .unwrap(),
-            };
-            let upper = Transformed {
-                child: Box::new(Plane {
+                },
+                InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0)).unwrap(),
+            );
+            let upper = Transformed::new(
+                Plane {
                     material: Material {
                         reflectivity: 1.0,
                         ..Default::default()
                     },
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 1.0, 0.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::translation(0.0, 1.0, 0.0)).unwrap(),
+            );
             let w = World {
                 lights: vec![light],
                 objects: vec![Box::new(lower), Box::new(upper)],
@@ -550,16 +545,15 @@ mod tests {
 
         #[test]
         fn reflected_color_at_maximum_recursive_depth() {
-            let shape = Transformed {
-                child: Box::new(Plane {
+            let shape = Transformed::new(
+                Plane {
                     material: Material {
                         reflectivity: 0.5,
                         ..Default::default()
                     },
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0)).unwrap(),
+            );
             let mut w = World::basic();
             w.objects.push(Box::new(shape));
 
@@ -618,8 +612,8 @@ mod tests {
         fn the_refracted_color_under_total_internal_reflection() {
             let mut spheres = basic_spheres();
             let shape = &mut spheres[0];
-            shape.child.material.transparency = 1.0;
-            shape.child.material.refractive_index = 1.5;
+            shape.child().material.transparency = 1.0;
+            shape.child().material.refractive_index = 1.5;
             let mut w = World::basic();
             w.objects = spheres
                 .into_iter()
@@ -641,13 +635,13 @@ mod tests {
         fn the_refracted_color_with_a_refracted_ray() {
             let mut spheres = basic_spheres();
             let a = &mut spheres[0];
-            a.child.material.ambient = 1.0;
-            a.child.material.surface = Surface::Pattern(Box::new(MockPattern {
+            a.child().material.ambient = 1.0;
+            a.child().material.surface = Surface::Pattern(Box::new(MockPattern {
                 transform: InvertibleMatrix::identity(),
             }));
             let b = &mut spheres[1];
-            b.child.material.transparency = 1.0;
-            b.child.material.refractive_index = 1.5;
+            b.child().material.transparency = 1.0;
+            b.child().material.refractive_index = 1.5;
             let mut w = World::basic();
             w.objects = spheres
                 .into_iter()
@@ -666,28 +660,26 @@ mod tests {
         #[test]
         fn shade_hit_with_a_transparent_material() {
             let mut w = World::basic();
-            let floor = Transformed {
-                child: Box::new(Plane {
+            let floor = Transformed::new(
+                Plane {
                     material: Material {
                         transparency: 0.5,
                         refractive_index: 1.5,
                         ..Default::default()
                     },
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
-                    .unwrap(),
-            };
-            let ball = Transformed {
-                child: Box::new(Sphere {
+                },
+                InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0)).unwrap(),
+            );
+            let ball = Transformed::new(
+                Sphere {
                     material: Material {
                         surface: Surface::Color(color::red()),
                         ambient: 0.5,
                         ..Default::default()
                     },
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, -3.5, -0.5))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::translation(0.0, -3.5, -0.5)).unwrap(),
+            );
             w.objects.push(Box::new(floor));
             w.objects.push(Box::new(ball));
 
@@ -711,29 +703,27 @@ mod tests {
     #[test]
     fn shade_hit_with_a_reflective_transparent_material() {
         let mut w = World::basic();
-        let floor = Transformed {
-            child: Box::new(Plane {
+        let floor = Transformed::new(
+            Plane {
                 material: Material {
                     transparency: 0.5,
                     refractive_index: 1.5,
                     reflectivity: 0.5,
                     ..Default::default()
                 },
-            }),
-            transform: InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0))
-                .unwrap(),
-        };
-        let ball = Transformed {
-            child: Box::new(Sphere {
+            },
+            InvertibleMatrix::try_from(transformation::translation(0.0, -1.0, 0.0)).unwrap(),
+        );
+        let ball = Transformed::new(
+            Sphere {
                 material: Material {
                     surface: Surface::Color(color::red()),
                     ambient: 0.5,
                     ..Default::default()
                 },
-            }),
-            transform: InvertibleMatrix::try_from(transformation::translation(0.0, -3.5, -0.5))
-                .unwrap(),
-        };
+            },
+            InvertibleMatrix::try_from(transformation::translation(0.0, -3.5, -0.5)).unwrap(),
+        );
         w.objects.push(Box::new(floor));
         w.objects.push(Box::new(ball));
 
