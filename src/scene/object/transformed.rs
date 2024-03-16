@@ -6,8 +6,8 @@ use crate::{
 
 use super::{bounded::Bounds, Object};
 
-pub struct Transformed<T: Object + ?Sized + 'static> {
-    child: Box<T>,
+pub struct Transformed<T> {
+    child: T,
     transform: InvertibleMatrix<4>,
     bounds: Bounds,
 }
@@ -16,7 +16,7 @@ impl<T: Object> Transformed<T> {
     pub fn new(child: T, transform: InvertibleMatrix<4>) -> Self {
         let bounds = calculate_bounds(&transform, &child.bounds());
         Transformed {
-            child: Box::new(child),
+            child,
             transform,
             bounds,
         }
@@ -34,7 +34,7 @@ fn calculate_bounds(transform: &InvertibleMatrix<4>, child_bounds: &Bounds) -> B
     Bounds::from_points(&transformed_points).expect("should have been 8 transformed points")
 }
 
-impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
+impl<T: Object> Object for Transformed<T> {
     fn material(&self) -> &Material {
         self.child.material()
     }
