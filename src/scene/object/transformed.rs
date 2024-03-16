@@ -9,18 +9,44 @@ use super::{bounded::Bounds, Object};
 pub struct Transformed<T: Object + ?Sized + 'static> {
     child: Box<T>,
     transform: InvertibleMatrix<4>,
+    bounds: Bounds,
 }
 
 impl<T: Object> Transformed<T> {
     pub fn new(child: T, transform: InvertibleMatrix<4>) -> Self {
+        let bounds = calculate_bounds(&transform, &child.bounds());
         Transformed {
             child: Box::new(child),
             transform,
+            bounds,
         }
     }
 
     pub fn child(&mut self) -> &mut T {
         &mut self.child
+    }
+}
+
+fn calculate_bounds(transform: &InvertibleMatrix<4>, child_bounds: &Bounds) -> Bounds {
+    let enumerated_points = child_bounds.enumerate();
+    let transformed_points = enumerated_points.map(|p| &**transform * &p);
+    let first = &transformed_points[0];
+    let (min, max) = transformed_points.iter().fold(
+        (
+            [first.x(), first.y(), first.z()],
+            [first.x(), first.y(), first.z()],
+        ),
+        |(mn, mx), p| {
+            (
+                [mn[0].min(p.x()), mn[1].min(p.y()), mn[2].min(p.z())],
+                [mx[0].max(p.x()), mx[1].max(p.y()), mx[2].max(p.z())],
+            )
+        },
+    );
+
+    Bounds {
+        minimum: Point3d::new(min[0], min[1], min[2]),
+        maximum: Point3d::new(max[0], max[1], max[2]),
     }
 }
 
@@ -44,26 +70,7 @@ impl<T: Object + ?Sized + 'static> Object for Transformed<T> {
     }
 
     fn bounds(&self) -> Bounds {
-        let enumerated_points = self.child.bounds().enumerate();
-        let transformed_points = enumerated_points.map(|p| &*self.transform * &p);
-        let first = &transformed_points[0];
-        let (min, max) = transformed_points.iter().fold(
-            (
-                [first.x(), first.y(), first.z()],
-                [first.x(), first.y(), first.z()],
-            ),
-            |(mn, mx), p| {
-                (
-                    [mn[0].min(p.x()), mn[1].min(p.y()), mn[2].min(p.z())],
-                    [mx[0].max(p.x()), mx[1].max(p.y()), mx[2].max(p.z())],
-                )
-            },
-        );
-
-        Bounds {
-            minimum: Point3d::new(min[0], min[1], min[2]),
-            maximum: Point3d::new(max[0], max[1], max[2]),
-        }
+        self.bounds.clone()
     }
 }
 
@@ -82,10 +89,7 @@ mod tests {
     #[test]
     fn material_of_transformed_object_is_material_of_child() {
         let shape = MockObject::default();
-        let transformed = Transformed {
-            child: Box::new(shape),
-            transform: Default::default(),
-        };
+        let transformed = Transformed::new(shape, Default::default());
 
         assert!(transformed.material() == transformed.child.material());
     }
@@ -98,17 +102,16 @@ mod tests {
         #[test]
         fn intersecting_scaled_shape_with_ray() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let s = Transformed {
-                child: Box::new(MockObject {
+            let s = Transformed::new(
+                MockObject {
                     intersect_local_arg_expectation: Some(Ray::new(
                         Point3d::new(0.0, 0.0, -2.5),
                         Vec3d::new(0.0, 0.0, 0.5),
                     )),
                     ..Default::default()
-                }),
-                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
+            );
 
             s.intersect(&r);
         }
@@ -116,17 +119,16 @@ mod tests {
         #[test]
         fn intersecting_translated_shape_with_ray() {
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
-            let s = Transformed {
-                child: Box::new(MockObject {
+            let s = Transformed::new(
+                MockObject {
                     intersect_local_arg_expectation: Some(Ray::new(
                         Point3d::new(-5.0, 0.0, -5.0),
                         Vec3d::new(0.0, 0.0, 1.0),
                     )),
                     ..Default::default()
-                }),
-                transform: InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap(),
+            );
 
             s.intersect(&r);
         }
@@ -142,11 +144,10 @@ mod tests {
 
         #[test]
         fn computing_normal_on_translated_shape() {
-            let s = Transformed {
-                child: Box::new(MockObject::default()),
-                transform: InvertibleMatrix::try_from(transformation::translation(0.0, 1.0, 0.0))
-                    .unwrap(),
-            };
+            let s = Transformed::new(
+                MockObject::default(),
+                InvertibleMatrix::try_from(transformation::translation(0.0, 1.0, 0.0)).unwrap(),
+            );
 
             let i = s.intersect(&Ray::new(
                 Point3d::new(1.0, 0.0, 0.0),
@@ -161,14 +162,14 @@ mod tests {
 
         #[test]
         fn computing_normal_on_transformed_shape() {
-            let s = Transformed {
-                child: Box::new(MockObject::default()),
-                transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+            let s = Transformed::new(
+                MockObject::default(),
+                InvertibleMatrix::try_from(transformation::sequence(&vec![
                     transformation::rotation_z(std::f64::consts::PI / 5.0),
                     transformation::scaling(1.0, 0.5, 1.0),
                 ]))
                 .unwrap(),
-            };
+            );
 
             let t = std::f64::consts::SQRT_2 / 2.0;
             let i = s.intersect(&Ray::new(
@@ -194,17 +195,16 @@ mod tests {
             let pattern = MockPattern {
                 transform: Default::default(),
             };
-            let shape = Transformed {
-                child: Box::new(MockObject {
+            let shape = Transformed::new(
+                MockObject {
                     material: Material {
                         surface: Surface::Pattern(Box::new(pattern)),
                         ..Default::default()
                     },
                     ..Default::default()
-                }),
-                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
+            );
 
             let i = shape.intersect(&Ray::new(
                 Point3d::new(2.0, 3.0, 4.0),
@@ -220,17 +220,16 @@ mod tests {
                 transform: InvertibleMatrix::try_from(transformation::translation(0.5, 1.0, 1.5))
                     .unwrap(),
             };
-            let shape = Transformed {
-                child: Box::new(MockObject {
+            let shape = Transformed::new(
+                MockObject {
                     material: Material {
                         surface: Surface::Pattern(Box::new(pattern)),
                         ..Default::default()
                     },
                     ..Default::default()
-                }),
-                transform: InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0))
-                    .unwrap(),
-            };
+                },
+                InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
+            );
 
             let i = shape.intersect(&Ray::new(
                 Point3d::new(2.5, 3.0, 3.5),
@@ -260,17 +259,12 @@ mod tests {
             },
             ..Default::default()
         };
-        let inner_transformed = Transformed {
-            child: Box::new(shape1),
-            transform: InvertibleMatrix::try_from(t1).unwrap(),
-        };
-        let outer_transformed = Transformed {
-            child: Box::new(inner_transformed),
-            transform: InvertibleMatrix::try_from(t2).unwrap(),
-        };
+        let inner_transformed = Transformed::new(shape1, InvertibleMatrix::try_from(t1).unwrap());
+        let outer_transformed =
+            Transformed::new(inner_transformed, InvertibleMatrix::try_from(t2).unwrap());
 
-        let transformed_at_once = Transformed {
-            child: Box::new(MockObject {
+        let transformed_at_once = Transformed::new(
+            MockObject {
                 intersect_local_arg_expectation: Some(expectation.clone()),
                 material: Material {
                     surface: Surface::Pattern(Box::new(MockPattern {
@@ -279,9 +273,9 @@ mod tests {
                     ..Default::default()
                 },
                 ..Default::default()
-            }),
-            transform: InvertibleMatrix::try_from(sequenced).unwrap(),
-        };
+            },
+            InvertibleMatrix::try_from(sequenced).unwrap(),
+        );
 
         let outer_transformed_xs = outer_transformed.intersect(&r);
         let transformed_at_once_xs = transformed_at_once.intersect(&r);
