@@ -22,6 +22,7 @@ impl<T: Object> Transformed<T> {
         }
     }
 
+    // TODO: Be careful with mutability here...
     pub fn child(&mut self) -> &mut T {
         &mut self.child
     }
