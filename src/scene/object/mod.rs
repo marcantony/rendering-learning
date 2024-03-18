@@ -9,8 +9,7 @@ use super::{intersect::Intersection, material::Material, ray::Ray};
 
 pub trait Object {
     fn material(&self) -> &Material;
-    fn intersect(&self, ray: &Ray)
-        -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>>;
+    fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>>;
     fn bounds(&self) -> Bounds;
 }
 
@@ -41,6 +40,7 @@ pub mod impls;
 pub mod plane;
 pub mod sphere;
 pub mod transformed;
+pub mod triangle;
 
 #[cfg(test)]
 pub mod test_utils {
