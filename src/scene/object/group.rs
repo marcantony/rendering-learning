@@ -11,19 +11,19 @@ use crate::{
 use super::{bounded::Bounds, Object};
 
 /// A group of multiple sub-objects
-pub struct Group {
-    children: Vec<Box<dyn Object>>,
+pub struct Group<T> {
+    children: Vec<T>,
     bounds: Bounds,
 }
 
-impl Group {
-    pub fn new(children: Vec<Box<dyn Object>>) -> Group {
+impl<T: Object> Group<T> {
+    pub fn new(children: Vec<T>) -> Self {
         let bounds = calculate_bounds(&children);
         Group { children, bounds }
     }
 }
 
-fn calculate_bounds(children: &[Box<dyn Object>]) -> Bounds {
+fn calculate_bounds<T: Object>(children: &[T]) -> Bounds {
     let points: Vec<_> = children
         .iter()
         .flat_map(|c| [c.bounds().minimum, c.bounds().maximum].into_iter())
@@ -34,7 +34,7 @@ fn calculate_bounds(children: &[Box<dyn Object>]) -> Bounds {
     })
 }
 
-impl Object for Group {
+impl<T: Object> Object for Group<T> {
     fn material(&self) -> &Material {
         unimplemented!()
     }
@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn adding_a_child_to_a_group() {
-        let g = Group::new(vec![Box::new(Sphere::unit())]);
+        let g = Group::new(vec![Sphere::unit()]);
 
         assert_eq!(g.children.len(), 1);
     }
@@ -83,7 +83,7 @@ mod tests {
 
         #[test]
         fn intersecting_a_ray_with_an_empty_group() {
-            let g: Group = Group::new(vec![]);
+            let g = Group::<Sphere>::new(vec![]);
             let r = Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, 1.0));
 
             let xs = g.intersect(&r);
@@ -105,7 +105,8 @@ mod tests {
                 InvertibleMatrix::try_from(transformation::translation(5.0, 0.0, 0.0)).unwrap(),
             );
 
-            let g = Group::new(vec![Box::new(s1), Box::new(s2), Box::new(s3)]);
+            let g: Group<Box<dyn Object>> =
+                Group::new(vec![Box::new(s1), Box::new(s2), Box::new(s3)]);
 
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let xs = is::test_utils::to_ts(&g.intersect(&r));
@@ -121,7 +122,7 @@ mod tests {
             );
 
             let g = Transformed::new(
-                Group::new(vec![Box::new(s)]),
+                Group::new(vec![s]),
                 InvertibleMatrix::try_from(transformation::scaling(2.0, 2.0, 2.0)).unwrap(),
             );
 
@@ -134,7 +135,7 @@ mod tests {
         #[test]
         fn intersecting_a_group_returns_intersection_of_child() {
             let s1: Sphere = Default::default();
-            let g = Group::new(vec![Box::new(s1)]);
+            let g = Group::new(vec![s1]);
 
             let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 0.0, 1.0));
             let group_xs = g.intersect(&r);
@@ -175,7 +176,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let group = Group::new(vec![Box::new(c1), Box::new(c2), Box::new(c3)]);
+            let group = Group::new(vec![c1, c2, c3]);
 
             assert_eq!(
                 group.bounds(),
@@ -188,7 +189,7 @@ mod tests {
 
         #[test]
         fn bounds_of_an_empty_group_are_minimal() {
-            let g = Group::new(vec![]);
+            let g = Group::<Sphere>::new(vec![]);
 
             assert_eq!(
                 g.bounds(),

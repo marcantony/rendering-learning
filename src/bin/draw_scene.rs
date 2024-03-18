@@ -74,7 +74,7 @@ fn hexagon_edge() -> impl Object {
 }
 
 fn hexagon_side() -> impl Object {
-    Bounded::new(Group::new(vec![
+    Bounded::new(Group::<Box<dyn Object>>::new(vec![
         Box::new(hexagon_corner()),
         Box::new(hexagon_edge()),
     ]))
