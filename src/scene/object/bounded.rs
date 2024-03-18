@@ -30,7 +30,7 @@ impl Bounds {
     }
 
     pub fn from_points(points: &[Point3d]) -> Option<Self> {
-        if points.len() < 2 {
+        if points.is_empty() {
             None
         } else {
             let first = &points[0];
@@ -163,10 +163,18 @@ mod bounds_tests {
     }
 
     #[test]
-    fn trying_to_create_bounds_from_less_than_2_points() {
+    fn trying_to_create_bounds_from_no_points() {
+        assert_eq!(None, Bounds::from_points(&vec![]));
+    }
+
+    #[test]
+    fn creating_bounds_from_one_point() {
         assert_eq!(
-            None,
-            Bounds::from_points(&vec![Point3d::new(0.0, 0.0, 0.0)])
+            Some(Bounds {
+                minimum: Point3d::new(0.0, 1.0, 2.0),
+                maximum: Point3d::new(0.0, 1.0, 2.0)
+            }),
+            Bounds::from_points(&vec![Point3d::new(0.0, 1.0, 2.0)])
         );
     }
 
