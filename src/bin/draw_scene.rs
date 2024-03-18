@@ -27,7 +27,7 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let world = test_hexagon_world();
+    let world: World = test_mirror_world();
 
     let from = Point3d::new(0.0, 2.0, -7.0);
     let to = Point3d::new(0.0, 1.5, 0.0);
@@ -129,7 +129,11 @@ fn test_mirror_world() -> World {
     );
     let sphere_group = Bounded::new(Transformed::new(
         Group::new(vec![Box::new(gs1), Box::new(gs2)]),
-        InvertibleMatrix::try_from(transformation::translation(-1.0, 0.0, 0.0)).unwrap(),
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
+            transformation::rotation_z(std::f64::consts::FRAC_PI_2),
+            transformation::translation(-2.0, 2.0, 0.0),
+        ]))
+        .unwrap(),
     ));
 
     let floor = Plane {
