@@ -9,29 +9,17 @@ use super::{bounded::Bounds, Object};
 pub struct Transformed<T> {
     child: T,
     transform: InvertibleMatrix<4>,
-    bounds: Bounds,
 }
 
 impl<T: Object> Transformed<T> {
     pub fn new(child: T, transform: InvertibleMatrix<4>) -> Self {
-        let bounds = calculate_bounds(&transform, &child.bounds());
-        Transformed {
-            child,
-            transform,
-            bounds,
-        }
+        Transformed { child, transform }
     }
 
     // TODO: Be careful with mutability here...
     pub fn child(&mut self) -> &mut T {
         &mut self.child
     }
-}
-
-fn calculate_bounds(transform: &InvertibleMatrix<4>, child_bounds: &Bounds) -> Bounds {
-    let enumerated_points = child_bounds.enumerate();
-    let transformed_points = enumerated_points.map(|p| &**transform * &p);
-    Bounds::from_points(&transformed_points).expect("should have been 8 transformed points")
 }
 
 impl<T: Object> Object for Transformed<T> {
@@ -54,7 +42,9 @@ impl<T: Object> Object for Transformed<T> {
     }
 
     fn bounds(&self) -> Bounds {
-        self.bounds.clone()
+        let enumerated_points = self.child.bounds().enumerate();
+        let transformed_points = enumerated_points.map(|p| &*self.transform * &p);
+        Bounds::from_points(&transformed_points).expect("should have been 8 transformed points")
     }
 }
 

@@ -13,25 +13,12 @@ use super::{bounded::Bounds, Object};
 /// A group of multiple sub-objects
 pub struct Group<T> {
     children: Vec<T>,
-    bounds: Bounds,
 }
 
 impl<T: Object> Group<T> {
     pub fn new(children: Vec<T>) -> Self {
-        let bounds = calculate_bounds(&children);
-        Group { children, bounds }
+        Group { children }
     }
-}
-
-fn calculate_bounds<T: Object>(children: &[T]) -> Bounds {
-    let points: Vec<_> = children
-        .iter()
-        .flat_map(|c| [c.bounds().minimum, c.bounds().maximum].into_iter())
-        .collect();
-    Bounds::from_points(&points).unwrap_or(Bounds {
-        minimum: Point3d::new(0.0, 0.0, 0.0),
-        maximum: Point3d::new(0.0, 0.0, 0.0),
-    })
 }
 
 impl<T: Object> Object for Group<T> {
@@ -55,7 +42,15 @@ impl<T: Object> Object for Group<T> {
     }
 
     fn bounds(&self) -> Bounds {
-        self.bounds.clone()
+        let points: Vec<_> = self
+            .children
+            .iter()
+            .flat_map(|c| [c.bounds().minimum, c.bounds().maximum].into_iter())
+            .collect();
+        Bounds::from_points(&points).unwrap_or(Bounds {
+            minimum: Point3d::new(0.0, 0.0, 0.0),
+            maximum: Point3d::new(0.0, 0.0, 0.0),
+        })
     }
 }
 
