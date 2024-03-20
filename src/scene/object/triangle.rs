@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::{
     draw::color::Color,
     math::{
@@ -73,6 +75,28 @@ impl Object for Triangle {
 
     fn bounds(&self) -> Bounds {
         Bounds::from_points(&self.points).expect("triangle should have points")
+    }
+}
+
+impl Debug for Triangle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Triangle")
+            .field("points", &self.points)
+            .field("edges", &self.edges)
+            .field("normal", &self.normal)
+            .field("material", &format!("{:p}", &self.material))
+            .finish()
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use super::*;
+
+    impl PartialEq for Triangle {
+        fn eq(&self, other: &Self) -> bool {
+            self.points.iter().all(|p| other.points.contains(p))
+        }
     }
 }
 
