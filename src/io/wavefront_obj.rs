@@ -98,14 +98,14 @@ fn parse_face(tail: &str, vertices: &[Point3d]) -> Option<Vec<Triangle>> {
             points
                 .try_into()
                 .ok()
-                .map(|ps: [Point3d; 3]| vec![Triangle::new(ps, Default::default())])
+                .map(|ps: [Point3d; 3]| vec![Triangle::flat(ps, Default::default())])
         } else if points.len() > 3 {
             let triangulated = fan_triangulate(&points);
             Some(
                 triangulated
                     .into_iter()
                     .map(|verts| verts.map(|v| v.clone()))
-                    .map(|verts| Triangle::new(verts, Default::default()))
+                    .map(|verts| Triangle::flat(verts, Default::default()))
                     .collect::<Vec<_>>(),
             )
         } else {
@@ -181,7 +181,7 @@ f 1 3 4
 
             assert_eq!(
                 t1,
-                &Triangle::new(
+                &Triangle::flat(
                     [
                         parsed.vertices[0].clone(),
                         parsed.vertices[1].clone(),
@@ -192,7 +192,7 @@ f 1 3 4
             );
             assert_eq!(
                 t2,
-                &Triangle::new(
+                &Triangle::flat(
                     [
                         parsed.vertices[0].clone(),
                         parsed.vertices[2].clone(),
@@ -224,7 +224,7 @@ f 1 2 3 4 5
 
             assert_eq!(
                 t1,
-                &Triangle::new(
+                &Triangle::flat(
                     [
                         parsed.vertices[0].clone(),
                         parsed.vertices[1].clone(),
@@ -235,7 +235,7 @@ f 1 2 3 4 5
             );
             assert_eq!(
                 t2,
-                &Triangle::new(
+                &Triangle::flat(
                     [
                         parsed.vertices[0].clone(),
                         parsed.vertices[2].clone(),
@@ -246,7 +246,7 @@ f 1 2 3 4 5
             );
             assert_eq!(
                 t3,
-                &Triangle::new(
+                &Triangle::flat(
                     [
                         parsed.vertices[0].clone(),
                         parsed.vertices[3].clone(),
@@ -286,7 +286,7 @@ f 1 3 4
 
             assert_eq!(
                 t1,
-                &Triangle::new(
+                &Triangle::flat(
                     [
                         parsed.vertices[0].clone(),
                         parsed.vertices[1].clone(),
@@ -297,7 +297,7 @@ f 1 3 4
             );
             assert_eq!(
                 t2,
-                &Triangle::new(
+                &Triangle::flat(
                     [
                         parsed.vertices[0].clone(),
                         parsed.vertices[2].clone(),

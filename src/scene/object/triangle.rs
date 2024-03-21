@@ -9,19 +9,25 @@ use crate::{
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
-use super::{bounded::Bounds, Object, PhysicalObject};
+use super::{bounded::Bounds, Object};
 
 const EPSILON: f64 = 1e-8;
+
+#[derive(Debug, PartialEq, Clone)]
+enum TriangleNormal {
+    Flat(NormalizedVec3d),
+    Smooth([Vec3d; 3]),
+}
 
 pub struct Triangle {
     points: [Point3d; 3],
     edges: [Vec3d; 2],
-    normal: NormalizedVec3d,
+    normal: TriangleNormal,
     material: Material,
 }
 
 impl Triangle {
-    pub fn new(points: [Point3d; 3], material: Material) -> Self {
+    pub fn flat(points: [Point3d; 3], material: Material) -> Self {
         let e1 = &points[1] - &points[0];
         let e2 = &points[2] - &points[0];
         let normal = NormalizedVec3d::try_from(e2.cross(&e1)).unwrap();
@@ -29,15 +35,23 @@ impl Triangle {
         Triangle {
             points,
             edges: [e1, e2],
-            normal,
+            normal: TriangleNormal::Flat(normal),
             material,
         }
     }
-}
 
-impl PhysicalObject for Triangle {
-    fn normal_at(&self, _: &Point3d) -> NormalizedVec3d {
-        self.normal.clone()
+    pub fn smooth(vertices: [(Point3d, Vec3d); 3], material: Material) -> Self {
+        let [(p1, v1), (p2, v2), (p3, v3)] = vertices;
+
+        let e1 = &p2 - &p1;
+        let e2 = &p3 - &p1;
+
+        Triangle {
+            points: [p1, p2, p3],
+            edges: [e1, e2],
+            normal: TriangleNormal::Smooth([v1, v2, v3]),
+            material,
+        }
     }
 }
 
@@ -67,7 +81,20 @@ impl Object for Triangle {
                     vec![]
                 } else {
                     let t = f * self.edges[1].dot(&origin_cross_e1);
-                    vec![super::build_basic_intersection(ray, t, self)]
+
+                    let p = ray.position(t);
+                    let color = self.material().surface.color_at(&p);
+                    let normal = match &self.normal {
+                        TriangleNormal::Flat(n) => n.clone(),
+                        TriangleNormal::Smooth([v1, v2, v3]) => NormalizedVec3d::try_from(
+                            &(&(v2 * u) + &(v3 * v)) + &(v1 * (1.0 - u - v)),
+                        )
+                        .unwrap(),
+                    };
+
+                    let i = Intersection::new(t, self as &dyn Object, color, normal);
+
+                    vec![i]
                 }
             }
         }
@@ -104,50 +131,40 @@ mod test_utils {
 mod tests {
     use super::*;
 
-    fn test_triangle() -> Triangle {
-        Triangle::new(
-            [
+    mod flat {
+        use super::*;
+
+        fn test_triangle() -> Triangle {
+            Triangle::flat(
+                [
+                    Point3d::new(0.0, 1.0, 0.0),
+                    Point3d::new(-1.0, 0.0, 0.0),
+                    Point3d::new(1.0, 0.0, 0.0),
+                ],
+                Default::default(),
+            )
+        }
+
+        #[test]
+        fn constructing_a_triangle() {
+            let points = [
                 Point3d::new(0.0, 1.0, 0.0),
                 Point3d::new(-1.0, 0.0, 0.0),
                 Point3d::new(1.0, 0.0, 0.0),
-            ],
-            Default::default(),
-        )
-    }
+            ];
 
-    #[test]
-    fn constructing_a_triangle() {
-        let points = [
-            Point3d::new(0.0, 1.0, 0.0),
-            Point3d::new(-1.0, 0.0, 0.0),
-            Point3d::new(1.0, 0.0, 0.0),
-        ];
+            let triangle = Triangle::flat(points.clone(), Default::default());
 
-        let triangle = Triangle::new(points.clone(), Default::default());
-
-        assert_eq!(triangle.points, points);
-        assert_eq!(
-            triangle.edges,
-            [Vec3d::new(-1.0, -1.0, 0.0), Vec3d::new(1.0, -1.0, 0.0)]
-        );
-        assert_eq!(
-            triangle.normal,
-            NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap()
-        )
-    }
-
-    #[test]
-    fn finding_the_normal_on_a_triangle() {
-        let t = test_triangle();
-
-        assert_eq!(t.normal, NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap());
-        assert_eq!(t.normal_at(&Point3d::new(0.0, 0.5, 0.0)), t.normal);
-        assert_eq!(t.normal_at(&Point3d::new(-0.5, 0.75, 0.0)), t.normal);
-        assert_eq!(t.normal_at(&Point3d::new(0.5, 0.25, 0.0)), t.normal);
-    }
-
-    mod intersect {
-        use super::*;
+            assert_eq!(triangle.points, points);
+            assert_eq!(
+                triangle.edges,
+                [Vec3d::new(-1.0, -1.0, 0.0), Vec3d::new(1.0, -1.0, 0.0)]
+            );
+            assert_eq!(
+                triangle.normal,
+                TriangleNormal::Flat(NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap())
+            )
+        }
 
         #[test]
         fn intersecting_a_ray_parallel_to_the_triangle() {
@@ -200,11 +217,37 @@ mod tests {
             assert_eq!(xs[0].t(), 2.0);
             for x in xs {
                 let p = r.position(x.t());
-                let n = t.normal_at(&p);
+                let n = NormalizedVec3d::new(0.0, 0.0, -1.0).unwrap();
                 let c = t.material().surface.color_at(&p);
                 assert_eq!(x.normal, n);
                 assert_eq!(x.color, c);
             }
+        }
+    }
+
+    mod smooth {
+        use crate::math::vector;
+
+        use super::*;
+
+        #[test]
+        fn normal_vector_of_a_smooth_triangle_interpolates_vertex_normals() {
+            let t = Triangle::smooth(
+                [
+                    (Point3d::new(0.0, 1.0, 0.0), Vec3d::new(0.0, 1.0, 0.0)),
+                    (Point3d::new(-1.0, 0.0, 0.0), Vec3d::new(-1.0, 0.0, 0.0)),
+                    (Point3d::new(1.0, 0.0, 0.0), Vec3d::new(1.0, 0.0, 0.0)),
+                ],
+                Default::default(),
+            );
+            let r = Ray::new(Point3d::new(-0.2, 0.3, -2.0), Vec3d::new(0.0, 0.0, 1.0));
+
+            let is = t.intersect(&r);
+
+            vector::test_utils::assert_vec_approx_equals(
+                &is[0].normal,
+                &Vec3d::new(-0.55470, 0.83205, 0.0),
+            )
         }
     }
 
@@ -213,7 +256,7 @@ mod tests {
 
         #[test]
         fn bounds_of_a_triangle() {
-            let t = Triangle::new(
+            let t = Triangle::flat(
                 [
                     Point3d::new(0.0, 0.0, 0.0),
                     Point3d::new(0.0, 1.0, 0.0),
