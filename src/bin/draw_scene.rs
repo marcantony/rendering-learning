@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 
-use std::f64::consts;
+use std::{f64::consts, fs::File, io::BufReader};
 
 use ray_tracer_challenge::{
     draw::color::{self, Color},
+    io::wavefront_obj::WavefrontObj,
     math::{matrix::InvertibleMatrix, point::Point3d, vector::Vec3d},
     scene::{
         camera::Camera,
@@ -27,10 +28,10 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let world: World = test_mirror_world();
+    let world: World = test_obj_world();
 
-    let from = Point3d::new(0.0, 2.0, -7.0);
-    let to = Point3d::new(0.0, 1.5, 0.0);
+    let from = Point3d::new(0.0, 15.0, -30.0);
+    let to = Point3d::new(0.0, 5.0, 0.0);
     let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
         RES_X,
@@ -287,6 +288,31 @@ fn test_mirror_world() -> World {
             Box::new(behind_wall),
             Box::new(sphere_group),
         ],
+        lights: vec![light_source],
+        ..Default::default()
+    }
+}
+
+fn test_obj_world() -> World {
+    let obj_file = File::open("path/to/obj").unwrap();
+    let reader = BufReader::new(obj_file);
+
+    let obj = Transformed::new(
+        WavefrontObj::parse(reader).to_object(),
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
+            transformation::rotation_y(std::f64::consts::FRAC_PI_2),
+            transformation::scaling(10.0, 10.0, 10.0),
+        ]))
+        .unwrap(),
+    );
+
+    let light_source = PointLight {
+        position: Point3d::new(-2.0, 20.0, -30.0),
+        intensity: color::white(),
+    };
+
+    World {
+        objects: vec![Box::new(obj)],
         lights: vec![light_source],
         ..Default::default()
     }
