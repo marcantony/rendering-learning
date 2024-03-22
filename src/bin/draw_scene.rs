@@ -11,8 +11,15 @@ use ray_tracer_challenge::{
         light::PointLight,
         material::{Material, Surface},
         object::{
-            bounded::Bounded, cube::Cube, cylinder::Cylinder, group::Group, plane::Plane,
-            sphere::Sphere, transformed::Transformed, Object,
+            bounded::Bounded,
+            csg::{Csg, CsgOperation},
+            cube::Cube,
+            cylinder::Cylinder,
+            group::Group,
+            plane::Plane,
+            sphere::Sphere,
+            transformed::Transformed,
+            Object,
         },
         pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
@@ -28,10 +35,10 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let world: World = test_obj_world();
+    let world: World = test_csg_world();
 
-    let from = Point3d::new(0.0, 15.0, -30.0);
-    let to = Point3d::new(0.0, 5.0, 0.0);
+    let from = Point3d::new(0.0, 0.0, -30.0);
+    let to = Point3d::new(0.0, 0.0, 0.0);
     let up = Vec3d::new(0.0, 1.0, 0.0);
     let camera = Camera::new(
         RES_X,
@@ -314,6 +321,87 @@ fn test_obj_world() -> World {
     World {
         objects: vec![Box::new(obj)],
         lights: vec![light_source],
+        ..Default::default()
+    }
+}
+
+fn test_csg_world() -> World {
+    let room = Transformed::new(
+        Cube {
+            material: Material {
+                surface: Surface::Pattern(Box::new(Checker3d {
+                    a: Color::new(0.6, 0.6, 0.6),
+                    b: Color::new(0.7, 0.7, 0.7),
+                    transform: InvertibleMatrix::try_from(transformation::sequence(&vec![
+                        transformation::translation(0.01, 0.01, 0.01),
+                        transformation::scaling(0.02, 0.02, 0.02),
+                    ]))
+                    .unwrap(),
+                })),
+                reflectivity: 0.0,
+                ambient: 0.5,
+                shininess: 10.0,
+                diffuse: 0.3,
+                specular: 0.3,
+                ..Default::default()
+            },
+        },
+        InvertibleMatrix::try_from(transformation::scaling(50.0, 50.0, 50.0)).unwrap(),
+    );
+
+    let hollow_circle = Csg::<Box<dyn Object>> {
+        left: Box::new(Sphere {
+            material: Material {
+                surface: Surface::Color(color::green()),
+                ..Default::default()
+            },
+        }),
+        right: Box::new(Transformed::new(
+            Sphere {
+                material: Material {
+                    surface: Surface::Color(color::blue()),
+                    ..Default::default()
+                },
+            },
+            InvertibleMatrix::try_from(transformation::scaling(0.7, 0.7, 0.7)).unwrap(),
+        )),
+        operation: CsgOperation::Difference,
+    };
+    let object = Csg::<Box<dyn Object>> {
+        left: Box::new(hollow_circle),
+        right: Box::new(Transformed::new(
+            Cube {
+                material: Material {
+                    surface: Surface::Color(color::red()),
+                    ..Default::default()
+                },
+            },
+            InvertibleMatrix::try_from(transformation::translation(1.0, 0.0, 0.0)).unwrap(),
+        )),
+        operation: CsgOperation::Difference,
+    };
+    let object_transformed = Transformed::new(
+        object,
+        InvertibleMatrix::try_from(transformation::sequence(&vec![
+            transformation::rotation_y(std::f64::consts::FRAC_PI_6),
+            transformation::scaling(7.0, 7.0, 7.0),
+        ]))
+        .unwrap(),
+    );
+
+    let light_source_1 = PointLight {
+        position: Point3d::new(-2.0, 20.0, -30.0),
+        intensity: Color::new(0.5, 0.5, 0.5),
+    };
+
+    let light_source_2 = PointLight {
+        position: Point3d::new(10.0, 20.0, -30.0),
+        intensity: Color::new(0.5, 0.5, 0.5),
+    };
+
+    World {
+        objects: vec![Box::new(room), Box::new(object_transformed)],
+        lights: vec![light_source_1, light_source_2],
         ..Default::default()
     }
 }
