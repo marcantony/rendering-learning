@@ -1,3 +1,5 @@
+use std::{borrow::Borrow, ops::Deref};
+
 use crate::{
     draw::color::Color,
     math::{point::Point3d, vector::NormalizedVec3d},
@@ -29,17 +31,18 @@ impl Bounds {
         ]
     }
 
-    pub fn from_points(points: &[Point3d]) -> Option<Self> {
+    pub fn from_points<P: Borrow<Point3d>>(points: &[P]) -> Option<Self> {
         if points.is_empty() {
             None
         } else {
-            let first = &points[0];
+            let first = &points[0].borrow();
             let (min, max) = points.iter().fold(
                 (
                     [first.x(), first.y(), first.z()],
                     [first.x(), first.y(), first.z()],
                 ),
                 |(mn, mx), p| {
+                    let p = p.borrow();
                     (
                         [mn[0].min(p.x()), mn[1].min(p.y()), mn[2].min(p.z())],
                         [mx[0].max(p.x()), mx[1].max(p.y()), mx[2].max(p.z())],
@@ -52,6 +55,23 @@ impl Bounds {
                 maximum: Point3d::new(max[0], max[1], max[2]),
             })
         }
+    }
+
+    pub fn from_bounds<B: Borrow<Bounds>>(bounds: &[B]) -> Self {
+        let points: Vec<_> = bounds
+            .iter()
+            .flat_map(|b| {
+                let Bounds {
+                    minimum: min,
+                    maximum: max,
+                } = b.borrow();
+                [min, max].into_iter()
+            })
+            .collect();
+        Bounds::from_points(points.deref()).unwrap_or(Bounds {
+            minimum: Point3d::new(0.0, 0.0, 0.0),
+            maximum: Point3d::new(0.0, 0.0, 0.0),
+        })
     }
 }
 
@@ -164,7 +184,7 @@ mod bounds_tests {
 
     #[test]
     fn trying_to_create_bounds_from_no_points() {
-        assert_eq!(None, Bounds::from_points(&vec![]));
+        assert_eq!(None, Bounds::from_points::<Point3d>(&vec![]));
     }
 
     #[test]

@@ -108,7 +108,7 @@ impl<T: Object> Object for Csg<T> {
     }
 
     fn bounds(&self) -> Bounds {
-        todo!()
+        Bounds::from_bounds(&[self.left.bounds(), self.right.bounds()])
     }
 }
 
@@ -210,5 +210,25 @@ mod csg_tests {
         assert!(xs[1] == right_intersections[1]);
         assert_eq!(xs[1].color, right_intersections[1].color);
         assert_eq!(xs[1].normal, right_intersections[1].normal);
+    }
+
+    #[test]
+    fn bounds_cover_both_children() {
+        let c = Csg::<Box<dyn Object>> {
+            left: Box::new(Sphere::default()),
+            right: Box::new(Transformed::new(
+                Sphere::default(),
+                InvertibleMatrix::try_from(transformation::translation(0.0, 0.0, 0.5)).unwrap(),
+            )),
+            operation: CsgOperation::Union,
+        };
+
+        assert_eq!(
+            c.bounds(),
+            Bounds {
+                minimum: Point3d::new(-1.0, -1.0, -1.0),
+                maximum: Point3d::new(1.0, 1.0, 1.5)
+            }
+        )
     }
 }

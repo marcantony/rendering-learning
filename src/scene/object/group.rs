@@ -1,6 +1,6 @@
 use crate::{
     draw::color::Color,
-    math::{point::Point3d, vector::NormalizedVec3d},
+    math::vector::NormalizedVec3d,
     scene::{
         intersect::{self, Intersection},
         material::Material,
@@ -42,15 +42,8 @@ impl<T: Object> Object for Group<T> {
     }
 
     fn bounds(&self) -> Bounds {
-        let points: Vec<_> = self
-            .children
-            .iter()
-            .flat_map(|c| [c.bounds().minimum, c.bounds().maximum].into_iter())
-            .collect();
-        Bounds::from_points(&points).unwrap_or(Bounds {
-            minimum: Point3d::new(0.0, 0.0, 0.0),
-            maximum: Point3d::new(0.0, 0.0, 0.0),
-        })
+        let bounds = self.children.iter().map(|c| c.bounds()).collect::<Vec<_>>();
+        Bounds::from_bounds(&bounds)
     }
 }
 
