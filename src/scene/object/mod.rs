@@ -33,6 +33,7 @@ fn build_basic_intersection<'a, T: PhysicalObject>(
 
 pub mod bounded;
 pub mod cone;
+pub mod csg;
 pub mod cube;
 pub mod cylinder;
 pub mod group;
