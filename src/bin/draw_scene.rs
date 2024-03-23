@@ -316,15 +316,14 @@ fn test_mirror_world() -> Scene {
 }
 
 fn test_obj_world() -> Scene {
-    let obj_file = File::open("path/to/obj").unwrap();
+    let obj_file = File::open("objs/teapot-low.obj").unwrap();
     let reader = BufReader::new(obj_file);
 
     let obj = Transformed::new(
         WavefrontObj::parse(reader).to_object(),
-        InvertibleMatrix::try_from(transformation::sequence(&vec![
-            transformation::rotation_y(std::f64::consts::FRAC_PI_2),
-            transformation::scaling(10.0, 10.0, 10.0),
-        ]))
+        InvertibleMatrix::try_from(transformation::sequence(&vec![transformation::rotation_x(
+            -std::f64::consts::FRAC_PI_2,
+        )]))
         .unwrap(),
     );
 
