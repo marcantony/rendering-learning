@@ -48,18 +48,6 @@ fn main() {
     util::write_to_file(&canvas, "output/scene");
 }
 
-fn test_camera() -> Camera {
-    let from = Point3d::new(0.0, 0.0, -30.0);
-    let to = Point3d::new(0.0, 0.0, 0.0);
-    let up = Vec3d::new(0.0, 1.0, 0.0);
-    Camera::new(
-        RES_X,
-        RES_Y,
-        consts::FRAC_PI_3,
-        InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
-    )
-}
-
 fn hexagon_corner() -> impl Object {
     let corner = Sphere::unit();
     let transform = transformation::sequence(&vec![
@@ -122,16 +110,23 @@ fn test_hexagon_world() -> Scene {
         .unwrap(),
     );
 
-    let w = World {
+    let world = World {
         objects: vec![Box::new(hexagon)],
         lights: vec![light_source],
         ..Default::default()
     };
 
-    Scene {
-        camera: test_camera(),
-        world: w,
-    }
+    let from = Point3d::new(0.0, 2.0, -7.0);
+    let to = Point3d::new(0.0, 1.5, 0.0);
+    let up = Vec3d::new(0.0, 1.0, 0.0);
+    let camera = Camera::new(
+        RES_X,
+        RES_Y,
+        consts::FRAC_PI_3,
+        InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
+    );
+
+    Scene { camera, world }
 }
 
 fn test_mirror_world() -> Scene {
@@ -291,7 +286,7 @@ fn test_mirror_world() -> Scene {
         intensity: color::white(),
     };
 
-    let w = World {
+    let world = World {
         objects: vec![
             Box::new(floor),
             Box::new(left_wall),
@@ -307,10 +302,17 @@ fn test_mirror_world() -> Scene {
         ..Default::default()
     };
 
-    Scene {
-        camera: test_camera(),
-        world: w,
-    }
+    let from = Point3d::new(0.0, 2.0, -7.0);
+    let to = Point3d::new(0.0, 1.5, 0.0);
+    let up = Vec3d::new(0.0, 1.0, 0.0);
+    let camera = Camera::new(
+        RES_X,
+        RES_Y,
+        consts::FRAC_PI_3,
+        InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
+    );
+
+    Scene { camera, world }
 }
 
 fn test_obj_world() -> Scene {
@@ -331,16 +333,23 @@ fn test_obj_world() -> Scene {
         intensity: color::white(),
     };
 
-    let w = World {
+    let world = World {
         objects: vec![Box::new(obj)],
         lights: vec![light_source],
         ..Default::default()
     };
 
-    Scene {
-        camera: test_camera(),
-        world: w,
-    }
+    let from = Point3d::new(0.0, 15.0, -30.0);
+    let to = Point3d::new(0.0, 5.0, 0.0);
+    let up = Vec3d::new(0.0, 1.0, 0.0);
+    let camera = Camera::new(
+        RES_X,
+        RES_Y,
+        consts::FRAC_PI_3,
+        InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
+    );
+
+    Scene { camera, world }
 }
 
 fn test_csg_world() -> Scene {
@@ -417,14 +426,21 @@ fn test_csg_world() -> Scene {
         intensity: Color::new(0.5, 0.5, 0.5),
     };
 
-    let w = World {
+    let world = World {
         objects: vec![Box::new(room), Box::new(object_transformed)],
         lights: vec![light_source_1, light_source_2],
         ..Default::default()
     };
 
-    Scene {
-        camera: test_camera(),
-        world: w,
-    }
+    let from = Point3d::new(0.0, 0.0, -30.0);
+    let to = Point3d::new(0.0, 0.0, 0.0);
+    let up = Vec3d::new(0.0, 1.0, 0.0);
+    let camera = Camera::new(
+        RES_X,
+        RES_Y,
+        consts::FRAC_PI_3,
+        InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
+    );
+
+    Scene { camera, world }
 }
