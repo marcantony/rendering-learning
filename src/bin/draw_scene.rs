@@ -45,7 +45,7 @@ fn main() {
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 
-    util::write_to_file(&canvas, "scene");
+    util::write_to_file(&canvas, "output/scene");
 }
 
 fn test_camera() -> Camera {
