@@ -24,6 +24,7 @@ use ray_tracer_challenge::{
         pattern::{checker3d::Checker3d, stripe::Stripe},
         transformation,
         world::World,
+        Scene,
     },
     util,
 };
@@ -35,26 +36,28 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let world: World = test_csg_world();
-
-    let from = Point3d::new(0.0, 0.0, -30.0);
-    let to = Point3d::new(0.0, 0.0, 0.0);
-    let up = Vec3d::new(0.0, 1.0, 0.0);
-    let camera = Camera::new(
-        RES_X,
-        RES_Y,
-        consts::FRAC_PI_3,
-        InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
-    );
+    let scene = test_csg_world();
 
     println!("Rendering scene...");
-    let canvas = camera.render(&world);
+    let canvas = scene.render();
     println!("Scene rendered.");
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
 
     util::write_to_file(&canvas, "scene");
+}
+
+fn test_camera() -> Camera {
+    let from = Point3d::new(0.0, 0.0, -30.0);
+    let to = Point3d::new(0.0, 0.0, 0.0);
+    let up = Vec3d::new(0.0, 1.0, 0.0);
+    Camera::new(
+        RES_X,
+        RES_Y,
+        consts::FRAC_PI_3,
+        InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap(),
+    )
 }
 
 fn hexagon_corner() -> impl Object {
@@ -103,7 +106,7 @@ fn hexagon() -> impl Object {
     Group::new(sides)
 }
 
-fn test_hexagon_world() -> World {
+fn test_hexagon_world() -> Scene {
     let light_source = PointLight {
         position: Point3d::new(-10.0, 10.0, -10.0),
         intensity: color::white(),
@@ -119,14 +122,19 @@ fn test_hexagon_world() -> World {
         .unwrap(),
     );
 
-    World {
+    let w = World {
         objects: vec![Box::new(hexagon)],
         lights: vec![light_source],
         ..Default::default()
+    };
+
+    Scene {
+        camera: test_camera(),
+        world: w,
     }
 }
 
-fn test_mirror_world() -> World {
+fn test_mirror_world() -> Scene {
     let gs1 = Transformed::new(
         Sphere::unit(),
         InvertibleMatrix::try_from(transformation::translation(-0.5, 0.0, 0.0)).unwrap(),
@@ -283,7 +291,7 @@ fn test_mirror_world() -> World {
         intensity: color::white(),
     };
 
-    World {
+    let w = World {
         objects: vec![
             Box::new(floor),
             Box::new(left_wall),
@@ -297,10 +305,15 @@ fn test_mirror_world() -> World {
         ],
         lights: vec![light_source],
         ..Default::default()
+    };
+
+    Scene {
+        camera: test_camera(),
+        world: w,
     }
 }
 
-fn test_obj_world() -> World {
+fn test_obj_world() -> Scene {
     let obj_file = File::open("path/to/obj").unwrap();
     let reader = BufReader::new(obj_file);
 
@@ -318,14 +331,19 @@ fn test_obj_world() -> World {
         intensity: color::white(),
     };
 
-    World {
+    let w = World {
         objects: vec![Box::new(obj)],
         lights: vec![light_source],
         ..Default::default()
+    };
+
+    Scene {
+        camera: test_camera(),
+        world: w,
     }
 }
 
-fn test_csg_world() -> World {
+fn test_csg_world() -> Scene {
     let room = Transformed::new(
         Cube {
             material: Material {
@@ -399,9 +417,14 @@ fn test_csg_world() -> World {
         intensity: Color::new(0.5, 0.5, 0.5),
     };
 
-    World {
+    let w = World {
         objects: vec![Box::new(room), Box::new(object_transformed)],
         lights: vec![light_source_1, light_source_2],
         ..Default::default()
+    };
+
+    Scene {
+        camera: test_camera(),
+        world: w,
     }
 }
