@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 by_address = "1.1.0"
+
+[[bench]]
+name = "ray_tracer"
+harness = false
