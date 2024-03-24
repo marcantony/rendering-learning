@@ -19,7 +19,7 @@ use ray_tracer_challenge::{
 };
 
 fn main() {
-    let iterations = 10;
+    let iterations = 50;
     let scene = test_mirror_scene();
     let results = (0..iterations)
         .map(|_i| time(|| scene.render()))
