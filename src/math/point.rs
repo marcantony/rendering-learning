@@ -50,11 +50,7 @@ impl Add<&Vec3d> for &Point3d {
     type Output = Point3d;
 
     fn add(self, rhs: &Vec3d) -> Self::Output {
-        Point3d::new(
-            &self.x() + &rhs.x(),
-            &self.y() + &rhs.y(),
-            &self.z() + &rhs.z(),
-        )
+        Point3d::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
     }
 }
 
@@ -62,11 +58,7 @@ impl Sub for &Point3d {
     type Output = Vec3d;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Vec3d::new(
-            &self.x() - &rhs.x(),
-            &self.y() - &rhs.y(),
-            &self.z() - &rhs.z(),
-        )
+        Vec3d::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z())
     }
 }
 
@@ -74,11 +66,7 @@ impl Sub<&Vec3d> for &Point3d {
     type Output = Point3d;
 
     fn sub(self, rhs: &Vec3d) -> Self::Output {
-        Point3d::new(
-            &self.x() - &rhs.x(),
-            &self.y() - &rhs.y(),
-            &self.z() - &rhs.z(),
-        )
+        Point3d::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z())
     }
 }
 

@@ -1,3 +1,5 @@
+#![allow(clippy::needless_range_loop)] // Iterators don't play nicely with arrays
+
 use std::ops::{Add, Deref, Index, IndexMut, Mul, Sub};
 
 use super::util;

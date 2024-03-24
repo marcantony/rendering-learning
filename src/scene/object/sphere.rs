@@ -80,7 +80,6 @@ pub fn glass_sphere() -> Sphere {
             refractive_index: 1.52,
             ..Default::default()
         },
-        ..Default::default()
     }
 }
 

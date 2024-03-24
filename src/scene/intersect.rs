@@ -180,7 +180,7 @@ pub fn hit<T, C, N>(intersections: &[Intersection<T, C, N>]) -> Option<&Intersec
     })
 }
 
-pub fn sort<T, C, N>(xs: &mut Vec<Intersection<T, C, N>>) {
+pub fn sort<T, C, N>(xs: &mut [Intersection<T, C, N>]) {
     xs.sort_by(|a, b| a.t().partial_cmp(&b.t()).unwrap())
 }
 
