@@ -33,7 +33,7 @@ impl<T: Object> Object for Group<T> {
         let mut intersections: Vec<_> = self
             .children
             .iter()
-            .flat_map(|obj| obj.intersect(&object_ray))
+            .flat_map(|obj| obj.intersect(object_ray))
             .collect();
 
         intersect::sort(&mut intersections);

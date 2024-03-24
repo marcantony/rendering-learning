@@ -86,7 +86,7 @@ pub fn lighting(
         )
     };
 
-    return &(&ambient + &diffuse) + &specular;
+    &(&ambient + &diffuse) + &specular
 }
 
 #[cfg(test)]

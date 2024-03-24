@@ -9,6 +9,7 @@ use super::{bounded::Bounds, Object, PhysicalObject};
 const EPSILON: f64 = 1e-8;
 
 /// A double-napped cone with slope 1 aligned along the y-axis, whose vertex is at the origin
+#[derive(Default)]
 pub struct Cone {
     pub material: Material,
     pub minimum: Option<f64>,
@@ -146,17 +147,6 @@ impl Object for Cone {
         Bounds {
             minimum: Point3d::new(-radius, y_min, -radius),
             maximum: Point3d::new(radius, y_max, radius),
-        }
-    }
-}
-
-impl Default for Cone {
-    fn default() -> Self {
-        Self {
-            material: Default::default(),
-            minimum: None,
-            maximum: None,
-            closed: false,
         }
     }
 }

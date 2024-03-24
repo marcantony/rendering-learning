@@ -71,7 +71,7 @@ impl Object for Triangle {
             let p1_to_origin = &ray.origin - &self.points[0];
             let u = f * p1_to_origin.dot(&dir_cross_e2);
 
-            if u < 0.0 || u > 1.0 {
+            if !(0.0..=1.0).contains(&u) {
                 vec![]
             } else {
                 let origin_cross_e1 = p1_to_origin.cross(&self.edges[0]);

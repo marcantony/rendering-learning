@@ -321,7 +321,7 @@ fn test_obj_world() -> Scene {
 
     let obj = Transformed::new(
         WavefrontObj::parse(reader).to_object(),
-        InvertibleMatrix::try_from(transformation::sequence(&vec![transformation::rotation_x(
+        InvertibleMatrix::try_from(transformation::sequence(&[transformation::rotation_x(
             -std::f64::consts::FRAC_PI_2,
         )]))
         .unwrap(),

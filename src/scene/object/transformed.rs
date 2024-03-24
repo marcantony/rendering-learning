@@ -31,7 +31,7 @@ impl<T: Object> Object for Transformed<T> {
         &self,
         object_ray: &Ray,
     ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
-        let local_ray = object_ray.transform(&self.transform.inverse());
+        let local_ray = object_ray.transform(self.transform.inverse());
         let mut xs = self.child.intersect(&local_ray);
         xs.iter_mut().for_each(|x| {
             let world_normal = &self.transform.inverse().transpose() * &*x.normal;

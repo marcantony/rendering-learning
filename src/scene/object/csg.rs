@@ -83,7 +83,7 @@ impl<T: Object> Object for Csg<T> {
     fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         let left_xs = self
             .left
-            .intersect(&ray)
+            .intersect(ray)
             .into_iter()
             .map(|i| SidedIntersection {
                 i,
@@ -92,7 +92,7 @@ impl<T: Object> Object for Csg<T> {
             .collect::<Vec<_>>();
         let mut right_xs = self
             .right
-            .intersect(&ray)
+            .intersect(ray)
             .into_iter()
             .map(|i| SidedIntersection {
                 i,

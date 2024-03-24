@@ -45,7 +45,7 @@ impl WavefrontObj {
                         res.map(|mut ts| current_group_val.append(&mut ts))
                     }
                     "g" => {
-                        let group_vals = current_group_val.drain(..).collect::<Vec<_>>();
+                        let group_vals = std::mem::take(&mut current_group_val);
                         obj.groups.insert(current_group_name.clone(), group_vals);
                         current_group_name = ObjGroup::Named(String::from(trimmed));
                         current_group_val.clear();

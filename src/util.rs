@@ -12,5 +12,5 @@ pub fn write_to_file(c: &Canvas, filename_prefix: &str) {
             .expect("time went backwards")
             .as_secs()
     );
-    fs::write(&filename, ppm_data).expect("unable to write file")
+    fs::write(filename, ppm_data).expect("unable to write file")
 }

@@ -7,6 +7,7 @@ use crate::{
 use super::{bounded::Bounds, Object, PhysicalObject};
 
 /// A plane: by default, a plane in xz
+#[derive(Default)]
 pub struct Plane {
     pub material: Material,
 }
@@ -43,14 +44,6 @@ impl Object for Plane {
             // Use an epsilon for -y/+y to avoid any floating point wonkiness
             minimum: Point3d::new(f64::NEG_INFINITY, -1e8, f64::NEG_INFINITY),
             maximum: Point3d::new(f64::INFINITY, 1e8, f64::INFINITY),
-        }
-    }
-}
-
-impl Default for Plane {
-    fn default() -> Self {
-        Self {
-            material: Default::default(),
         }
     }
 }

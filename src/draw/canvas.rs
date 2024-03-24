@@ -13,8 +13,8 @@ impl Canvas {
 
     pub fn new_with_color(width: usize, height: usize, color: &Color) -> Canvas {
         Canvas {
-            width: width,
-            height: height,
+            width,
+            height,
             data: vec![color.clone(); width * height],
         }
     }
@@ -31,7 +31,6 @@ impl Canvas {
         let idx = self.to_idx(coords.0, coords.1);
         idx.map(|i| {
             self.data[i] = color;
-            ()
         })
     }
 

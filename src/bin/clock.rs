@@ -38,5 +38,5 @@ fn main() {
             .expect("time went backwards")
             .as_secs()
     );
-    fs::write(&filename, ppm_data).expect("unable to write file")
+    fs::write(filename, ppm_data).expect("unable to write file")
 }

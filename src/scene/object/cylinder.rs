@@ -9,6 +9,7 @@ use super::{bounded::Bounds, Object, PhysicalObject};
 const EPSILON: f64 = 1e-8;
 
 /// A cylinder, by default with radius 1 and infinite length around the y-axis
+#[derive(Default)]
 pub struct Cylinder {
     pub material: Material,
     pub minimum: Option<f64>,
@@ -141,17 +142,6 @@ impl Object for Cylinder {
         Bounds {
             minimum: Point3d::new(-1.0, self.minimum.unwrap_or(f64::NEG_INFINITY), -1.0),
             maximum: Point3d::new(1.0, self.maximum.unwrap_or(f64::INFINITY), 1.0),
-        }
-    }
-}
-
-impl Default for Cylinder {
-    fn default() -> Self {
-        Self {
-            material: Default::default(),
-            minimum: None,
-            maximum: None,
-            closed: false,
         }
     }
 }

@@ -244,7 +244,7 @@ fn test_obj_scene() -> Scene {
 
     let obj = Transformed::new(
         WavefrontObj::parse(content).to_object(),
-        InvertibleMatrix::try_from(transformation::sequence(&vec![transformation::rotation_x(
+        InvertibleMatrix::try_from(transformation::sequence(&[transformation::rotation_x(
             -consts::FRAC_PI_2,
         )]))
         .unwrap(),

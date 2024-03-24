@@ -45,8 +45,7 @@ impl World {
         let mut intersections = self
             .objects
             .iter()
-            .map(|object| object.intersect(ray))
-            .flatten()
+            .flat_map(|object| object.intersect(ray))
             .collect::<Vec<_>>();
         intersect::sort(&mut intersections);
 
