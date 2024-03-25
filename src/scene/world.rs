@@ -27,6 +27,7 @@ pub struct World {
     pub objects: Vec<Box<dyn Object>>,
     pub lights: Vec<PointLight>,
     pub max_reflection_depth: usize,
+    pub void_color: Color,
 }
 
 impl World {
@@ -38,6 +39,7 @@ impl World {
                 .collect(),
             lights: vec![basic_light()],
             max_reflection_depth: 5,
+            void_color: color::black(),
         }
     }
 
@@ -92,7 +94,7 @@ impl World {
                 let comps = h.prepare_computations(ray, &xs);
                 self.shade_hit(&comps, remaining)
             })
-            .unwrap_or(color::black())
+            .unwrap_or(self.void_color.clone())
     }
 
     pub fn color_at(&self, ray: &Ray) -> Color {
@@ -162,6 +164,7 @@ impl Default for World {
             objects: Default::default(),
             lights: Default::default(),
             max_reflection_depth: 5,
+            void_color: color::black(),
         }
     }
 }
@@ -328,11 +331,12 @@ mod tests {
 
     #[test]
     fn color_when_a_ray_misses() {
-        let w = World::basic();
+        let mut w = World::basic();
+        w.void_color = color::blue();
         let r = Ray::new(Point3d::new(0.0, 0.0, -5.0), Vec3d::new(0.0, 1.0, 0.0));
         let c = w.color_at_internal(&r, TEST_DEPTH);
 
-        assert_eq!(c, color::black());
+        assert_eq!(c, color::blue());
     }
 
     #[test]
