@@ -36,7 +36,7 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let scene = test_csg_world();
+    let scene = test_mirror_world();
 
     println!("Rendering scene...");
     let canvas = scene.render();
