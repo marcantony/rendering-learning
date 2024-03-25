@@ -113,7 +113,8 @@ impl World {
                     direction: d,
                 };
                 let intersections = self.intersect(&r);
-                let mut seen = HashSet::<ByAddress<&dyn Object>>::new();
+                let mut seen =
+                    HashSet::<ByAddress<&dyn Object>>::with_capacity(intersections.len());
                 intersections
                     .iter()
                     .filter(|i| i.t() > 0.0 && i.t() < distance)
