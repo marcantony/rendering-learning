@@ -44,19 +44,18 @@ impl Object for Sphere {
 
         let discriminant = b * b - 4.0 * a * c;
 
-        let ts = if discriminant < 0.0 {
+        if discriminant < 0.0 {
             Vec::new()
         } else {
             let disc_sqrt = f64::sqrt(discriminant);
             let t1 = (-b - disc_sqrt) / (2.0 * a);
             let t2 = (-b + disc_sqrt) / (2.0 * a);
 
-            vec![t1, t2]
-        };
-
-        ts.into_iter()
-            .map(|t| super::build_basic_intersection(object_ray, t, self))
-            .collect()
+            [t1, t2]
+                .into_iter()
+                .map(|t| super::build_basic_intersection(object_ray, t, self))
+                .collect()
+        }
     }
 
     fn bounds(&self) -> Bounds {

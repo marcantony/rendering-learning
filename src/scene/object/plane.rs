@@ -28,15 +28,14 @@ impl Object for Plane {
         object_ray: &Ray,
     ) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>> {
         // If ray y direction is 0 (epsilon comparison cause floating point)
-        let ts = if f64::abs(object_ray.direction.y()) < 1e-8 {
-            return Vec::new();
+        if f64::abs(object_ray.direction.y()) < 1e-8 {
+            Vec::new()
         } else {
-            vec![-object_ray.origin.y() / object_ray.direction.y()]
-        };
-
-        ts.into_iter()
-            .map(|t| super::build_basic_intersection(object_ray, t, self))
-            .collect()
+            [-object_ray.origin.y() / object_ray.direction.y()]
+                .into_iter()
+                .map(|t| super::build_basic_intersection(object_ray, t, self))
+                .collect()
+        }
     }
 
     fn bounds(&self) -> Bounds {

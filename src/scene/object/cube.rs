@@ -46,15 +46,14 @@ impl Object for Cube {
         let tmin = xtmin.max(ytmin).max(ztmin);
         let tmax = xtmax.min(ytmax).min(ztmax);
 
-        let ts = if tmin > tmax {
+        if tmin > tmax {
             Vec::new()
         } else {
-            vec![tmin, tmax]
-        };
-
-        ts.into_iter()
-            .map(|t| super::build_basic_intersection(object_ray, t, self))
-            .collect()
+            [tmin, tmax]
+                .into_iter()
+                .map(|t| super::build_basic_intersection(object_ray, t, self))
+                .collect()
+        }
     }
 
     fn bounds(&self) -> Bounds {
