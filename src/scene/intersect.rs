@@ -82,7 +82,7 @@ fn prepare_computations_helper<'a, T: Object + ?Sized, C1, N1, C2, N2>(
 
     let reflect_v = NormalizedVec3d::try_from(ray.direction.reflect(&adjusted_normal_v)).unwrap();
 
-    let mut containers = Vec::<&T>::new();
+    let mut containers = Vec::<&T>::with_capacity(xs.len());
     let mut n1: f64 = 1.0;
     let mut n2: f64 = 1.0;
     for i in xs {
