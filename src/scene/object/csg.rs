@@ -13,14 +13,16 @@ pub enum CsgOperation {
 }
 
 impl CsgOperation {
-    fn intersection_allowed(&self, is_left_hit: bool, is_in_left: bool, is_in_right: bool) -> bool {
+    fn intersection_allowed(&self, side: &Side, is_in_left: bool, is_in_right: bool) -> bool {
         match self {
-            CsgOperation::Union => (is_left_hit && !is_in_right) || (!is_left_hit && !is_in_left),
+            CsgOperation::Union => {
+                (side == &Side::Left && !is_in_right) || (side == &Side::Right && !is_in_left)
+            }
             CsgOperation::Intersection => {
-                (is_left_hit && is_in_right) || (!is_left_hit && is_in_left)
+                (side == &Side::Left && is_in_right) || (side == &Side::Right && is_in_left)
             }
             CsgOperation::Difference => {
-                (is_left_hit && !is_in_right) || (!is_left_hit && is_in_left)
+                (side == &Side::Left && !is_in_right) || (side == &Side::Right && is_in_left)
             }
         }
     }
@@ -36,6 +38,8 @@ struct SidedIntersection<T, C, N> {
     pub i: Intersection<T, C, N>,
     pub side: Side,
 }
+
+#[derive(Debug, PartialEq)]
 enum Side {
     Left,
     Right,
@@ -50,19 +54,13 @@ impl<T> Csg<T> {
         let mut is_in_right = false;
         xs.into_iter()
             .filter_map(|x| {
-                let is_left_hit = match x.side {
-                    Side::Left => true,
-                    Side::Right => false,
-                };
-
                 let is_allowed =
                     self.operation
-                        .intersection_allowed(is_left_hit, is_in_left, is_in_right);
+                        .intersection_allowed(&x.side, is_in_left, is_in_right);
 
-                if is_left_hit {
-                    is_in_left = !is_in_left;
-                } else {
-                    is_in_right = !is_in_right;
+                match &x.side {
+                    Side::Left => is_in_left = !is_in_left,
+                    Side::Right => is_in_right = !is_in_right,
                 };
 
                 if is_allowed {
@@ -121,8 +119,8 @@ mod operation_tests {
             $(
                 #[test]
                 fn $name() {
-                    let (operation, is_left_hit, is_in_left, is_in_right) = $args;
-                    let result = operation.intersection_allowed(is_left_hit, is_in_left, is_in_right);
+                    let (operation, side, is_in_left, is_in_right) = $args;
+                    let result = operation.intersection_allowed(&side, is_in_left, is_in_right);
                     assert_eq!(result, $expected);
                 }
             )*
@@ -130,32 +128,32 @@ mod operation_tests {
     }
 
     op_tests! {
-        union1: (CsgOperation::Union, true, true, true), false,
-        union2: (CsgOperation::Union, true, true, false), true,
-        union3: (CsgOperation::Union, true, false, true), false,
-        union4: (CsgOperation::Union, true, false, false), true,
-        union5: (CsgOperation::Union, false, true, true), false,
-        union6: (CsgOperation::Union, false, true, false), false,
-        union7: (CsgOperation::Union, false, false, true), true,
-        union8: (CsgOperation::Union, false, false, false), true,
+        union1: (CsgOperation::Union, Side::Left, true, true), false,
+        union2: (CsgOperation::Union, Side::Left, true, false), true,
+        union3: (CsgOperation::Union, Side::Left, false, true), false,
+        union4: (CsgOperation::Union, Side::Left, false, false), true,
+        union5: (CsgOperation::Union, Side::Right, true, true), false,
+        union6: (CsgOperation::Union, Side::Right, true, false), false,
+        union7: (CsgOperation::Union, Side::Right, false, true), true,
+        union8: (CsgOperation::Union, Side::Right, false, false), true,
 
-        intersection1: (CsgOperation::Intersection, true, true, true), true,
-        intersection2: (CsgOperation::Intersection, true, true, false), false,
-        intersection3: (CsgOperation::Intersection, true, false, true), true,
-        intersection4: (CsgOperation::Intersection, true, false, false), false,
-        intersection5: (CsgOperation::Intersection, false, true, true), true,
-        intersection6: (CsgOperation::Intersection, false, true, false), true,
-        intersection7: (CsgOperation::Intersection, false, false, true), false,
-        intersection8: (CsgOperation::Intersection, false, false, false), false,
+        intersection1: (CsgOperation::Intersection, Side::Left, true, true), true,
+        intersection2: (CsgOperation::Intersection, Side::Left, true, false), false,
+        intersection3: (CsgOperation::Intersection, Side::Left, false, true), true,
+        intersection4: (CsgOperation::Intersection, Side::Left, false, false), false,
+        intersection5: (CsgOperation::Intersection, Side::Right, true, true), true,
+        intersection6: (CsgOperation::Intersection, Side::Right, true, false), true,
+        intersection7: (CsgOperation::Intersection, Side::Right, false, true), false,
+        intersection8: (CsgOperation::Intersection, Side::Right, false, false), false,
 
-        difference1: (CsgOperation::Difference, true, true, true), false,
-        difference2: (CsgOperation::Difference, true, true, false), true,
-        difference3: (CsgOperation::Difference, true, false, true), false,
-        difference4: (CsgOperation::Difference, true, false, false), true,
-        difference5: (CsgOperation::Difference, false, true, true), true,
-        difference6: (CsgOperation::Difference, false, true, false), true,
-        difference7: (CsgOperation::Difference, false, false, true), false,
-        difference8: (CsgOperation::Difference, false, false, false), false
+        difference1: (CsgOperation::Difference, Side::Left, true, true), false,
+        difference2: (CsgOperation::Difference, Side::Left, true, false), true,
+        difference3: (CsgOperation::Difference, Side::Left, false, true), false,
+        difference4: (CsgOperation::Difference, Side::Left, false, false), true,
+        difference5: (CsgOperation::Difference, Side::Right, true, true), true,
+        difference6: (CsgOperation::Difference, Side::Right, true, false), true,
+        difference7: (CsgOperation::Difference, Side::Right, false, true), false,
+        difference8: (CsgOperation::Difference, Side::Right, false, false), false
     }
 }
 
