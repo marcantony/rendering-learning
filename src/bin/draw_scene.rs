@@ -36,11 +36,11 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    let scene = test_mirror_world();
+    let scene = test_obj_world();
 
     println!("Rendering scene...");
     let canvas = scene.render(&RenderOpts {
-        anti_aliasing_samples: 2
+        anti_aliasing_samples: 2,
     });
     println!("Scene rendered.");
 
@@ -318,14 +318,16 @@ fn test_mirror_world() -> Scene {
 }
 
 fn test_obj_world() -> Scene {
-    let obj_file = File::open("objs/teapot-low.obj").unwrap();
+    let obj_file = File::open("objs/spot_triangulated.obj").unwrap();
     let reader = BufReader::new(obj_file);
 
     let obj = Transformed::new(
         WavefrontObj::parse(reader).to_object(),
-        InvertibleMatrix::try_from(transformation::sequence(&[transformation::rotation_x(
-            -std::f64::consts::FRAC_PI_2,
-        )]))
+        InvertibleMatrix::try_from(transformation::sequence(&[
+            transformation::rotation_y(std::f64::consts::FRAC_PI_4),
+            transformation::scaling(10.0, 10.0, 10.0),
+            transformation::translation(0.0, 5.0, 0.0),
+        ]))
         .unwrap(),
     );
 
