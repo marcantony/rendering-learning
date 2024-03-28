@@ -7,7 +7,7 @@ use ray_tracer_challenge::{
     io::wavefront_obj::WavefrontObj,
     math::{matrix::InvertibleMatrix, point::Point3d, vector::Vec3d},
     scene::{
-        camera::Camera,
+        camera::{Camera, RenderOpts},
         light::PointLight,
         material::{Material, Surface},
         object::{
@@ -39,7 +39,9 @@ fn main() {
     let scene = test_mirror_world();
 
     println!("Rendering scene...");
-    let canvas = scene.render();
+    let canvas = scene.render(&RenderOpts {
+        anti_aliasing_samples: 2
+    });
     println!("Scene rendered.");
 
     let elapsed = now.elapsed();

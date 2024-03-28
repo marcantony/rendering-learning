@@ -16,6 +16,19 @@ pub struct Camera {
     half_height: f64,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct RenderOpts {
+    pub anti_aliasing_samples: usize,
+}
+
+impl Default for RenderOpts {
+    fn default() -> Self {
+        Self {
+            anti_aliasing_samples: 1,
+        }
+    }
+}
+
 impl Camera {
     pub fn new(hsize: usize, vsize: usize, fov: f64, transform: InvertibleMatrix<4>) -> Self {
         let half_view = f64::tan(fov / 2.0);
@@ -45,29 +58,47 @@ impl Camera {
         Camera::new(hsize, vsize, fov, InvertibleMatrix::identity())
     }
 
-    fn ray_for_pixel(&self, px: usize, py: usize) -> Ray {
-        // offset from the edge of the canvas to the pixel's center
-        let xoffset = (px as f64 + 0.5) * self.pixel_size;
-        let yoffset = (py as f64 + 0.5) * self.pixel_size;
+    fn rays_for_pixel(&self, px: usize, py: usize, samples: usize) -> impl Iterator<Item = Ray> {
+        let pixel_size = self.pixel_size;
+        let half_width = self.half_width;
+        let half_height = self.half_height;
+        let inverse = self.transform.inverse().clone();
 
-        // untransformed coordinates of the pixel in world space
-        let world_x = self.half_width - xoffset;
-        let world_y = self.half_height - yoffset;
+        let mut rays = Vec::with_capacity(samples);
 
-        let pixel = self.transform.inverse() * &Point3d::new(world_x, world_y, -1.0);
-        let origin = self.transform.inverse() * &Point3d::new(0.0, 0.0, 0.0);
-        let direction = (&pixel - &origin).norm().unwrap();
+        for nx in 0..samples {
+            for ny in 0..samples {
+                // offset from the edge of the canvas to the pixel's center
+                let sample_offset = 1.0 / samples as f64;
+                let xoffset = (px as f64 + sample_offset * (nx as f64 + 0.5)) * pixel_size as f64;
+                let yoffset = (py as f64 + sample_offset * (ny as f64 + 0.5)) * pixel_size as f64;
 
-        Ray { origin, direction }
+                // untransformed coordinates of the pixel in world space
+                let world_x = half_width - xoffset;
+                let world_y = half_height - yoffset;
+
+                let pixel = &inverse * &Point3d::new(world_x, world_y, -1.0);
+                let origin = &inverse * &Point3d::new(0.0, 0.0, 0.0);
+                let direction = (&pixel - &origin).norm().unwrap();
+
+                rays.push(Ray { origin, direction })
+            }
+        }
+
+        rays.into_iter()
     }
 
-    pub fn render(&self, world: &World) -> Canvas {
+    pub fn render(&self, world: &World, opts: &RenderOpts) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
         for y in 0..self.vsize {
             for x in 0..self.hsize {
-                let ray = self.ray_for_pixel(x, y);
-                let color = world.color_at(&ray);
+                let rays = self.rays_for_pixel(x, y, opts.anti_aliasing_samples);
+                let color = &(rays
+                    .map(|r| world.color_at(&r))
+                    .reduce(|acc, c| &acc + &c)
+                    .unwrap())
+                    * (1.0 / (opts.anti_aliasing_samples.pow(2)) as f64);
                 image.write((x, y), color);
             }
         }
@@ -129,11 +160,14 @@ mod tests {
         fn constructing_ray_through_center_of_canvas() {
             let c = Camera::default(201, 101, consts::FRAC_PI_2);
 
-            let r = c.ray_for_pixel(100, 50);
+            let r = c.rays_for_pixel(100, 50, 1);
 
             assert_eq!(
-                r,
-                Ray::new(Point3d::new(0.0, 0.0, 0.0), Vec3d::new(0.0, 0.0, -1.0))
+                r.collect::<Vec<_>>(),
+                vec![Ray::new(
+                    Point3d::new(0.0, 0.0, 0.0),
+                    Vec3d::new(0.0, 0.0, -1.0)
+                )]
             );
         }
 
@@ -141,7 +175,7 @@ mod tests {
         fn constructing_ray_through_corner_of_canvas() {
             let c = Camera::default(201, 101, consts::FRAC_PI_2);
 
-            let r = c.ray_for_pixel(0, 0);
+            let r = &c.rays_for_pixel(0, 0, 1).collect::<Vec<_>>()[0];
 
             assert_eq!(r.origin, Point3d::new(0.0, 0.0, 0.0));
             vector::test_utils::assert_vec_approx_equals(
@@ -163,12 +197,42 @@ mod tests {
                 InvertibleMatrix::try_from(transform).unwrap(),
             );
 
-            let r = c.ray_for_pixel(100, 50);
+            let r = &c.rays_for_pixel(100, 50, 1).collect::<Vec<_>>()[0];
 
             let t = consts::SQRT_2 / 2.0;
             assert_eq!(
                 r,
-                Ray::new(Point3d::new(0.0, 2.0, -5.0), Vec3d::new(t, 0.0, -t))
+                &Ray::new(Point3d::new(0.0, 2.0, -5.0), Vec3d::new(t, 0.0, -t))
+            );
+        }
+
+        #[test]
+        fn generating_multiple_samples_for_antialiasing() {
+            let c = Camera::default(1, 1, consts::FRAC_PI_2);
+
+            let r = c.rays_for_pixel(0, 0, 2);
+            let dt = c.pixel_size / 4.0;
+
+            assert_eq!(
+                r.collect::<Vec<_>>(),
+                vec![
+                    Ray::new(
+                        Point3d::new(0.0, 0.0, 0.0),
+                        Vec3d::new(dt, dt, -1.0).norm().unwrap()
+                    ),
+                    Ray::new(
+                        Point3d::new(0.0, 0.0, 0.0),
+                        Vec3d::new(dt, -dt, -1.0).norm().unwrap()
+                    ),
+                    Ray::new(
+                        Point3d::new(0.0, 0.0, 0.0),
+                        Vec3d::new(-dt, dt, -1.0).norm().unwrap()
+                    ),
+                    Ray::new(
+                        Point3d::new(0.0, 0.0, 0.0),
+                        Vec3d::new(-dt, -dt, -1.0).norm().unwrap()
+                    ),
+                ]
             );
         }
     }
@@ -183,7 +247,7 @@ mod tests {
             InvertibleMatrix::try_from(transformation::view_transform(&from, &to, &up)).unwrap();
         let c = Camera::new(11, 11, consts::FRAC_PI_2, transform);
 
-        let image = c.render(&w);
+        let image = c.render(&w, &Default::default());
 
         color::test_utils::assert_colors_approx_equal(
             image.at(5, 5).unwrap(),

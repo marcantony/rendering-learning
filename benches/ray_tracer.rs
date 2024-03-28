@@ -22,7 +22,7 @@ fn main() {
     let iterations = 50;
     let scene = test_mirror_scene();
     let results = (0..iterations)
-        .map(|_i| time(|| scene.render()))
+        .map(|_i| time(|| scene.render(&Default::default())))
         .collect::<Vec<_>>();
 
     let avg_duration = results.iter().map(|r| r.1).sum::<Duration>() / iterations;

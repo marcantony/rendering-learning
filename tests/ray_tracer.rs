@@ -37,7 +37,7 @@ macro_rules! test_render {
             fn $name() {
                 let expected_data = include_str!(concat!("expectations/", $expectation_path));
 
-                let canvas = $test_scene.render();
+                let canvas = $test_scene.render(&Default::default());
                 let data = canvas.ppm();
 
                 assert!(expected_data == data, "output image did not equal expectation image");

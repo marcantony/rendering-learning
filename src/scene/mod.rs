@@ -1,6 +1,9 @@
 use crate::draw::canvas::Canvas;
 
-use self::{camera::Camera, world::World};
+use self::{
+    camera::{Camera, RenderOpts},
+    world::World,
+};
 
 pub mod camera;
 pub mod intersect;
@@ -18,7 +21,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn render(&self) -> Canvas {
-        self.camera.render(&self.world)
+    pub fn render(&self, opts: &RenderOpts) -> Canvas {
+        self.camera.render(&self.world, opts)
     }
 }
