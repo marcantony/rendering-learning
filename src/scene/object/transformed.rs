@@ -1,6 +1,9 @@
 use crate::{
     draw::color::Color,
-    math::{matrix::InvertibleMatrix, vector::NormalizedVec3d},
+    math::{
+        matrix::{InvertibleMatrix, SquareMatrix},
+        vector::NormalizedVec3d,
+    },
     scene::{intersect::Intersection, material::Material, ray::Ray},
 };
 
@@ -9,11 +12,17 @@ use super::{bounded::Bounds, Object};
 pub struct Transformed<T> {
     child: T,
     transform: InvertibleMatrix<4>,
+    inverse_transpose: SquareMatrix<4>,
 }
 
 impl<T: Object> Transformed<T> {
     pub fn new(child: T, transform: InvertibleMatrix<4>) -> Self {
-        Transformed { child, transform }
+        let inverse_transpose = transform.inverse().transpose();
+        Transformed {
+            child,
+            transform,
+            inverse_transpose,
+        }
     }
 
     // TODO: Be careful with mutability here...
@@ -34,7 +43,7 @@ impl<T: Object> Object for Transformed<T> {
         let local_ray = object_ray.transform(self.transform.inverse());
         let mut xs = self.child.intersect(&local_ray);
         xs.iter_mut().for_each(|x| {
-            let world_normal = &self.transform.inverse().transpose() * &*x.normal;
+            let world_normal = &self.inverse_transpose * &*x.normal;
             let normalized = NormalizedVec3d::try_from(world_normal).unwrap();
             x.normal = normalized;
         });
