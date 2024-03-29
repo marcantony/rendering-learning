@@ -15,6 +15,7 @@ codegen-units = 1
 [dependencies]
 by_address = "1.1.0"
 rayon = "1.8"
+mimalloc = { version = "0.1.39", default-features = false }
 
 [[bench]]
 name = "ray_tracer"
