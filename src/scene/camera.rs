@@ -5,6 +5,8 @@ use crate::{
 
 use super::{ray::Ray, world::World};
 
+use rayon::prelude::*;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Camera {
     pub hsize: usize,
@@ -91,17 +93,32 @@ impl Camera {
     pub fn render(&self, world: &World, opts: &RenderOpts) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
-        for y in 0..self.vsize {
-            for x in 0..self.hsize {
-                let rays = self.rays_for_pixel(x, y, opts.anti_aliasing_samples);
-                let color = &(rays
-                    .map(|r| world.color_at(&r))
-                    .reduce(|acc, c| &acc + &c)
-                    .unwrap())
-                    * (1.0 / (opts.anti_aliasing_samples.pow(2)) as f64);
-                image.write((x, y), color);
-            }
-        }
+        let indices = (0..self.hsize)
+            .into_par_iter()
+            .flat_map_iter(|x| (0..self.vsize).map(move |y| (x, y)));
+
+        let colors = indices
+            .map(|(x, y)| {
+                (
+                    (x, y),
+                    self.rays_for_pixel(x, y, opts.anti_aliasing_samples),
+                )
+            })
+            .map(|(p, rays)| {
+                (
+                    p,
+                    &(rays
+                        .map(|r| world.color_at(&r))
+                        .reduce(|acc, c| &acc + &c)
+                        .unwrap())
+                        * (1.0 / (opts.anti_aliasing_samples.pow(2)) as f64),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        colors.into_iter().for_each(|(p, c)| {
+            image.write(p, c);
+        });
 
         image
     }

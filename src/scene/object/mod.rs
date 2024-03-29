@@ -7,7 +7,7 @@ use self::bounded::Bounds;
 
 use super::{intersect::Intersection, material::Material, ray::Ray};
 
-pub trait Object {
+pub trait Object: Sync + Send {
     fn material(&self) -> &Material;
     fn intersect(&self, ray: &Ray) -> Vec<Intersection<&dyn Object, Color, NormalizedVec3d>>;
     fn bounds(&self) -> Bounds;

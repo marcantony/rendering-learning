@@ -10,6 +10,7 @@ debug = true
 
 [dependencies]
 by_address = "1.1.0"
+rayon = "1.8"
 
 [[bench]]
 name = "ray_tracer"

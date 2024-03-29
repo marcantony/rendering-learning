@@ -3,7 +3,7 @@ use crate::{
     math::{matrix::InvertibleMatrix, point::Point3d},
 };
 
-pub trait Pattern {
+pub trait Pattern: Sync + Send {
     fn transform(&self) -> &InvertibleMatrix<4>;
     fn at_local(&self, point: &Point3d) -> Color;
     fn at(&self, point: &Point3d) -> Color {
