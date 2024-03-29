@@ -7,9 +7,6 @@ use super::{object::Object, ray::Ray};
 
 const POINT_OFFSET_BIAS: f64 = 1e-5;
 
-pub type ColorFn<'a> = Box<dyn Fn() -> Color + 'a>;
-pub type NormalFn<'a> = Box<dyn Fn() -> NormalizedVec3d>;
-
 #[derive(Debug, Clone)]
 pub struct Intersection<T, C, N> {
     t: f64,
@@ -34,16 +31,6 @@ impl<T, C, N> Intersection<T, C, N> {
 
     pub fn object(&self) -> &T {
         &self.object
-    }
-}
-
-impl<T: Object + ?Sized, C: Fn() -> Color, N: Fn() -> NormalizedVec3d> Intersection<&T, C, N> {
-    pub fn prepare_computations(
-        &self,
-        ray: &Ray,
-        xs: &[Intersection<&T, ColorFn, NormalFn>],
-    ) -> Precomputation<&T> {
-        prepare_computations_helper(self, ray, (self.normal)(), (self.color)(), xs)
     }
 }
 
