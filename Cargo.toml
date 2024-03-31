@@ -1,9 +1,9 @@
-[package]
-name = "ray-tracer-challenge"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+members = [
+    "ray-tracer-challenge"
+]
+resolver = "2"
 
 [profile.bench]
 debug = true
@@ -11,12 +11,3 @@ debug = true
 [profile.release]
 lto = "fat"
 codegen-units = 1
-
-[dependencies]
-by_address = "1.1.0"
-rayon = "1.8"
-mimalloc = { version = "0.1.39", default-features = false }
-
-[[bench]]
-name = "ray_tracer"
-harness = false

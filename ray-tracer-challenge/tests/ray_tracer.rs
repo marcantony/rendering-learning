@@ -240,7 +240,7 @@ fn test_mirror_scene() -> Scene {
 }
 
 fn test_obj_scene() -> Scene {
-    let content = include_str!("../objs/teapot-low.obj").as_bytes();
+    let content = include_str!("../../objs/teapot-low.obj").as_bytes();
 
     let obj = Transformed::new(
         WavefrontObj::parse(content).to_object(),
