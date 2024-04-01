@@ -1,7 +1,8 @@
 [workspace]
 
 members = [
-    "ray-tracer-challenge"
+    "ray-tracer-challenge",
+    "ray-tracing-one-weekend"
 ]
 resolver = "2"
 
