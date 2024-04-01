@@ -1,5 +1,7 @@
 use std::io::{self, BufWriter, Result, Write};
 
+use ray_tracing_one_weekend::color::Color;
+
 fn main() -> Result<()> {
     let image_width: usize = 256;
     let image_height: usize = 256;
@@ -16,12 +18,9 @@ fn main() -> Result<()> {
             let r = i as f64 / (image_width - 1) as f64;
             let g = j as f64 / (image_height - 1) as f64;
             let b = 0 as f64;
+            let color = Color::new(r, g, b);
 
-            let ir = (255.999 * r) as u8;
-            let ig = (255.999 * g) as u8;
-            let ib = (255.999 * b) as u8;
-
-            writeln!(writer, "{} {} {}", ir, ig, ib)?
+            color.write_ppm(&mut writer)?;
         }
     }
 
