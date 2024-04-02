@@ -64,60 +64,92 @@ impl IndexMut<usize> for Vec3 {
     }
 }
 
-impl Add<&Vec3> for &Vec3 {
-    type Output = Vec3;
+macro_rules! vec3_vec3_ops {
+    ($($lhs_type:ty, $rhs_type:ty),*) => {
+        $(
+            impl Add<$rhs_type> for $lhs_type {
+                type Output = Vec3;
 
-    fn add(self, rhs: &Vec3) -> Self::Output {
-        Vec3::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
-    }
+                fn add(self, rhs: $rhs_type) -> Self::Output {
+                    Vec3::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
+                }
+            }
+
+            impl Sub<$rhs_type> for $lhs_type {
+                type Output = Vec3;
+
+                fn sub(self, rhs: $rhs_type) -> Self::Output {
+                    Vec3::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z())
+                }
+            }
+
+            impl Mul<$rhs_type> for $lhs_type {
+                type Output = Vec3;
+
+                fn mul(self, rhs: $rhs_type) -> Self::Output {
+                    Vec3::new(self.x() * rhs.x(), self.y() * rhs.y(), self.z() * rhs.z())
+                }
+            }
+        )*
+    };
 }
 
-impl AddAssign<&Vec3> for Vec3 {
-    fn add_assign(&mut self, rhs: &Vec3) {
-        self.0[0] += rhs.x();
-        self.0[1] += rhs.y();
-        self.0[2] += rhs.z();
-    }
+vec3_vec3_ops! {
+    Vec3, Vec3,
+    Vec3, &Vec3,
+    &Vec3, Vec3,
+    &Vec3, &Vec3
 }
 
-impl Neg for &Vec3 {
-    type Output = Vec3;
+macro_rules! vec3_other_ops {
+    ($($vec_type:ty),*) => {
+        $(
+            impl AddAssign<$vec_type> for Vec3 {
+                fn add_assign(&mut self, rhs: $vec_type) {
+                    self.0[0] += rhs.x();
+                    self.0[1] += rhs.y();
+                    self.0[2] += rhs.z();
+                }
+            }
 
-    fn neg(self) -> Self::Output {
-        Vec3::new(-self.x(), -self.y(), -self.z())
-    }
+            impl Neg for $vec_type {
+                type Output = Vec3;
+
+                fn neg(self) -> Self::Output {
+                    Vec3::new(-self.x(), -self.y(), -self.z())
+                }
+            }
+
+            impl Mul<f64> for $vec_type {
+                type Output = Vec3;
+
+                fn mul(self, rhs: f64) -> Self::Output {
+                    Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs)
+                }
+            }
+
+            impl Mul<$vec_type> for f64 {
+                type Output = Vec3;
+
+                fn mul(self, rhs: $vec_type) -> Self::Output {
+                    rhs * self
+                }
+            }
+
+            impl Div<f64> for $vec_type {
+                type Output = Vec3;
+
+                fn div(self, rhs: f64) -> Self::Output {
+                    self * (1.0 / rhs)
+                }
+            }
+        )*
+    };
 }
 
-impl Sub<&Vec3> for &Vec3 {
-    type Output = Vec3;
-
-    fn sub(self, rhs: &Vec3) -> Self::Output {
-        Vec3::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z())
-    }
-}
-
-impl Mul<&Vec3> for &Vec3 {
-    type Output = Vec3;
-
-    fn mul(self, rhs: &Vec3) -> Self::Output {
-        Vec3::new(self.x() * rhs.x(), self.y() * rhs.y(), self.z() * rhs.z())
-    }
-}
-
-impl Mul<f64> for &Vec3 {
-    type Output = Vec3;
-
-    fn mul(self, rhs: f64) -> Self::Output {
-        Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs)
-    }
-}
-
-impl Mul<&Vec3> for f64 {
-    type Output = Vec3;
-
-    fn mul(self, rhs: &Vec3) -> Self::Output {
-        rhs * self
-    }
+vec3_other_ops! {
+    Vec3,
+    &Vec3
 }
 
 impl MulAssign<f64> for Vec3 {
@@ -125,14 +157,6 @@ impl MulAssign<f64> for Vec3 {
         self.0[0] *= rhs;
         self.0[1] *= rhs;
         self.0[2] *= rhs;
-    }
-}
-
-impl Div<f64> for &Vec3 {
-    type Output = Vec3;
-
-    fn div(self, rhs: f64) -> Self::Output {
-        self * (1.0 / rhs)
     }
 }
 
