@@ -56,7 +56,21 @@ fn main() -> Result<()> {
 }
 
 fn ray_color(ray: &Ray) -> Color {
-    let direction = ray.direction.normalize();
-    let a = 0.5 * (direction.y() + 1.0);
-    (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray) {
+        Color::new(1.0, 0.0, 0.0)
+    } else {
+        let direction = ray.direction.normalize();
+        let a = 0.5 * (direction.y() + 1.0);
+        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+    }
+}
+
+fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> bool {
+    let oc: Vec3 = &ray.origin - center;
+    let a = ray.direction.dot(&ray.direction);
+    let b = 2.0 * oc.dot(&ray.direction);
+    let c = oc.dot(&oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+
+    discriminant >= 0.0
 }
