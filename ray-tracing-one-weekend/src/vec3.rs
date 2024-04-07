@@ -1,4 +1,6 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Deref, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
+
+use float_cmp::{assert_approx_eq, ApproxEq, F64Margin};
 
 #[derive(Debug, Clone)]
 pub struct Vec3([f64; 3]);
@@ -168,6 +170,56 @@ impl DivAssign<f64> for Vec3 {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct NormalizedVec3(Vec3);
+
+impl NormalizedVec3 {
+    /// Convenience method to create a new normalized vector by hand.
+    /// Will panic if the magnitude of the resulting vector is not ~1.
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        let vec = Vec3::new(x, y, z);
+        NormalizedVec3::from(vec)
+    }
+}
+
+impl TryFrom<&Vec3> for NormalizedVec3 {
+    type Error = &'static str;
+
+    fn try_from(value: &Vec3) -> Result<Self, Self::Error> {
+        let m = value.length_squared();
+        if m.approx_eq(0.0, F64Margin::zero().epsilon(1e-16)) {
+            Err("cannot normalize vector with magnitude 0")
+        } else {
+            Ok(NormalizedVec3(value.normalize()))
+        }
+    }
+}
+
+impl From<Vec3> for NormalizedVec3 {
+    /// Convenience method to create a new normalized vector from a known normalized [Vec3].
+    /// Will panic if the magnitude of the input vector is not ~1.
+    fn from(value: Vec3) -> Self {
+        assert_approx_eq!(f64, value.length_squared(), 1.0, ulps = 10);
+        NormalizedVec3(value)
+    }
+}
+
+impl Deref for NormalizedVec3 {
+    type Target = Vec3;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Neg for &NormalizedVec3 {
+    type Output = NormalizedVec3;
+
+    fn neg(self) -> Self::Output {
+        NormalizedVec3(-&self.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use float_cmp::{assert_approx_eq, ApproxEq, F64Margin};
@@ -185,119 +237,160 @@ mod tests {
         }
     }
 
-    #[test]
-    fn zero_vector() {
-        let zeros = Vec3::zero();
-        assert_approx_eq!(&Vec3, &zeros, &Vec3::new(0.0, 0.0, 0.0));
+    mod vec3 {
+        use super::*;
+
+        #[test]
+        fn zero_vector() {
+            let zeros = Vec3::zero();
+            assert_approx_eq!(&Vec3, &zeros, &Vec3::new(0.0, 0.0, 0.0));
+        }
+
+        #[test]
+        fn vector_accessors() {
+            let v = Vec3::new(0.0, 1.0, 2.0);
+
+            assert_eq!(v.x(), 0.0);
+            assert_eq!(v.y(), 1.0);
+            assert_eq!(v.z(), 2.0);
+        }
+
+        #[test]
+        fn vector_length() {
+            let v = Vec3::new(0.0, 3.0, 4.0);
+
+            assert_eq!(v.length_squared(), 25.0);
+            assert_eq!(v.length(), 5.0);
+        }
+
+        #[test]
+        fn dot_product() {
+            let v1 = Vec3::new(2.0, 2.0, 2.0);
+            let v2 = Vec3::new(3.0, 0.5, 1.0);
+
+            assert_eq!(v1.dot(&v2), 9.0);
+        }
+
+        #[test]
+        fn cross_product() {
+            let v1 = Vec3::new(1.0, 0.0, 0.0);
+            let v2 = Vec3::new(0.0, 2.0, 0.0);
+
+            assert_approx_eq!(&Vec3, &v1.cross(&v2), &Vec3::new(0.0, 0.0, 2.0));
+        }
+
+        #[test]
+        fn normalize() {
+            let v = Vec3::new(2.0, 3.0, 4.0);
+
+            assert_approx_eq!(
+                &Vec3,
+                &v.normalize(),
+                &Vec3::new(0.37139, 0.55708, 0.74278),
+                epsilon = 1e-5
+            );
+        }
+
+        #[test]
+        fn vector_indexing() {
+            let mut v = Vec3::new(1.0, 2.0, 3.0);
+            assert_eq!(v[0], 1.0);
+            v[0] = 4.0;
+            assert_eq!(v[0], 4.0);
+        }
+
+        #[test]
+        fn vector_vector_addition() {
+            let mut v1 = Vec3::new(1.0, 1.0, 1.0);
+            let v2 = Vec3::new(2.0, 2.0, 2.0);
+            let expect = Vec3::new(3.0, 3.0, 3.0);
+
+            assert_approx_eq!(&Vec3, &(&v1 + &v2), &expect);
+            v1 += &v2;
+            assert_approx_eq!(&Vec3, &v1, &expect);
+        }
+
+        #[test]
+        fn vector_negation() {
+            let v1 = Vec3::new(1.0, 2.0, 3.0);
+
+            assert_approx_eq!(&Vec3, &-&v1, &Vec3::new(-1.0, -2.0, -3.0));
+        }
+
+        #[test]
+        fn vector_subtraction() {
+            let v1 = Vec3::new(1.0, 2.0, 3.0);
+            let v2 = Vec3::new(1.0, 1.0, 1.0);
+
+            assert_approx_eq!(&Vec3, &(&v1 - &v2), &Vec3::new(0.0, 1.0, 2.0));
+        }
+
+        #[test]
+        fn vector_vector_multiplication() {
+            let v1 = Vec3::new(1.0, 2.0, 3.0);
+            let v2 = Vec3::new(2.0, 0.5, 2.0);
+
+            assert_approx_eq!(&Vec3, &(&v1 * &v2), &Vec3::new(2.0, 1.0, 6.0));
+        }
+
+        #[test]
+        fn vector_number_multiplication() {
+            let mut v1 = Vec3::new(1.0, 2.0, 3.0);
+            let t = 2.0;
+            let expect = Vec3::new(2.0, 4.0, 6.0);
+
+            assert_approx_eq!(&Vec3, &(&v1 * t), &expect);
+            assert_approx_eq!(&Vec3, &(t * &v1), &expect);
+            v1 *= t;
+            assert_approx_eq!(&Vec3, &v1, &expect);
+        }
+
+        #[test]
+        fn vector_number_division() {
+            let mut v1 = Vec3::new(1.0, 2.0, 3.0);
+            let t = 2.0;
+            let expect = Vec3::new(0.5, 1.0, 1.5);
+
+            assert_approx_eq!(&Vec3, &(&v1 / t), &expect);
+            v1 /= t;
+            assert_approx_eq!(&Vec3, &v1, &expect);
+        }
     }
 
-    #[test]
-    fn vector_accessors() {
-        let v = Vec3::new(0.0, 1.0, 2.0);
+    mod normalized_vec3 {
+        use super::*;
 
-        assert_eq!(v.x(), 0.0);
-        assert_eq!(v.y(), 1.0);
-        assert_eq!(v.z(), 2.0);
-    }
+        #[test]
+        fn creating_new_normalized_vector_by_hand() {
+            NormalizedVec3::new(0.0, 1.0, 0.0);
+        }
 
-    #[test]
-    fn vector_length() {
-        let v = Vec3::new(0.0, 3.0, 4.0);
+        #[test]
+        #[should_panic]
+        fn trying_to_create_bad_normalized_vector_by_hand() {
+            NormalizedVec3::new(2.0, 2.0, 2.0);
+        }
 
-        assert_eq!(v.length_squared(), 25.0);
-        assert_eq!(v.length(), 5.0);
-    }
+        #[test]
+        fn creating_normalized_vector_from_vec3() {
+            let vec = Vec3::new(3.0, 0.0, 0.0);
+            assert_approx_eq!(
+                &Vec3,
+                &NormalizedVec3::try_from(&vec).unwrap(),
+                &Vec3::new(1.0, 0.0, 0.0)
+            );
+        }
 
-    #[test]
-    fn dot_product() {
-        let v1 = Vec3::new(2.0, 2.0, 2.0);
-        let v2 = Vec3::new(3.0, 0.5, 1.0);
+        #[test]
+        fn creating_normalized_vector_from_zero_length_vec() {
+            let vec = Vec3::new(0.0, 0.0, 0.0);
+            assert!(NormalizedVec3::try_from(&vec).is_err());
+        }
 
-        assert_eq!(v1.dot(&v2), 9.0);
-    }
-
-    #[test]
-    fn cross_product() {
-        let v1 = Vec3::new(1.0, 0.0, 0.0);
-        let v2 = Vec3::new(0.0, 2.0, 0.0);
-
-        assert_approx_eq!(&Vec3, &v1.cross(&v2), &Vec3::new(0.0, 0.0, 2.0));
-    }
-
-    #[test]
-    fn normalize() {
-        let v = Vec3::new(2.0, 3.0, 4.0);
-
-        assert_approx_eq!(
-            &Vec3,
-            &v.normalize(),
-            &Vec3::new(0.37139, 0.55708, 0.74278),
-            epsilon = 1e-5
-        );
-    }
-
-    #[test]
-    fn vector_indexing() {
-        let mut v = Vec3::new(1.0, 2.0, 3.0);
-        assert_eq!(v[0], 1.0);
-        v[0] = 4.0;
-        assert_eq!(v[0], 4.0);
-    }
-
-    #[test]
-    fn vector_vector_addition() {
-        let mut v1 = Vec3::new(1.0, 1.0, 1.0);
-        let v2 = Vec3::new(2.0, 2.0, 2.0);
-        let expect = Vec3::new(3.0, 3.0, 3.0);
-
-        assert_approx_eq!(&Vec3, &(&v1 + &v2), &expect);
-        v1 += &v2;
-        assert_approx_eq!(&Vec3, &v1, &expect);
-    }
-
-    #[test]
-    fn vector_negation() {
-        let v1 = Vec3::new(1.0, 2.0, 3.0);
-
-        assert_approx_eq!(&Vec3, &-&v1, &Vec3::new(-1.0, -2.0, -3.0));
-    }
-
-    #[test]
-    fn vector_subtraction() {
-        let v1 = Vec3::new(1.0, 2.0, 3.0);
-        let v2 = Vec3::new(1.0, 1.0, 1.0);
-
-        assert_approx_eq!(&Vec3, &(&v1 - &v2), &Vec3::new(0.0, 1.0, 2.0));
-    }
-
-    #[test]
-    fn vector_vector_multiplication() {
-        let v1 = Vec3::new(1.0, 2.0, 3.0);
-        let v2 = Vec3::new(2.0, 0.5, 2.0);
-
-        assert_approx_eq!(&Vec3, &(&v1 * &v2), &Vec3::new(2.0, 1.0, 6.0));
-    }
-
-    #[test]
-    fn vector_number_multiplication() {
-        let mut v1 = Vec3::new(1.0, 2.0, 3.0);
-        let t = 2.0;
-        let expect = Vec3::new(2.0, 4.0, 6.0);
-
-        assert_approx_eq!(&Vec3, &(&v1 * t), &expect);
-        assert_approx_eq!(&Vec3, &(t * &v1), &expect);
-        v1 *= t;
-        assert_approx_eq!(&Vec3, &v1, &expect);
-    }
-
-    #[test]
-    fn vector_number_division() {
-        let mut v1 = Vec3::new(1.0, 2.0, 3.0);
-        let t = 2.0;
-        let expect = Vec3::new(0.5, 1.0, 1.5);
-
-        assert_approx_eq!(&Vec3, &(&v1 / t), &expect);
-        v1 /= t;
-        assert_approx_eq!(&Vec3, &v1, &expect);
+        #[test]
+        fn negating_normalized_vector() {
+            let n = NormalizedVec3::new(1.0, 0.0, 0.0);
+            assert_approx_eq!(&Vec3, &-&n, &Vec3::new(-1.0, 0.0, 0.0));
+        }
     }
 }

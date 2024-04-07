@@ -2,7 +2,7 @@ use crate::{
     hittable::{self, HitRecord, Hittable},
     interval::Interval,
     ray::Ray,
-    vec3::Point3,
+    vec3::{NormalizedVec3, Point3},
 };
 
 pub struct Sphere {
@@ -37,7 +37,7 @@ impl Hittable for Sphere {
 
             root.map(|t| {
                 let p = r.at(t);
-                let outward_normal = (&p - &self.center) / self.radius;
+                let outward_normal = NormalizedVec3::from((&p - &self.center) / self.radius);
                 let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
                 HitRecord { p, normal, t, face }
             })

@@ -81,6 +81,6 @@ fn ray_color<H: Hittable>(ray: &Ray, world: &H) -> Color {
             let a = 0.5 * (direction.y() + 1.0);
             (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
         },
-        |h| 0.5 * (h.normal + Color::new(1.0, 1.0, 1.0)),
+        |h| 0.5 * (&*h.normal + Color::new(1.0, 1.0, 1.0)),
     )
 }

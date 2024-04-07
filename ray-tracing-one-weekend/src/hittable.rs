@@ -1,7 +1,7 @@
 use crate::{
     interval::Interval,
     ray::Ray,
-    vec3::{Point3, Vec3},
+    vec3::{NormalizedVec3, Point3},
 };
 
 #[derive(Debug, PartialEq)]
@@ -12,16 +12,16 @@ pub enum Face {
 
 pub struct HitRecord {
     pub p: Point3,
-    pub normal: Vec3,
+    pub normal: NormalizedVec3,
     pub t: f64,
     pub face: Face,
 }
 
-pub fn calculate_face_normal(r: &Ray, outward_normal: Vec3) -> (Vec3, Face) {
+pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (NormalizedVec3, Face) {
     if r.direction.dot(&outward_normal) <= 0.0 {
         (outward_normal, Face::Front)
     } else {
-        (-outward_normal, Face::Back)
+        (-&outward_normal, Face::Back)
     }
 }
 
@@ -50,6 +50,8 @@ impl<H: Hittable> Hittable for &[H] {
 
 #[cfg(test)]
 mod tests {
+    use crate::vec3::Vec3;
+
     use super::*;
 
     mod calculate_face_normal {
@@ -60,18 +62,18 @@ mod tests {
         #[test]
         fn ray_and_outward_normal_in_same_direction() {
             let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 1.0, -1.0));
-            let outward_normal = Vec3::new(0.0, 1.0, 0.0);
+            let outward_normal = NormalizedVec3::new(0.0, 1.0, 0.0);
 
             let (n, face) = calculate_face_normal(&ray, outward_normal.clone());
 
             assert_eq!(face, Face::Back);
-            assert_approx_eq!(&Vec3, &-outward_normal, &n);
+            assert_approx_eq!(&Vec3, &-&outward_normal, &n);
         }
 
         #[test]
         fn ray_and_outward_normal_in_different_directions() {
             let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 1.0, -1.0));
-            let outward_normal = Vec3::new(0.0, -1.0, 0.0);
+            let outward_normal = NormalizedVec3::new(0.0, -1.0, 0.0);
 
             let (n, face) = calculate_face_normal(&ray, outward_normal.clone());
 
