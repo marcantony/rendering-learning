@@ -72,8 +72,8 @@ impl Camera {
             for ny in 0..samples {
                 // offset from the edge of the canvas to the pixel's center
                 let sample_offset = 1.0 / samples as f64;
-                let xoffset = (px as f64 + sample_offset * (nx as f64 + 0.5)) * pixel_size as f64;
-                let yoffset = (py as f64 + sample_offset * (ny as f64 + 0.5)) * pixel_size as f64;
+                let xoffset = (px as f64 + sample_offset * (nx as f64 + 0.5)) * pixel_size;
+                let yoffset = (py as f64 + sample_offset * (ny as f64 + 0.5)) * pixel_size;
 
                 // untransformed coordinates of the pixel in world space
                 let world_x = half_width - xoffset;
