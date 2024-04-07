@@ -38,13 +38,8 @@ impl Hittable for Sphere {
             root.map(|t| {
                 let p = r.at(t);
                 let outward_normal = (&p - &self.center) / self.radius;
-                let (normal, front_face) = hittable::calculate_face_normal(r, outward_normal);
-                HitRecord {
-                    p,
-                    normal,
-                    t,
-                    front_face,
-                }
+                let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
+                HitRecord { p, normal, t, face }
             })
         }
     }
@@ -54,7 +49,7 @@ impl Hittable for Sphere {
 mod tests {
     use float_cmp::assert_approx_eq;
 
-    use crate::vec3::Vec3;
+    use crate::{hittable::Face, vec3::Vec3};
 
     use super::*;
 
@@ -81,7 +76,7 @@ mod tests {
         let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
 
         assert_eq!(hit.t, 5.0);
-        assert_eq!(hit.front_face, true);
+        assert_eq!(hit.face, Face::Front);
         assert_approx_eq!(&Vec3, &hit.normal, &Vec3::new(0.0, 1.0, 0.0));
     }
 
@@ -93,7 +88,7 @@ mod tests {
         let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
 
         assert_eq!(hit.t, 4.0);
-        assert_eq!(hit.front_face, true);
+        assert_eq!(hit.face, Face::Front);
         assert_approx_eq!(&Vec3, &hit.normal, &Vec3::new(0.0, 0.0, 1.0));
     }
 
@@ -105,7 +100,7 @@ mod tests {
         let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
 
         assert_eq!(hit.t, 1.0);
-        assert_eq!(hit.front_face, false);
+        assert_eq!(hit.face, Face::Back);
         assert_approx_eq!(&Vec3, &hit.normal, &Vec3::new(0.0, 0.0, 1.0));
     }
 

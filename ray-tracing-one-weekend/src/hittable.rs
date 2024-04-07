@@ -4,22 +4,25 @@ use crate::{
     vec3::{Point3, Vec3},
 };
 
+#[derive(Debug, PartialEq)]
+pub enum Face {
+    Front,
+    Back,
+}
+
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
-    pub front_face: bool,
+    pub face: Face,
 }
 
-pub fn calculate_face_normal(r: &Ray, outward_normal: Vec3) -> (Vec3, bool) {
-    let front_face = r.direction.dot(&outward_normal) <= 0.0;
-    let n = if front_face {
-        outward_normal
+pub fn calculate_face_normal(r: &Ray, outward_normal: Vec3) -> (Vec3, Face) {
+    if r.direction.dot(&outward_normal) <= 0.0 {
+        (outward_normal, Face::Front)
     } else {
-        -outward_normal
-    };
-
-    (n, front_face)
+        (-outward_normal, Face::Back)
+    }
 }
 
 pub trait Hittable {
@@ -59,9 +62,9 @@ mod tests {
             let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 1.0, -1.0));
             let outward_normal = Vec3::new(0.0, 1.0, 0.0);
 
-            let (n, front_face) = calculate_face_normal(&ray, outward_normal.clone());
+            let (n, face) = calculate_face_normal(&ray, outward_normal.clone());
 
-            assert_eq!(front_face, false);
+            assert_eq!(face, Face::Back);
             assert_approx_eq!(&Vec3, &-outward_normal, &n);
         }
 
@@ -70,9 +73,9 @@ mod tests {
             let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 1.0, -1.0));
             let outward_normal = Vec3::new(0.0, -1.0, 0.0);
 
-            let (n, front_face) = calculate_face_normal(&ray, outward_normal.clone());
+            let (n, face) = calculate_face_normal(&ray, outward_normal.clone());
 
-            assert_eq!(front_face, true);
+            assert_eq!(face, Face::Front);
             assert_approx_eq!(&Vec3, &outward_normal, &n);
         }
     }
