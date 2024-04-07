@@ -2,7 +2,10 @@ use std::io::{self, BufWriter, Result, Write};
 
 use ray_tracing_one_weekend::{
     color::Color,
+    hittable::Hittable,
+    interval::Interval,
     ray::Ray,
+    sphere::Sphere,
     vec3::{Point3, Vec3},
 };
 
@@ -12,6 +15,18 @@ fn main() -> Result<()> {
 
     // Calculate image height, ensuring it's at least 1
     let image_height: usize = ((image_width as f64 / aspect_ratio) as usize).max(1);
+
+    // World
+    let world = [
+        Sphere {
+            center: Point3::new(0.0, 0.0, -1.0),
+            radius: 0.5,
+        },
+        Sphere {
+            center: Point3::new(0.0, -100.5, -1.0),
+            radius: 100.0,
+        },
+    ];
 
     // Camera
     let focal_length = 1.0;
@@ -44,7 +59,7 @@ fn main() -> Result<()> {
             let pixel_center = &pixel_00_location + (i as f64 * &pixel_du) + (j as f64 * &pixel_dv);
             let ray_direction = &pixel_center - &camera_center;
             let ray = Ray::new(camera_center.clone(), ray_direction);
-            let color = ray_color(&ray);
+            let color = ray_color(&ray, &world.as_slice());
 
             color.write_ppm(&mut writer)?;
         }
@@ -55,28 +70,17 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn ray_color(ray: &Ray) -> Color {
-    let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray);
-    if t > 0.0 {
-        let n = (ray.at(t) - Point3::new(0.0, 0.0, -1.0)).normalize();
-        0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0)
-    } else {
-        let direction = ray.direction.normalize();
-        let a = 0.5 * (direction.y() + 1.0);
-        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
-    }
-}
-
-fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
-    let oc: Vec3 = &ray.origin - center;
-    let a = ray.direction.length_squared();
-    let half_b = oc.dot(&ray.direction);
-    let c = oc.length_squared() - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
-    }
+fn ray_color<H: Hittable>(ray: &Ray, world: &H) -> Color {
+    let interval = Interval {
+        min: 0.0,
+        max: f64::INFINITY,
+    };
+    world.hit(ray, &interval).map_or_else(
+        || {
+            let direction = ray.direction.normalize();
+            let a = 0.5 * (direction.y() + 1.0);
+            (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+        },
+        |h| 0.5 * (h.normal + Color::new(1.0, 1.0, 1.0)),
+    )
 }
