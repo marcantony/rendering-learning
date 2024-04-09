@@ -23,9 +23,17 @@ impl Color {
             n.clamp(0, 255) as u8
         }
 
-        let ir = to_ppm(self.r());
-        let ig = to_ppm(self.g());
-        let ib = to_ppm(self.b());
+        fn linear_to_gamma(linear_component: f64) -> f64 {
+            if linear_component > 0.0 {
+                linear_component.sqrt()
+            } else {
+                0.0
+            }
+        }
+
+        let ir = to_ppm(linear_to_gamma(self.r()));
+        let ig = to_ppm(linear_to_gamma(self.g()));
+        let ib = to_ppm(linear_to_gamma(self.b()));
 
         writeln!(writer, "{} {} {}", ir, ig, ib)?;
 
