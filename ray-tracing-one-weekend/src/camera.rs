@@ -129,8 +129,7 @@ impl<R: Rng> Camera<R> {
                     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
                 },
                 |h| {
-                    let direction =
-                        Vec3::random_on_unit_hemisphere(&mut self.params.rng, &h.normal);
+                    let direction = &*h.normal + Vec3::random_unit_vector(&mut self.params.rng);
                     let next_ray = Ray::new(h.p.clone(), direction);
                     0.5 * self.ray_color(&next_ray, world, depth - 1)
                 },
