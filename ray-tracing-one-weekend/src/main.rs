@@ -26,6 +26,7 @@ fn main() -> Result<()> {
         image_width: 400,
         samples_per_pixel: 100,
         rng: Xoshiro256PlusPlus::seed_from_u64(1),
+        max_depth: 10,
     });
 
     let mut out = BufWriter::new(io::stdout().lock());

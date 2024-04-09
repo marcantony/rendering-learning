@@ -1,6 +1,8 @@
 use std::ops::{Add, AddAssign, Deref, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
 use float_cmp::{assert_approx_eq, ApproxEq, F64Margin};
+use rand::Rng;
+use rand_distr::{Distribution, UnitSphere};
 
 #[derive(Debug, Clone)]
 pub struct Vec3([f64; 3]);
@@ -49,6 +51,21 @@ impl Vec3 {
 
     pub fn normalize(&self) -> Self {
         self / self.length()
+    }
+
+    pub fn random_on_unit_sphere(rng: &mut impl Rng) -> Self {
+        let [x, y, z] = UnitSphere.sample(rng);
+        Vec3::new(x, y, z)
+    }
+
+    pub fn random_on_unit_hemisphere(rng: &mut impl Rng, normal: &Vec3) -> Self {
+        let on_unit_sphere = Vec3::random_on_unit_sphere(rng);
+        if on_unit_sphere.dot(normal) > 0.0 {
+            // In the same hemisphere as the normal
+            on_unit_sphere
+        } else {
+            -on_unit_sphere
+        }
     }
 }
 
@@ -199,7 +216,7 @@ impl From<Vec3> for NormalizedVec3 {
     /// Convenience method to create a new normalized vector from a known normalized [Vec3].
     /// Will panic if the magnitude of the input vector is not ~1.
     fn from(value: Vec3) -> Self {
-        assert_approx_eq!(f64, value.length_squared(), 1.0, ulps = 10);
+        assert_approx_eq!(f64, value.length_squared(), 1.0, epsilon = 1e-10);
         NormalizedVec3(value)
     }
 }

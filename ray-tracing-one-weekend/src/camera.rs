@@ -15,6 +15,7 @@ pub struct CameraParams<R> {
     pub image_width: usize,
     pub samples_per_pixel: usize,
     pub rng: R,
+    pub max_depth: usize,
 }
 
 pub struct Camera<R> {
@@ -78,7 +79,10 @@ impl<R: Rng> Camera<R> {
             eprintln!("Scanlines remaining: {}", (image_height - j));
             for i in 0..image_width {
                 let color = (0..self.params.samples_per_pixel)
-                    .map(|_n| ray_color(&self.get_ray(i, j), world))
+                    .map(|_n| {
+                        let ray = self.get_ray(i, j);
+                        self.ray_color(&ray, world, self.params.max_depth)
+                    })
                     .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
                     / self.params.samples_per_pixel as f64;
 
@@ -109,16 +113,28 @@ impl<R: Rng> Camera<R> {
 
         (px * &self.pixel_du) + (py * &self.pixel_dv)
     }
-}
 
-fn ray_color<H: Hittable>(r: &Ray, world: &H) -> Color {
-    let interval = Interval::nonnegative();
-    world.hit(r, &interval).map_or_else(
-        || {
-            let direction = r.direction.normalize();
-            let a = 0.5 * (direction.y() + 1.0);
-            (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
-        },
-        |h| 0.5 * (&*h.normal + Color::new(1.0, 1.0, 1.0)),
-    )
+    fn ray_color<H: Hittable>(&mut self, r: &Ray, world: &H, depth: usize) -> Color {
+        if depth == 0 {
+            Color::new(0.0, 0.0, 0.0)
+        } else {
+            let interval = Interval {
+                min: 1e-10,
+                max: f64::INFINITY,
+            };
+            world.hit(r, &interval).map_or_else(
+                || {
+                    let direction = r.direction.normalize();
+                    let a = 0.5 * (direction.y() + 1.0);
+                    (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+                },
+                |h| {
+                    let direction =
+                        Vec3::random_on_unit_hemisphere(&mut self.params.rng, &h.normal);
+                    let next_ray = Ray::new(h.p.clone(), direction);
+                    0.5 * self.ray_color(&next_ray, world, depth - 1)
+                },
+            )
+        }
+    }
 }
