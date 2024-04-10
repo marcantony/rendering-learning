@@ -1,5 +1,6 @@
 use crate::{
     interval::Interval,
+    material::Material,
     ray::Ray,
     vec3::{NormalizedVec3, Point3},
 };
@@ -10,11 +11,12 @@ pub enum Face {
     Back,
 }
 
-pub struct HitRecord {
+pub struct HitRecord<'a> {
     pub p: Point3,
     pub normal: NormalizedVec3,
     pub t: f64,
     pub face: Face,
+    pub material: &'a dyn Material,
 }
 
 pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (NormalizedVec3, Face) {
@@ -83,7 +85,7 @@ mod tests {
     }
 
     mod slice_hittable {
-        use crate::sphere::Sphere;
+        use crate::{material::Flat, sphere::Sphere};
 
         use super::*;
 
@@ -92,11 +94,14 @@ mod tests {
             let sphere = Sphere {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
+                material: Flat,
             };
+            let arr = [sphere];
+            let slice = arr.as_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 1.0, 0.0));
 
-            let hit = [sphere].as_slice().hit(&ray, &Interval::nonnegative());
+            let hit = slice.hit(&ray, &Interval::nonnegative());
 
             assert!(hit.is_none());
         }
@@ -106,11 +111,14 @@ mod tests {
             let sphere = Sphere {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
+                material: Flat,
             };
+            let arr = [sphere];
+            let slice = arr.as_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
-            let hit = [sphere].as_slice().hit(&ray, &Interval::nonnegative());
+            let hit = slice.hit(&ray, &Interval::nonnegative());
 
             assert_eq!(hit.map(|h| h.t), Some(14.0));
         }
@@ -120,21 +128,24 @@ mod tests {
             let back_sphere = Sphere {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
+                material: Flat,
             };
             let middle_sphere = Sphere {
                 center: Point3::new(0.0, 0.0, -5.0),
                 radius: 1.0,
+                material: Flat,
             };
             let front_sphere = Sphere {
                 center: Point3::new(0.0, 0.0, 0.0),
                 radius: 1.0,
+                material: Flat,
             };
+            let arr = [back_sphere, front_sphere, middle_sphere];
+            let slice = arr.as_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
-            let hit = [back_sphere, front_sphere, middle_sphere]
-                .as_slice()
-                .hit(&ray, &Interval::nonnegative());
+            let hit = slice.hit(&ray, &Interval::nonnegative());
 
             assert_eq!(hit.map(|h| h.t), Some(4.0));
         }

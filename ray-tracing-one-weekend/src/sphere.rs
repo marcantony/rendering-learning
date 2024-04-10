@@ -1,16 +1,18 @@
 use crate::{
     hittable::{self, HitRecord, Hittable},
     interval::Interval,
+    material::Material,
     ray::Ray,
     vec3::{NormalizedVec3, Point3},
 };
 
-pub struct Sphere {
+pub struct Sphere<M> {
     pub center: Point3,
     pub radius: f64,
+    pub material: M,
 }
 
-impl Hittable for Sphere {
+impl<M: Material> Hittable for Sphere<M> {
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord> {
         let oc = &r.origin - &self.center;
         let a = r.direction.length_squared();
@@ -39,7 +41,13 @@ impl Hittable for Sphere {
                 let p = r.at(t);
                 let outward_normal = NormalizedVec3::from((&p - &self.center) / self.radius);
                 let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
-                HitRecord { p, normal, t, face }
+                HitRecord {
+                    p,
+                    normal,
+                    t,
+                    face,
+                    material: &self.material,
+                }
             })
         }
     }
@@ -49,14 +57,15 @@ impl Hittable for Sphere {
 mod tests {
     use float_cmp::assert_approx_eq;
 
-    use crate::{hittable::Face, vec3::Vec3};
+    use crate::{hittable::Face, material::Flat, vec3::Vec3};
 
     use super::*;
 
-    fn test_sphere() -> Sphere {
+    fn test_sphere() -> Sphere<Flat> {
         Sphere {
             center: Point3::new(0.0, 0.0, 0.0),
             radius: 1.0,
+            material: Flat,
         }
     }
 

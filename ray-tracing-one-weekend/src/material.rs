@@ -6,6 +6,14 @@ pub trait Material {
     fn scatter(&mut self, ray: &Ray, record: &HitRecord) -> Option<(Color, Ray)>;
 }
 
+pub struct Flat;
+
+impl Material for Flat {
+    fn scatter(&mut self, _ray: &Ray, _record: &HitRecord) -> Option<(Color, Ray)> {
+        None
+    }
+}
+
 pub struct Lambertian<R> {
     pub albedo: Color,
     pub rng: R,
