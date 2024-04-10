@@ -53,6 +53,13 @@ impl Vec3 {
         self / self.length()
     }
 
+    pub fn near_zero(&self) -> bool {
+        let margin = F64Margin::zero().epsilon(1e-8);
+        self.x().approx_eq(0.0, margin)
+            && self.y().approx_eq(0.0, margin)
+            && self.z().approx_eq(0.0, margin)
+    }
+
     /// Returns a random vector from the origin to a point on the unit sphere
     pub fn random_unit_vector(rng: &mut impl Rng) -> Self {
         let [x, y, z] = UnitSphere.sample(rng);
