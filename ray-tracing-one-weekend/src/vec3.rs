@@ -60,6 +60,10 @@ impl Vec3 {
             && self.z().approx_eq(0.0, margin)
     }
 
+    pub fn reflect(&self, normal: &NormalizedVec3) -> Self {
+        self - 2.0 * self.dot(&normal) * (&**normal)
+    }
+
     /// Returns a random vector from the origin to a point on the unit sphere
     pub fn random_unit_vector(rng: &mut impl Rng) -> Self {
         let [x, y, z] = UnitSphere.sample(rng);

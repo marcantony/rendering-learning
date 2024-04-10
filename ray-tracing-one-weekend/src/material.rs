@@ -24,3 +24,15 @@ impl<R: Rng> Material for Lambertian<R> {
         Some((self.albedo.clone(), scattered))
     }
 }
+
+pub struct Metal {
+    pub albedo: Color,
+}
+
+impl Material for Metal {
+    fn scatter(&mut self, ray: &Ray, record: &HitRecord) -> Option<(Color, Ray)> {
+        let reflected_direction = ray.direction.reflect(&record.normal);
+        let reflected_ray = Ray::new(record.p.clone(), reflected_direction);
+        Some((self.albedo.clone(), reflected_ray))
+    }
+}
