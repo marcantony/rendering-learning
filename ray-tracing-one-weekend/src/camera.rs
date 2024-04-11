@@ -67,7 +67,7 @@ impl<R> Camera<R> {
 }
 
 impl<R: Rng> Camera<R> {
-    pub fn render<H: Hittable>(&mut self, world: &H, out: &mut impl Write) -> Result<()> {
+    pub fn render<H: Hittable>(&mut self, world: &mut H, out: &mut impl Write) -> Result<()> {
         let image_width = self.params.image_width;
         let image_height = self.image_height;
 
@@ -114,7 +114,7 @@ impl<R: Rng> Camera<R> {
         (px * &self.pixel_du) + (py * &self.pixel_dv)
     }
 
-    fn ray_color<H: Hittable>(&mut self, r: &Ray, world: &H, depth: usize) -> Color {
+    fn ray_color<H: Hittable>(&mut self, r: &Ray, world: &mut H, depth: usize) -> Color {
         if depth == 0 {
             Color::new(0.0, 0.0, 0.0)
         } else {
@@ -122,16 +122,18 @@ impl<R: Rng> Camera<R> {
                 min: 1e-10,
                 max: f64::INFINITY,
             };
-            world.hit(r, &interval).map_or_else(
+            let hit = world.hit(r, &interval);
+            let scattered = hit.map(|h| h.material.scatter(r, &h.normal, &h.p));
+            scattered.map_or_else(
                 || {
                     let direction = r.direction.normalize();
                     let a = 0.5 * (direction.y() + 1.0);
                     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
                 },
-                |h| {
-                    let direction = &*h.normal + Vec3::random_unit_vector(&mut self.params.rng);
-                    let next_ray = Ray::new(h.p.clone(), direction);
-                    0.5 * self.ray_color(&next_ray, world, depth - 1)
+                |s| {
+                    s.map_or(Color::new(0.0, 0.0, 0.0), |(attenuation, scattered)| {
+                        attenuation * self.ray_color(&scattered, world, depth - 1)
+                    })
                 },
             )
         }

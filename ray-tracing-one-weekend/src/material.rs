@@ -1,15 +1,40 @@
 use rand::Rng;
 
-use crate::{color::Color, hittable::HitRecord, ray::Ray, vec3::Vec3};
+use crate::{
+    color::Color,
+    ray::Ray,
+    vec3::{NormalizedVec3, Point3, Vec3},
+};
 
 pub trait Material {
-    fn scatter(&mut self, ray: &Ray, record: &HitRecord) -> Option<(Color, Ray)>;
+    fn scatter(
+        &mut self,
+        ray: &Ray,
+        normal: &NormalizedVec3,
+        point: &Point3,
+    ) -> Option<(Color, Ray)>;
+}
+
+impl Material for &mut dyn Material {
+    fn scatter(
+        &mut self,
+        ray: &Ray,
+        normal: &NormalizedVec3,
+        point: &Point3,
+    ) -> Option<(Color, Ray)> {
+        (**self).scatter(ray, normal, point)
+    }
 }
 
 pub struct Flat;
 
 impl Material for Flat {
-    fn scatter(&mut self, _ray: &Ray, _record: &HitRecord) -> Option<(Color, Ray)> {
+    fn scatter(
+        &mut self,
+        _ray: &Ray,
+        _normal: &NormalizedVec3,
+        _point: &Point3,
+    ) -> Option<(Color, Ray)> {
         None
     }
 }
@@ -20,15 +45,20 @@ pub struct Lambertian<R> {
 }
 
 impl<R: Rng> Material for Lambertian<R> {
-    fn scatter(&mut self, _ray: &Ray, record: &HitRecord) -> Option<(Color, Ray)> {
-        let random_scatter_direction = &*record.normal + Vec3::random_unit_vector(&mut self.rng);
+    fn scatter(
+        &mut self,
+        _ray: &Ray,
+        normal: &NormalizedVec3,
+        point: &Point3,
+    ) -> Option<(Color, Ray)> {
+        let random_scatter_direction = &**normal + Vec3::random_unit_vector(&mut self.rng);
         let scatter_direction = if random_scatter_direction.near_zero() {
             // Catch degenerate scatter direction
-            (&*record.normal).clone()
+            (&**normal).clone()
         } else {
             random_scatter_direction
         };
-        let scattered = Ray::new(record.p.clone(), scatter_direction);
+        let scattered = Ray::new(point.clone(), scatter_direction);
         Some((self.albedo.clone(), scattered))
     }
 }
@@ -38,9 +68,14 @@ pub struct Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&mut self, ray: &Ray, record: &HitRecord) -> Option<(Color, Ray)> {
-        let reflected_direction = ray.direction.reflect(&record.normal);
-        let reflected_ray = Ray::new(record.p.clone(), reflected_direction);
+    fn scatter(
+        &mut self,
+        ray: &Ray,
+        normal: &NormalizedVec3,
+        point: &Point3,
+    ) -> Option<(Color, Ray)> {
+        let reflected_direction = ray.direction.reflect(&normal);
+        let reflected_ray = Ray::new(point.clone(), reflected_direction);
         Some((self.albedo.clone(), reflected_ray))
     }
 }

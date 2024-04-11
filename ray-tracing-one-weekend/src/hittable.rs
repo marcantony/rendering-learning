@@ -16,7 +16,7 @@ pub struct HitRecord<'a> {
     pub normal: NormalizedVec3,
     pub t: f64,
     pub face: Face,
-    pub material: &'a dyn Material,
+    pub material: &'a mut dyn Material,
 }
 
 pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (NormalizedVec3, Face) {
@@ -28,25 +28,26 @@ pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (Normal
 }
 
 pub trait Hittable {
-    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord>;
+    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord>;
 }
 
-impl<H: Hittable> Hittable for &[H] {
-    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord> {
-        self.iter().fold(None, |closest_so_far, current_hittable| {
-            let new_max = closest_so_far
-                .as_ref()
-                .map_or(ray_t.max, |closest| closest.t);
-            current_hittable
-                .hit(
-                    r,
-                    &Interval {
-                        min: ray_t.min,
-                        max: new_max,
-                    },
-                )
-                .or(closest_so_far)
-        })
+impl<H: Hittable> Hittable for &mut [H] {
+    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord> {
+        self.iter_mut()
+            .fold(None, |closest_so_far, current_hittable| {
+                let new_max = closest_so_far
+                    .as_ref()
+                    .map_or(ray_t.max, |closest| closest.t);
+                current_hittable
+                    .hit(
+                        r,
+                        &Interval {
+                            min: ray_t.min,
+                            max: new_max,
+                        },
+                    )
+                    .or(closest_so_far)
+            })
     }
 }
 
@@ -96,8 +97,8 @@ mod tests {
                 radius: 1.0,
                 material: Flat,
             };
-            let arr = [sphere];
-            let slice = arr.as_slice();
+            let mut arr = [sphere];
+            let mut slice = arr.as_mut_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 1.0, 0.0));
 
@@ -113,8 +114,8 @@ mod tests {
                 radius: 1.0,
                 material: Flat,
             };
-            let arr = [sphere];
-            let slice = arr.as_slice();
+            let mut arr = [sphere];
+            let mut slice = arr.as_mut_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
@@ -140,8 +141,8 @@ mod tests {
                 radius: 1.0,
                 material: Flat,
             };
-            let arr = [back_sphere, front_sphere, middle_sphere];
-            let slice = arr.as_slice();
+            let mut arr = [back_sphere, front_sphere, middle_sphere];
+            let mut slice = arr.as_mut_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
