@@ -64,7 +64,7 @@ mod tests {
 
         let output = String::from_utf8(buf);
 
-        assert_eq!(output, Ok("0 127 255\n".to_string()));
+        assert_eq!(output, Ok("0 181 255\n".to_string()));
     }
 
     #[test]
@@ -77,6 +77,6 @@ mod tests {
 
         let output = String::from_utf8(buf);
 
-        assert_eq!(output, Ok("0 127 255\n".to_string()));
+        assert_eq!(output, Ok("0 181 255\n".to_string()));
     }
 }
