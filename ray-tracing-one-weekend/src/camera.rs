@@ -7,6 +7,7 @@ use crate::{
     hittable::Hittable,
     interval::Interval,
     ray::Ray,
+    utility,
     vec3::{Point3, Vec3},
 };
 
@@ -16,6 +17,8 @@ pub struct CameraParams<R> {
     pub samples_per_pixel: usize,
     pub rng: R,
     pub max_depth: usize,
+    /// Vertical FOV in degrees
+    pub vfov: f64,
 }
 
 pub struct Camera<R> {
@@ -28,7 +31,6 @@ pub struct Camera<R> {
 }
 
 const FOCAL_LENGTH: f64 = 1.0;
-const VIEWPORT_HEIGHT: f64 = 2.0;
 
 impl<R> Camera<R> {
     pub fn new(params: CameraParams<R>) -> Self {
@@ -36,13 +38,17 @@ impl<R> Camera<R> {
         // Calculate image height, ensuring it's at least 1
         let image_height: usize = ((image_width as f64 / params.aspect_ratio) as usize).max(1);
 
-        // Camera
-        let viewport_width = VIEWPORT_HEIGHT * (image_width as f64 / image_height as f64); // Use "real aspect ratio" and not "ideal aspect ratio"
         let camera_center = Point3::new(0.0, 0.0, 0.0);
+
+        // Determine viewport dimensions
+        let theta = utility::degrees_to_radians(params.vfov);
+        let h = f64::tan(theta / 2.0);
+        let viewport_height = 2.0 * h * FOCAL_LENGTH;
+        let viewport_width = viewport_height * (image_width as f64 / image_height as f64); // Use "real aspect ratio" and not "ideal aspect ratio"
 
         // Calculate the vectors across the horizontal and down the vertical viewport edges
         let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3::new(0.0, -VIEWPORT_HEIGHT, 0.0);
+        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
 
         // Calculate the horizontal and vertical delta vectors from pixel to pixel
         let pixel_du = &viewport_u / image_width as f64;

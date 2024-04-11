@@ -5,7 +5,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
-    material::{Dielectric, Lambertian, Material, Metal},
+    material::{Lambertian, Material},
     sphere::Sphere,
     vec3::Point3,
 };
@@ -13,53 +13,27 @@ use ray_tracing_one_weekend::{
 fn main() -> Result<()> {
     let mut master_rng = Xoshiro256PlusPlus::seed_from_u64(1);
 
-    let mut material_ground = Lambertian {
-        albedo: Color::new(0.8, 0.8, 0.0),
+    let mut material_left = Lambertian {
+        albedo: Color::new(0.0, 0.0, 1.0),
         rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
-    let mut material_center = Lambertian {
-        albedo: Color::new(0.1, 0.2, 0.5),
-        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
-    };
-    let mut material_left = Dielectric {
-        refraction_index: 1.5,
-        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
-    };
-    let mut material_bubble = Dielectric {
-        refraction_index: 1.0 / 1.5,
-        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
-    };
-    let mut material_right = Metal {
-        albedo: Color::new(0.8, 0.6, 0.2),
-        fuzz: 1.0,
+    let mut material_right = Lambertian {
+        albedo: Color::new(1.0, 0.0, 0.0),
         rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
 
+    let radius = f64::cos(std::f64::consts::FRAC_PI_4);
+
     // World
-    let mut world: [Sphere<&mut dyn Material>; 5] = [
+    let mut world: [Sphere<&mut dyn Material>; 2] = [
         Sphere {
-            center: Point3::new(0.0, -100.5, -1.0),
-            radius: 100.0,
-            material: &mut material_ground,
-        },
-        Sphere {
-            center: Point3::new(0.0, 0.0, -1.2),
-            radius: 0.5,
-            material: &mut material_center,
-        },
-        Sphere {
-            center: Point3::new(-1.0, 0.0, -1.0),
-            radius: 0.5,
+            center: Point3::new(-radius, 0.0, -1.0),
+            radius,
             material: &mut material_left,
         },
         Sphere {
-            center: Point3::new(-1.0, 0.0, -1.0),
-            radius: 0.4,
-            material: &mut material_bubble,
-        },
-        Sphere {
-            center: Point3::new(1.0, 0.0, -1.0),
-            radius: 0.5,
+            center: Point3::new(radius, 0.0, -1.0),
+            radius,
             material: &mut material_right,
         },
     ];
@@ -70,6 +44,7 @@ fn main() -> Result<()> {
         samples_per_pixel: 100,
         rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
         max_depth: 50,
+        vfov: 90.0,
     });
 
     let mut out = BufWriter::new(io::stdout().lock());
