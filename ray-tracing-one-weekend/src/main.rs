@@ -22,7 +22,7 @@ fn main() -> Result<()> {
         rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
     let mut material_left = Dielectric {
-        refraction_index: 1.5,
+        refraction_index: 1.0 / 1.33,
     };
     let mut material_right = Metal {
         albedo: Color::new(0.8, 0.6, 0.2),

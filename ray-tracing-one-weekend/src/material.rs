@@ -120,8 +120,17 @@ impl Material for Dielectric {
 
         let unit_direction = NormalizedVec3::try_from(&ray.direction)
             .expect("How did the incident ray have magnitude 0?");
-        let refracted = unit_direction.refract(normal, refraction_index);
-        let scattered = Ray::new(point.clone(), refracted);
+
+        let cos_theta = (-&unit_direction).dot(normal).min(1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        let cannot_refract = refraction_index * sin_theta > 1.0;
+
+        let direction = if cannot_refract {
+            unit_direction.reflect(normal)
+        } else {
+            unit_direction.refract(normal, refraction_index)
+        };
+        let scattered = Ray::new(point.clone(), direction);
 
         Some((Color::new(1.0, 1.0, 1.0), scattered))
     }
