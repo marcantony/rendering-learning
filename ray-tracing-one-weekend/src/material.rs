@@ -63,11 +63,13 @@ impl<R: Rng> Material for Lambertian<R> {
     }
 }
 
-pub struct Metal {
+pub struct Metal<R> {
     pub albedo: Color,
+    pub fuzz: f64,
+    pub rng: R,
 }
 
-impl Material for Metal {
+impl<R: Rng> Material for Metal<R> {
     fn scatter(
         &mut self,
         ray: &Ray,
@@ -75,7 +77,15 @@ impl Material for Metal {
         point: &Point3,
     ) -> Option<(Color, Ray)> {
         let reflected_direction = ray.direction.reflect(normal);
-        let reflected_ray = Ray::new(point.clone(), reflected_direction);
-        Some((self.albedo.clone(), reflected_ray))
+        let fuzzed_direction =
+            reflected_direction.normalize() + (self.fuzz * Vec3::random_unit_vector(&mut self.rng));
+        let reflected_ray = Ray::new(point.clone(), fuzzed_direction);
+
+        // Absorb fuzzed reflection if it scatters below the surface of the object
+        if reflected_ray.direction.dot(&normal) > 0.0 {
+            Some((self.albedo.clone(), reflected_ray))
+        } else {
+            None
+        }
     }
 }

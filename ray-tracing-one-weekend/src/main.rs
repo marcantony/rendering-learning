@@ -23,9 +23,13 @@ fn main() -> Result<()> {
     };
     let mut material_left = Metal {
         albedo: Color::new(0.8, 0.8, 0.8),
+        fuzz: 0.3,
+        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
     let mut material_right = Metal {
         albedo: Color::new(0.8, 0.6, 0.2),
+        fuzz: 1.0,
+        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
 
     // World
