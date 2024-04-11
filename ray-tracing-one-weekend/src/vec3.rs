@@ -207,7 +207,14 @@ impl NormalizedVec3 {
     /// Will panic if the magnitude of the resulting vector is not ~1.
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         let vec = Vec3::new(x, y, z);
-        NormalizedVec3::from(vec)
+        NormalizedVec3::from_normalized(vec)
+    }
+
+    /// Convenience method to create a new normalized vector from a known normalized [Vec3].
+    /// Will panic if the magnitude of the input vector is not ~1.
+    pub fn from_normalized(vec: Vec3) -> Self {
+        assert_approx_eq!(f64, vec.length_squared(), 1.0, epsilon = 1e-10);
+        NormalizedVec3(vec)
     }
 
     pub fn refract(&self, normal: &NormalizedVec3, etai_over_etat: f64) -> Vec3 {
@@ -219,26 +226,28 @@ impl NormalizedVec3 {
     }
 }
 
-impl TryFrom<&Vec3> for NormalizedVec3 {
-    type Error = &'static str;
+macro_rules! normalized_tryfrom {
+    ($($vec_type:ty),*) => {
+        $(
+            impl TryFrom<$vec_type> for NormalizedVec3 {
+                type Error = &'static str;
 
-    fn try_from(value: &Vec3) -> Result<Self, Self::Error> {
-        let m = value.length_squared();
-        if m.approx_eq(0.0, F64Margin::zero().epsilon(1e-16)) {
-            Err("cannot normalize vector with magnitude 0")
-        } else {
-            Ok(NormalizedVec3(value.normalize()))
-        }
-    }
+                fn try_from(value: $vec_type) -> Result<Self, Self::Error> {
+                    let m = value.length_squared();
+                    if m.approx_eq(0.0, F64Margin::zero().epsilon(1e-16)) {
+                        Err("cannot normalize vector with magnitude 0")
+                    } else {
+                        Ok(NormalizedVec3(value.normalize()))
+                    }
+                }
+            }
+        )*
+    };
 }
 
-impl From<Vec3> for NormalizedVec3 {
-    /// Convenience method to create a new normalized vector from a known normalized [Vec3].
-    /// Will panic if the magnitude of the input vector is not ~1.
-    fn from(value: Vec3) -> Self {
-        assert_approx_eq!(f64, value.length_squared(), 1.0, epsilon = 1e-10);
-        NormalizedVec3(value)
-    }
+normalized_tryfrom! {
+    Vec3,
+    &Vec3
 }
 
 impl Deref for NormalizedVec3 {

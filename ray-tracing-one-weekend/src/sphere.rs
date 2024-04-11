@@ -39,7 +39,8 @@ impl<M: Material> Hittable for Sphere<M> {
 
             root.map(|t| {
                 let p = r.at(t);
-                let outward_normal = NormalizedVec3::from((&p - &self.center) / self.radius);
+                let outward_normal =
+                    NormalizedVec3::from_normalized((&p - &self.center) / self.radius);
                 let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
                 HitRecord {
                     p,
