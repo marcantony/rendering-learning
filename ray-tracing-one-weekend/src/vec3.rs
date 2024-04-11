@@ -61,7 +61,7 @@ impl Vec3 {
     }
 
     pub fn reflect(&self, normal: &NormalizedVec3) -> Self {
-        self - 2.0 * self.dot(&normal) * (&**normal)
+        self - 2.0 * self.dot(normal) * (&**normal)
     }
 
     /// Returns a random vector from the origin to a point on the unit sphere

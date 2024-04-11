@@ -54,7 +54,7 @@ impl<R: Rng> Material for Lambertian<R> {
         let random_scatter_direction = &**normal + Vec3::random_unit_vector(&mut self.rng);
         let scatter_direction = if random_scatter_direction.near_zero() {
             // Catch degenerate scatter direction
-            (&**normal).clone()
+            (**normal).clone()
         } else {
             random_scatter_direction
         };
@@ -74,7 +74,7 @@ impl Material for Metal {
         normal: &NormalizedVec3,
         point: &Point3,
     ) -> Option<(Color, Ray)> {
-        let reflected_direction = ray.direction.reflect(&normal);
+        let reflected_direction = ray.direction.reflect(normal);
         let reflected_ray = Ray::new(point.clone(), reflected_direction);
         Some((self.albedo.clone(), reflected_ray))
     }
