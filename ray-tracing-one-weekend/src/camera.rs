@@ -1,6 +1,7 @@
 use std::io::{Result, Write};
 
 use rand::Rng;
+use rand_distr::{Distribution, UnitDisc};
 
 use crate::{
     color::Color,
@@ -22,6 +23,9 @@ pub struct CameraParams<R> {
     pub lookfrom: Point3,
     pub lookat: Point3,
     pub vup: Vec3,
+    /// In degrees
+    pub defocus_angle: f64,
+    pub focus_dist: f64,
 }
 
 pub struct Camera<R> {
@@ -30,6 +34,8 @@ pub struct Camera<R> {
     pixel_00_location: Point3,
     pixel_du: Vec3,
     pixel_dv: Vec3,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
 }
 
 impl<R> Camera<R> {
@@ -41,10 +47,9 @@ impl<R> Camera<R> {
         let camera_center = &params.lookfrom;
 
         // Determine viewport dimensions
-        let focal_length = (camera_center - &params.lookat).length();
         let theta = utility::degrees_to_radians(params.vfov);
         let h = f64::tan(theta / 2.0);
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * params.focus_dist;
         let viewport_width = viewport_height * (image_width as f64 / image_height as f64); // Use "real aspect ratio" and not "ideal aspect ratio"
 
         // Calculate the u, v, w unit basis vectors for the camera coordinate frame
@@ -62,8 +67,14 @@ impl<R> Camera<R> {
 
         // Calculate the location of the upper left pixel
         let viewport_upper_left =
-            camera_center - (focal_length * &*w) - &viewport_u / 2.0 - &viewport_v / 2.0;
+            camera_center - (params.focus_dist * &*w) - &viewport_u / 2.0 - &viewport_v / 2.0;
         let pixel_00_location = viewport_upper_left + 0.5 * (&pixel_du + &pixel_dv);
+
+        // Calculate the camera defocus disk basis vectors
+        let defocus_radius =
+            params.focus_dist * f64::tan(utility::degrees_to_radians(params.defocus_angle / 2.0));
+        let defocus_disk_u = &*u * defocus_radius;
+        let defocus_disk_v = &*v * defocus_radius;
 
         Camera {
             params,
@@ -71,6 +82,8 @@ impl<R> Camera<R> {
             pixel_00_location,
             pixel_du,
             pixel_dv,
+            defocus_disk_u,
+            defocus_disk_v,
         }
     }
 }
@@ -104,13 +117,18 @@ impl<R: Rng> Camera<R> {
         Ok(())
     }
 
-    /// Returns a randomly sampled camera ray for the pixel at location (i, j)
+    /// Returns a randomly sampled camera ray for the pixel at location (i, j).
+    /// The ray will originate from the defocus disk.
     fn get_ray(&mut self, i: usize, j: usize) -> Ray {
         let pixel_center =
             &self.pixel_00_location + (i as f64 * &self.pixel_du) + (j as f64 * &self.pixel_dv);
         let pixel_sample = pixel_center + self.pixel_sample_square();
 
-        let ray_origin = self.params.lookfrom.clone();
+        let ray_origin = if self.params.defocus_angle <= 0.0 {
+            self.params.lookfrom.clone()
+        } else {
+            self.defocus_disk_sample()
+        };
         let ray_direction = &pixel_sample - &ray_origin;
         Ray::new(ray_origin, ray_direction)
     }
@@ -121,6 +139,12 @@ impl<R: Rng> Camera<R> {
         let py = -0.5 + self.params.rng.gen::<f64>();
 
         (px * &self.pixel_du) + (py * &self.pixel_dv)
+    }
+
+    /// Returns a random point in the camera defocus disk
+    fn defocus_disk_sample(&mut self) -> Vec3 {
+        let [px, py]: [f64; 2] = UnitDisc.sample(&mut self.params.rng);
+        &self.params.lookfrom + (px * &self.defocus_disk_u) + (py * &self.defocus_disk_v)
     }
 }
 
