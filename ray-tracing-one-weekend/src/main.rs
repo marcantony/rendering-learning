@@ -22,7 +22,12 @@ fn main() -> Result<()> {
         rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
     let mut material_left = Dielectric {
-        refraction_index: 1.0 / 1.33,
+        refraction_index: 1.5,
+        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
+    };
+    let mut material_bubble = Dielectric {
+        refraction_index: 1.0 / 1.5,
+        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
     let mut material_right = Metal {
         albedo: Color::new(0.8, 0.6, 0.2),
@@ -31,7 +36,7 @@ fn main() -> Result<()> {
     };
 
     // World
-    let mut world: [Sphere<&mut dyn Material>; 4] = [
+    let mut world: [Sphere<&mut dyn Material>; 5] = [
         Sphere {
             center: Point3::new(0.0, -100.5, -1.0),
             radius: 100.0,
@@ -46,6 +51,11 @@ fn main() -> Result<()> {
             center: Point3::new(-1.0, 0.0, -1.0),
             radius: 0.5,
             material: &mut material_left,
+        },
+        Sphere {
+            center: Point3::new(-1.0, 0.0, -1.0),
+            radius: 0.4,
+            material: &mut material_bubble,
         },
         Sphere {
             center: Point3::new(1.0, 0.0, -1.0),

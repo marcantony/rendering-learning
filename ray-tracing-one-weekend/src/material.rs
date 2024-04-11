@@ -101,11 +101,12 @@ impl<R: Rng> Material for Metal<R> {
 /// material, then its index of refraction should be relative (the "true"
 /// refractive index of this material divided by the refractive index of the
 /// surrounding material).
-pub struct Dielectric {
+pub struct Dielectric<R> {
     pub refraction_index: f64,
+    pub rng: R,
 }
 
-impl Material for Dielectric {
+impl<R: Rng> Material for Dielectric<R> {
     fn scatter(
         &mut self,
         ray: &Ray,
@@ -125,13 +126,20 @@ impl Material for Dielectric {
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = refraction_index * sin_theta > 1.0;
 
-        let direction = if cannot_refract {
-            unit_direction.reflect(normal)
-        } else {
-            unit_direction.refract(normal, refraction_index)
-        };
+        let direction =
+            if cannot_refract || reflectance(cos_theta, refraction_index) > self.rng.gen() {
+                unit_direction.reflect(normal)
+            } else {
+                unit_direction.refract(normal, refraction_index)
+            };
         let scattered = Ray::new(point.clone(), direction);
 
         Some((Color::new(1.0, 1.0, 1.0), scattered))
     }
+}
+
+/// Approximate reflectance of a dielectric using Schlick's approximation
+fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
+    let r0 = ((1.0 - refraction_index) / (1.0 + refraction_index)).powi(2);
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }
