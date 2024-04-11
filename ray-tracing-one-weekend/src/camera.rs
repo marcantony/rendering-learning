@@ -124,7 +124,7 @@ fn ray_color<H: Hittable>(r: &Ray, world: &mut H, depth: usize) -> Color {
             max: f64::INFINITY,
         };
         let hit = world.hit(r, &interval);
-        let scattered = hit.map(|h| h.material.scatter(r, &h.normal, &h.p));
+        let scattered = hit.map(|h| h.material.scatter(r, &h.normal, &h.p, &h.face));
         scattered.map_or_else(
             || {
                 let direction = r.direction.normalize();

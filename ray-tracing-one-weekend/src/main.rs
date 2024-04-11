@@ -5,7 +5,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
-    material::{Lambertian, Material, Metal},
+    material::{Dielectric, Lambertian, Material, Metal},
     sphere::Sphere,
     vec3::Point3,
 };
@@ -21,10 +21,8 @@ fn main() -> Result<()> {
         albedo: Color::new(0.1, 0.2, 0.5),
         rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
     };
-    let mut material_left = Metal {
-        albedo: Color::new(0.8, 0.8, 0.8),
-        fuzz: 0.3,
-        rng: Xoshiro256PlusPlus::from_rng(&mut master_rng)?,
+    let mut material_left = Dielectric {
+        refraction_index: 1.5,
     };
     let mut material_right = Metal {
         albedo: Color::new(0.8, 0.6, 0.2),
