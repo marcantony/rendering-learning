@@ -7,9 +7,10 @@ use crate::{
     vec3::{NormalizedVec3, Point3, Vec3},
 };
 
-pub trait Material {
+pub trait Material<R> {
     fn scatter(
-        &mut self,
+        &self,
+        rng: &mut R,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
@@ -17,23 +18,25 @@ pub trait Material {
     ) -> Option<(Color, Ray)>;
 }
 
-impl Material for &mut dyn Material {
+impl<R> Material<R> for &dyn Material<R> {
     fn scatter(
-        &mut self,
+        &self,
+        rng: &mut R,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
         face: &Face,
     ) -> Option<(Color, Ray)> {
-        (**self).scatter(ray, normal, point, face)
+        (**self).scatter(rng, ray, normal, point, face)
     }
 }
 
 pub struct Flat;
 
-impl Material for Flat {
+impl<R> Material<R> for Flat {
     fn scatter(
-        &mut self,
+        &self,
+        _rng: &mut R,
         _ray: &Ray,
         _normal: &NormalizedVec3,
         _point: &Point3,
@@ -43,20 +46,20 @@ impl Material for Flat {
     }
 }
 
-pub struct Lambertian<R> {
+pub struct Lambertian {
     pub albedo: Color,
-    pub rng: R,
 }
 
-impl<R: Rng> Material for Lambertian<R> {
+impl<R: Rng> Material<R> for Lambertian {
     fn scatter(
-        &mut self,
+        &self,
+        rng: &mut R,
         _ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
         _face: &Face,
     ) -> Option<(Color, Ray)> {
-        let random_scatter_direction = &**normal + Vec3::random_unit_vector(&mut self.rng);
+        let random_scatter_direction = &**normal + Vec3::random_unit_vector(rng);
         let scatter_direction = if random_scatter_direction.near_zero() {
             // Catch degenerate scatter direction
             (**normal).clone()
@@ -68,15 +71,15 @@ impl<R: Rng> Material for Lambertian<R> {
     }
 }
 
-pub struct Metal<R> {
+pub struct Metal {
     pub albedo: Color,
     pub fuzz: f64,
-    pub rng: R,
 }
 
-impl<R: Rng> Material for Metal<R> {
+impl<R: Rng> Material<R> for Metal {
     fn scatter(
-        &mut self,
+        &self,
+        rng: &mut R,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
@@ -84,7 +87,7 @@ impl<R: Rng> Material for Metal<R> {
     ) -> Option<(Color, Ray)> {
         let reflected_direction = ray.direction.reflect(normal);
         let fuzzed_direction =
-            reflected_direction.normalize() + (self.fuzz * Vec3::random_unit_vector(&mut self.rng));
+            reflected_direction.normalize() + (self.fuzz * Vec3::random_unit_vector(rng));
         let reflected_ray = Ray::new(point.clone(), fuzzed_direction);
 
         // Absorb fuzzed reflection if it scatters below the surface of the object
@@ -101,14 +104,14 @@ impl<R: Rng> Material for Metal<R> {
 /// material, then its index of refraction should be relative (the "true"
 /// refractive index of this material divided by the refractive index of the
 /// surrounding material).
-pub struct Dielectric<R> {
+pub struct Dielectric {
     pub refraction_index: f64,
-    pub rng: R,
 }
 
-impl<R: Rng> Material for Dielectric<R> {
+impl<R: Rng> Material<R> for Dielectric {
     fn scatter(
-        &mut self,
+        &self,
+        rng: &mut R,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
@@ -126,12 +129,11 @@ impl<R: Rng> Material for Dielectric<R> {
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = refraction_index * sin_theta > 1.0;
 
-        let direction =
-            if cannot_refract || reflectance(cos_theta, refraction_index) > self.rng.gen() {
-                unit_direction.reflect(normal)
-            } else {
-                unit_direction.refract(normal, refraction_index)
-            };
+        let direction = if cannot_refract || reflectance(cos_theta, refraction_index) > rng.gen() {
+            unit_direction.reflect(normal)
+        } else {
+            unit_direction.refract(normal, refraction_index)
+        };
         let scattered = Ray::new(point.clone(), direction);
 
         Some((Color::new(1.0, 1.0, 1.0), scattered))

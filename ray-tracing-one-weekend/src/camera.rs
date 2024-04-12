@@ -7,16 +7,16 @@ use crate::{
     color::Color,
     hittable::Hittable,
     interval::Interval,
+    material::Material,
     ray::Ray,
     utility,
     vec3::{NormalizedVec3, Point3, Vec3},
 };
 
-pub struct CameraParams<R> {
+pub struct CameraParams {
     pub aspect_ratio: f64,
     pub image_width: usize,
     pub samples_per_pixel: usize,
-    pub rng: R,
     pub max_depth: usize,
     /// Vertical FOV in degrees
     pub vfov: f64,
@@ -28,8 +28,8 @@ pub struct CameraParams<R> {
     pub focus_dist: f64,
 }
 
-pub struct Camera<R> {
-    params: CameraParams<R>,
+pub struct Camera {
+    params: CameraParams,
     image_height: usize,
     pixel_00_location: Point3,
     pixel_du: Vec3,
@@ -38,8 +38,8 @@ pub struct Camera<R> {
     defocus_disk_v: Vec3,
 }
 
-impl<R> Camera<R> {
-    pub fn new(params: CameraParams<R>) -> Self {
+impl Camera {
+    pub fn new(params: CameraParams) -> Self {
         let image_width = params.image_width;
         // Calculate image height, ensuring it's at least 1
         let image_height: usize = ((image_width as f64 / params.aspect_ratio) as usize).max(1);
@@ -88,8 +88,13 @@ impl<R> Camera<R> {
     }
 }
 
-impl<R: Rng> Camera<R> {
-    pub fn render<H: Hittable>(&mut self, world: &mut H, out: &mut impl Write) -> Result<()> {
+impl Camera {
+    pub fn render<R: Rng, M: Material<R>, H: Hittable<M>>(
+        &mut self,
+        mut rng: &mut R,
+        world: &mut H,
+        out: &mut impl Write,
+    ) -> Result<()> {
         let image_width = self.params.image_width;
         let image_height = self.image_height;
 
@@ -102,8 +107,8 @@ impl<R: Rng> Camera<R> {
             for i in 0..image_width {
                 let color = (0..self.params.samples_per_pixel)
                     .map(|_n| {
-                        let ray = self.get_ray(i, j);
-                        ray_color(&ray, world, self.params.max_depth)
+                        let ray = self.get_ray(&mut rng, i, j);
+                        ray_color(rng, &ray, world, self.params.max_depth)
                     })
                     .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
                     / self.params.samples_per_pixel as f64;
@@ -119,36 +124,41 @@ impl<R: Rng> Camera<R> {
 
     /// Returns a randomly sampled camera ray for the pixel at location (i, j).
     /// The ray will originate from the defocus disk.
-    fn get_ray(&mut self, i: usize, j: usize) -> Ray {
+    fn get_ray(&mut self, rng: &mut impl Rng, i: usize, j: usize) -> Ray {
         let pixel_center =
             &self.pixel_00_location + (i as f64 * &self.pixel_du) + (j as f64 * &self.pixel_dv);
-        let pixel_sample = pixel_center + self.pixel_sample_square();
+        let pixel_sample = pixel_center + self.pixel_sample_square(rng);
 
         let ray_origin = if self.params.defocus_angle <= 0.0 {
             self.params.lookfrom.clone()
         } else {
-            self.defocus_disk_sample()
+            self.defocus_disk_sample(rng)
         };
         let ray_direction = &pixel_sample - &ray_origin;
         Ray::new(ray_origin, ray_direction)
     }
 
     /// Returns a random offset vector in the square surrounding a pixel
-    fn pixel_sample_square(&mut self) -> Vec3 {
-        let px = -0.5 + self.params.rng.gen::<f64>();
-        let py = -0.5 + self.params.rng.gen::<f64>();
+    fn pixel_sample_square(&mut self, rng: &mut impl Rng) -> Vec3 {
+        let px = -0.5 + rng.gen::<f64>();
+        let py = -0.5 + rng.gen::<f64>();
 
         (px * &self.pixel_du) + (py * &self.pixel_dv)
     }
 
     /// Returns a random point in the camera defocus disk
-    fn defocus_disk_sample(&mut self) -> Vec3 {
-        let [px, py]: [f64; 2] = UnitDisc.sample(&mut self.params.rng);
+    fn defocus_disk_sample(&mut self, rng: &mut impl Rng) -> Vec3 {
+        let [px, py]: [f64; 2] = UnitDisc.sample(rng);
         &self.params.lookfrom + (px * &self.defocus_disk_u) + (py * &self.defocus_disk_v)
     }
 }
 
-fn ray_color<H: Hittable>(r: &Ray, world: &mut H, depth: usize) -> Color {
+fn ray_color<R: Rng, M: Material<R>, H: Hittable<M>>(
+    mut rng: &mut R,
+    r: &Ray,
+    world: &mut H,
+    depth: usize,
+) -> Color {
     if depth == 0 {
         Color::new(0.0, 0.0, 0.0)
     } else {
@@ -157,7 +167,7 @@ fn ray_color<H: Hittable>(r: &Ray, world: &mut H, depth: usize) -> Color {
             max: f64::INFINITY,
         };
         let hit = world.hit(r, &interval);
-        let scattered = hit.map(|h| h.material.scatter(r, &h.normal, &h.p, &h.face));
+        let scattered = hit.map(|h| h.material.scatter(&mut rng, r, &h.normal, &h.p, &h.face));
         scattered.map_or_else(
             || {
                 let direction = r.direction.normalize();
@@ -166,7 +176,7 @@ fn ray_color<H: Hittable>(r: &Ray, world: &mut H, depth: usize) -> Color {
             },
             |s| {
                 s.map_or(Color::new(0.0, 0.0, 0.0), |(attenuation, scattered)| {
-                    attenuation * ray_color(&scattered, world, depth - 1)
+                    attenuation * ray_color(rng, &scattered, world, depth - 1)
                 })
             },
         )

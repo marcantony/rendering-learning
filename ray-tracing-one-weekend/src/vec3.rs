@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Deref, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
+use std::{
+    borrow::BorrowMut,
+    ops::{Add, AddAssign, Deref, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub},
+};
 
 use float_cmp::{assert_approx_eq, ApproxEq, F64Margin};
 use rand::Rng;
@@ -66,7 +69,7 @@ impl Vec3 {
 
     /// Returns a random vector from the origin to a point on the unit sphere
     pub fn random_unit_vector(rng: &mut impl Rng) -> Self {
-        let [x, y, z] = UnitSphere.sample(rng);
+        let [x, y, z] = UnitSphere.sample(rng.borrow_mut());
         Vec3::new(x, y, z)
     }
 

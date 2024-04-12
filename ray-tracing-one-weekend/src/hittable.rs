@@ -11,12 +11,12 @@ pub enum Face {
     Back,
 }
 
-pub struct HitRecord<'a> {
+pub struct HitRecord<M> {
     pub p: Point3,
     pub normal: NormalizedVec3,
     pub t: f64,
     pub face: Face,
-    pub material: &'a mut dyn Material,
+    pub material: M,
 }
 
 pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (NormalizedVec3, Face) {
@@ -27,12 +27,12 @@ pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (Normal
     }
 }
 
-pub trait Hittable {
-    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord>;
+pub trait Hittable<M> {
+    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>>;
 }
 
-impl<H: Hittable> Hittable for &mut [H] {
-    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord> {
+impl<M, H: Hittable<M>> Hittable<M> for &mut [H] {
+    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
         self.iter_mut()
             .fold(None, |closest_so_far, current_hittable| {
                 let new_max = closest_so_far
@@ -86,6 +86,10 @@ mod tests {
     }
 
     mod slice_hittable {
+        use std::marker::PhantomData;
+
+        use rand::rngs::ThreadRng;
+
         use crate::{material::Flat, sphere::Sphere};
 
         use super::*;
@@ -96,6 +100,7 @@ mod tests {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
                 material: Flat,
+                phantom: PhantomData::<ThreadRng>::default(),
             };
             let mut arr = [sphere];
             let mut slice = arr.as_mut_slice();
@@ -113,6 +118,7 @@ mod tests {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
                 material: Flat,
+                phantom: PhantomData::<ThreadRng>::default(),
             };
             let mut arr = [sphere];
             let mut slice = arr.as_mut_slice();
@@ -130,16 +136,19 @@ mod tests {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
                 material: Flat,
+                phantom: PhantomData::<ThreadRng>::default(),
             };
             let middle_sphere = Sphere {
                 center: Point3::new(0.0, 0.0, -5.0),
                 radius: 1.0,
                 material: Flat,
+                phantom: PhantomData::<ThreadRng>::default(),
             };
             let front_sphere = Sphere {
                 center: Point3::new(0.0, 0.0, 0.0),
                 radius: 1.0,
                 material: Flat,
+                phantom: PhantomData::<ThreadRng>::default(),
             };
             let mut arr = [back_sphere, front_sphere, middle_sphere];
             let mut slice = arr.as_mut_slice();

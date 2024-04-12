@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::{
     hittable::{self, HitRecord, Hittable},
     interval::Interval,
@@ -6,14 +8,15 @@ use crate::{
     vec3::{NormalizedVec3, Point3},
 };
 
-pub struct Sphere<M> {
+pub struct Sphere<M, R> {
     pub center: Point3,
     pub radius: f64,
     pub material: M,
+    pub phantom: PhantomData<R>,
 }
 
-impl<M: Material> Hittable for Sphere<M> {
-    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord> {
+impl<R, M: Material<R>> Hittable<M> for Sphere<M, R> {
+    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
         let oc = &r.origin - &self.center;
         let a = r.direction.length_squared();
         let half_b = oc.dot(&r.direction);
@@ -47,7 +50,7 @@ impl<M: Material> Hittable for Sphere<M> {
                     normal,
                     t,
                     face,
-                    material: &mut self.material,
+                    material: &self.material,
                 }
             })
         }
@@ -57,16 +60,18 @@ impl<M: Material> Hittable for Sphere<M> {
 #[cfg(test)]
 mod tests {
     use float_cmp::assert_approx_eq;
+    use rand::rngs::ThreadRng;
 
     use crate::{hittable::Face, material::Flat, vec3::Vec3};
 
     use super::*;
 
-    fn test_sphere() -> Sphere<Flat> {
+    fn test_sphere() -> Sphere<Flat, ThreadRng> {
         Sphere {
             center: Point3::new(0.0, 0.0, 0.0),
             radius: 1.0,
             material: Flat,
+            phantom: Default::default(),
         }
     }
 
