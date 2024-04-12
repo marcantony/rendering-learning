@@ -31,7 +31,7 @@ fn main() -> Result<()> {
     };
 
     // World
-    let mut world: [Sphere<&dyn Material<Xoshiro256PlusPlus>, Xoshiro256PlusPlus>; 5] = [
+    let world: [Sphere<&dyn Material<Xoshiro256PlusPlus>, Xoshiro256PlusPlus>; 5] = [
         Sphere {
             center: Point3::new(0.0, -100.5, -1.0),
             radius: 100.0,
@@ -64,7 +64,7 @@ fn main() -> Result<()> {
         },
     ];
 
-    let mut camera = Camera::new(CameraParams {
+    let camera = Camera::new(CameraParams {
         aspect_ratio: 16.0 / 9.0,
         image_width: 400,
         samples_per_pixel: 100,
@@ -79,5 +79,5 @@ fn main() -> Result<()> {
 
     let mut out = BufWriter::new(io::stdout().lock());
 
-    camera.render(&mut master_rng, &mut world.as_mut_slice(), &mut out)
+    camera.render(&mut master_rng, &world.as_slice(), &mut out)
 }

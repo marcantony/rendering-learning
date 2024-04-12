@@ -90,9 +90,9 @@ impl Camera {
 
 impl Camera {
     pub fn render<R: Rng, M: Material<R>, H: Hittable<M>>(
-        &mut self,
+        &self,
         mut rng: &mut R,
-        world: &mut H,
+        world: &H,
         out: &mut impl Write,
     ) -> Result<()> {
         let image_width = self.params.image_width;
@@ -124,7 +124,7 @@ impl Camera {
 
     /// Returns a randomly sampled camera ray for the pixel at location (i, j).
     /// The ray will originate from the defocus disk.
-    fn get_ray(&mut self, rng: &mut impl Rng, i: usize, j: usize) -> Ray {
+    fn get_ray(&self, rng: &mut impl Rng, i: usize, j: usize) -> Ray {
         let pixel_center =
             &self.pixel_00_location + (i as f64 * &self.pixel_du) + (j as f64 * &self.pixel_dv);
         let pixel_sample = pixel_center + self.pixel_sample_square(rng);
@@ -139,7 +139,7 @@ impl Camera {
     }
 
     /// Returns a random offset vector in the square surrounding a pixel
-    fn pixel_sample_square(&mut self, rng: &mut impl Rng) -> Vec3 {
+    fn pixel_sample_square(&self, rng: &mut impl Rng) -> Vec3 {
         let px = -0.5 + rng.gen::<f64>();
         let py = -0.5 + rng.gen::<f64>();
 
@@ -147,7 +147,7 @@ impl Camera {
     }
 
     /// Returns a random point in the camera defocus disk
-    fn defocus_disk_sample(&mut self, rng: &mut impl Rng) -> Vec3 {
+    fn defocus_disk_sample(&self, rng: &mut impl Rng) -> Vec3 {
         let [px, py]: [f64; 2] = UnitDisc.sample(rng);
         &self.params.lookfrom + (px * &self.defocus_disk_u) + (py * &self.defocus_disk_v)
     }
@@ -156,7 +156,7 @@ impl Camera {
 fn ray_color<R: Rng, M: Material<R>, H: Hittable<M>>(
     mut rng: &mut R,
     r: &Ray,
-    world: &mut H,
+    world: &H,
     depth: usize,
 ) -> Color {
     if depth == 0 {

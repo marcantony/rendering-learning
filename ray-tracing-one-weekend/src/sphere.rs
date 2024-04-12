@@ -16,7 +16,7 @@ pub struct Sphere<M, R> {
 }
 
 impl<R, M: Material<R>> Hittable<M> for Sphere<M, R> {
-    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
         let oc = &r.origin - &self.center;
         let a = r.direction.length_squared();
         let half_b = oc.dot(&r.direction);
@@ -77,7 +77,7 @@ mod tests {
 
     #[test]
     fn a_ray_misses_a_sphere() {
-        let mut sphere = test_sphere();
+        let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 2.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
         assert!(sphere.hit(&ray, &Interval::nonnegative()).is_none());
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn a_ray_is_tangent_to_a_sphere() {
-        let mut sphere = test_sphere();
+        let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 1.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn a_ray_goes_through_a_sphere() {
-        let mut sphere = test_sphere();
+        let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn a_ray_starts_inside_a_sphere() {
-        let mut sphere = test_sphere();
+        let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn a_ray_intersects_a_sphere_outside_the_interval() {
-        let mut sphere = test_sphere();
+        let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, &Interval { min: 0.0, max: 1.0 });
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn a_ray_intersects_a_sphere_bounding_the_interval() {
-        let mut sphere = test_sphere();
+        let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
         let hit = sphere.hit(&ray, &Interval { min: 0.0, max: 4.0 });

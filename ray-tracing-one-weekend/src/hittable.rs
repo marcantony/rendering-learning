@@ -1,6 +1,5 @@
 use crate::{
     interval::Interval,
-    material::Material,
     ray::Ray,
     vec3::{NormalizedVec3, Point3},
 };
@@ -28,26 +27,25 @@ pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (Normal
 }
 
 pub trait Hittable<M> {
-    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>>;
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>>;
 }
 
-impl<M, H: Hittable<M>> Hittable<M> for &mut [H] {
-    fn hit(&mut self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
-        self.iter_mut()
-            .fold(None, |closest_so_far, current_hittable| {
-                let new_max = closest_so_far
-                    .as_ref()
-                    .map_or(ray_t.max, |closest| closest.t);
-                current_hittable
-                    .hit(
-                        r,
-                        &Interval {
-                            min: ray_t.min,
-                            max: new_max,
-                        },
-                    )
-                    .or(closest_so_far)
-            })
+impl<M, H: Hittable<M>> Hittable<M> for &[H] {
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
+        self.iter().fold(None, |closest_so_far, current_hittable| {
+            let new_max = closest_so_far
+                .as_ref()
+                .map_or(ray_t.max, |closest| closest.t);
+            current_hittable
+                .hit(
+                    r,
+                    &Interval {
+                        min: ray_t.min,
+                        max: new_max,
+                    },
+                )
+                .or(closest_so_far)
+        })
     }
 }
 
@@ -102,8 +100,8 @@ mod tests {
                 material: Flat,
                 phantom: PhantomData::<ThreadRng>::default(),
             };
-            let mut arr = [sphere];
-            let mut slice = arr.as_mut_slice();
+            let arr = [sphere];
+            let slice = arr.as_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 1.0, 0.0));
 
@@ -120,8 +118,8 @@ mod tests {
                 material: Flat,
                 phantom: PhantomData::<ThreadRng>::default(),
             };
-            let mut arr = [sphere];
-            let mut slice = arr.as_mut_slice();
+            let arr = [sphere];
+            let slice = arr.as_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
@@ -150,8 +148,8 @@ mod tests {
                 material: Flat,
                 phantom: PhantomData::<ThreadRng>::default(),
             };
-            let mut arr = [back_sphere, front_sphere, middle_sphere];
-            let mut slice = arr.as_mut_slice();
+            let arr = [back_sphere, front_sphere, middle_sphere];
+            let slice = arr.as_slice();
 
             let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
