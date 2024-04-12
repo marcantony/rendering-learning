@@ -68,12 +68,12 @@ impl Vec3 {
     }
 
     /// Returns a random vector from the origin to a point on the unit sphere
-    pub fn random_unit_vector(rng: &mut impl Rng) -> Self {
+    pub fn random_unit_vector<R: Rng + ?Sized>(rng: &mut R) -> Self {
         let [x, y, z] = UnitSphere.sample(rng.borrow_mut());
         Vec3::new(x, y, z)
     }
 
-    pub fn random_on_unit_hemisphere(rng: &mut impl Rng, normal: &Vec3) -> Self {
+    pub fn random_on_unit_hemisphere<R: Rng + ?Sized>(rng: &mut R, normal: &Vec3) -> Self {
         let on_unit_sphere = Vec3::random_unit_vector(rng);
         if on_unit_sphere.dot(normal) > 0.0 {
             // In the same hemisphere as the normal

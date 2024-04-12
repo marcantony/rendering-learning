@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, RngCore};
 
 use crate::{
     color::Color,
@@ -7,10 +7,10 @@ use crate::{
     vec3::{NormalizedVec3, Point3, Vec3},
 };
 
-pub trait Material<R> {
+pub trait Material {
     fn scatter(
         &self,
-        rng: &mut R,
+        rng: &mut dyn RngCore,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
@@ -18,10 +18,10 @@ pub trait Material<R> {
     ) -> Option<(Color, Ray)>;
 }
 
-impl<R, T: Material<R> + ?Sized> Material<R> for &T {
+impl<T: Material + ?Sized> Material for &T {
     fn scatter(
         &self,
-        rng: &mut R,
+        rng: &mut dyn RngCore,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
@@ -33,10 +33,10 @@ impl<R, T: Material<R> + ?Sized> Material<R> for &T {
 
 pub struct Flat;
 
-impl<R> Material<R> for Flat {
+impl Material for Flat {
     fn scatter(
         &self,
-        _rng: &mut R,
+        _rng: &mut dyn RngCore,
         _ray: &Ray,
         _normal: &NormalizedVec3,
         _point: &Point3,
@@ -50,10 +50,10 @@ pub struct Lambertian {
     pub albedo: Color,
 }
 
-impl<R: Rng> Material<R> for Lambertian {
+impl Material for Lambertian {
     fn scatter(
         &self,
-        rng: &mut R,
+        rng: &mut dyn RngCore,
         _ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
@@ -76,10 +76,10 @@ pub struct Metal {
     pub fuzz: f64,
 }
 
-impl<R: Rng> Material<R> for Metal {
+impl Material for Metal {
     fn scatter(
         &self,
-        rng: &mut R,
+        rng: &mut dyn RngCore,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,
@@ -108,10 +108,10 @@ pub struct Dielectric {
     pub refraction_index: f64,
 }
 
-impl<R: Rng> Material<R> for Dielectric {
+impl Material for Dielectric {
     fn scatter(
         &self,
-        rng: &mut R,
+        rng: &mut dyn RngCore,
         ray: &Ray,
         normal: &NormalizedVec3,
         point: &Point3,

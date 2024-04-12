@@ -84,10 +84,6 @@ mod tests {
     }
 
     mod slice_hittable {
-        use std::marker::PhantomData;
-
-        use rand::rngs::ThreadRng;
-
         use crate::{material::Flat, sphere::Sphere};
 
         use super::*;
@@ -98,7 +94,6 @@ mod tests {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
                 material: Flat,
-                phantom: PhantomData::<ThreadRng>::default(),
             };
             let arr = [sphere];
             let slice = arr.as_slice();
@@ -116,7 +111,6 @@ mod tests {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
                 material: Flat,
-                phantom: PhantomData::<ThreadRng>::default(),
             };
             let arr = [sphere];
             let slice = arr.as_slice();
@@ -134,19 +128,16 @@ mod tests {
                 center: Point3::new(0.0, 0.0, -10.0),
                 radius: 1.0,
                 material: Flat,
-                phantom: PhantomData::<ThreadRng>::default(),
             };
             let middle_sphere = Sphere {
                 center: Point3::new(0.0, 0.0, -5.0),
                 radius: 1.0,
                 material: Flat,
-                phantom: PhantomData::<ThreadRng>::default(),
             };
             let front_sphere = Sphere {
                 center: Point3::new(0.0, 0.0, 0.0),
                 radius: 1.0,
                 material: Flat,
-                phantom: PhantomData::<ThreadRng>::default(),
             };
             let arr = [back_sphere, front_sphere, middle_sphere];
             let slice = arr.as_slice();

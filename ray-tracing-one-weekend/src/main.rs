@@ -31,36 +31,31 @@ fn main() -> Result<()> {
     };
 
     // World
-    let world: [Sphere<&dyn Material<Xoshiro256PlusPlus>, Xoshiro256PlusPlus>; 5] = [
+    let world: [Sphere<&dyn Material>; 5] = [
         Sphere {
             center: Point3::new(0.0, -100.5, -1.0),
             radius: 100.0,
             material: &material_ground,
-            phantom: Default::default(),
         },
         Sphere {
             center: Point3::new(0.0, 0.0, -1.2),
             radius: 0.5,
             material: &material_center,
-            phantom: Default::default(),
         },
         Sphere {
             center: Point3::new(-1.0, 0.0, -1.0),
             radius: 0.5,
             material: &material_left,
-            phantom: Default::default(),
         },
         Sphere {
             center: Point3::new(-1.0, 0.0, -1.0),
             radius: 0.4,
             material: &material_bubble,
-            phantom: Default::default(),
         },
         Sphere {
             center: Point3::new(1.0, 0.0, -1.0),
             radius: 0.5,
             material: &material_right,
-            phantom: Default::default(),
         },
     ];
 
