@@ -31,6 +31,19 @@ impl<T: Material + ?Sized> Material for &T {
     }
 }
 
+impl<T: Material + ?Sized> Material for Box<T> {
+    fn scatter(
+        &self,
+        rng: &mut dyn RngCore,
+        ray: &Ray,
+        normal: &NormalizedVec3,
+        point: &Point3,
+        face: &Face,
+    ) -> Option<(Color, Ray)> {
+        (**self).scatter(rng, ray, normal, point, face)
+    }
+}
+
 pub struct Flat;
 
 impl Material for Flat {

@@ -1,5 +1,7 @@
 use std::io::{Result, Write};
 
+use rand::Rng;
+
 use crate::vec3::Vec3;
 
 pub type Color = Vec3;
@@ -38,6 +40,18 @@ impl Color {
         writeln!(writer, "{} {} {}", ir, ig, ib)?;
 
         Ok(())
+    }
+
+    pub fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
+        Color::new(rng.gen(), rng.gen(), rng.gen())
+    }
+
+    pub fn random_in_range<R: Rng + ?Sized>(rng: &mut R, min: f64, max: f64) -> Self {
+        Color::new(
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+        )
     }
 }
 
