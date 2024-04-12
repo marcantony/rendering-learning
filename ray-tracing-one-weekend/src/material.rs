@@ -18,7 +18,7 @@ pub trait Material<R> {
     ) -> Option<(Color, Ray)>;
 }
 
-impl<R> Material<R> for &dyn Material<R> {
+impl<R, T: Material<R> + ?Sized> Material<R> for &T {
     fn scatter(
         &self,
         rng: &mut R,
