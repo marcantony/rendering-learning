@@ -90,7 +90,7 @@ fn main() -> Result<()> {
 
     let camera = Camera::new(CameraParams {
         aspect_ratio: 16.0 / 9.0,
-        image_width: 40,
+        image_width: 400,
         samples_per_pixel: 10,
         max_depth: 10,
         vfov: 20.0,
