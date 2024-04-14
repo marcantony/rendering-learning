@@ -10,12 +10,11 @@ pub enum Face {
     Back,
 }
 
-pub struct HitRecord<M> {
+pub struct HitRecord {
     pub p: Point3,
     pub normal: NormalizedVec3,
     pub t: f64,
     pub face: Face,
-    pub material: M,
 }
 
 pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (NormalizedVec3, Face) {
@@ -27,15 +26,15 @@ pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (Normal
 }
 
 pub trait Hittable<M> {
-    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>>;
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)>;
 }
 
 impl<M, H: Hittable<M>> Hittable<M> for &[H] {
-    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
         self.iter().fold(None, |closest_so_far, current_hittable| {
             let new_max = closest_so_far
                 .as_ref()
-                .map_or(ray_t.max, |closest| closest.t);
+                .map_or(ray_t.max, |closest| closest.1.t);
             current_hittable
                 .hit(
                     r,
@@ -119,7 +118,7 @@ mod tests {
 
             let hit = slice.hit(&ray, &Interval::nonnegative());
 
-            assert_eq!(hit.map(|h| h.t), Some(14.0));
+            assert_eq!(hit.map(|h| h.1.t), Some(14.0));
         }
 
         #[test]
@@ -146,7 +145,7 @@ mod tests {
 
             let hit = slice.hit(&ray, &Interval::nonnegative());
 
-            assert_eq!(hit.map(|h| h.t), Some(4.0));
+            assert_eq!(hit.map(|h| h.1.t), Some(4.0));
         }
     }
 }

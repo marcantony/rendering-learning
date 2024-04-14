@@ -2,9 +2,9 @@ use rand::{Rng, RngCore};
 
 use crate::{
     color::Color,
-    hittable::Face,
+    hittable::{Face, HitRecord},
     ray::Ray,
-    vec3::{NormalizedVec3, Point3, Vec3},
+    vec3::{NormalizedVec3, Vec3},
 };
 
 pub trait Material {
@@ -12,9 +12,7 @@ pub trait Material {
         &self,
         rng: &mut dyn RngCore,
         ray: &Ray,
-        normal: &NormalizedVec3,
-        point: &Point3,
-        face: &Face,
+        hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)>;
 }
 
@@ -23,11 +21,9 @@ impl<T: Material + ?Sized> Material for &T {
         &self,
         rng: &mut dyn RngCore,
         ray: &Ray,
-        normal: &NormalizedVec3,
-        point: &Point3,
-        face: &Face,
+        hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
-        (**self).scatter(rng, ray, normal, point, face)
+        (**self).scatter(rng, ray, hitrecord)
     }
 }
 
@@ -36,11 +32,9 @@ impl<T: Material + ?Sized> Material for Box<T> {
         &self,
         rng: &mut dyn RngCore,
         ray: &Ray,
-        normal: &NormalizedVec3,
-        point: &Point3,
-        face: &Face,
+        hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
-        (**self).scatter(rng, ray, normal, point, face)
+        (**self).scatter(rng, ray, hitrecord)
     }
 }
 
@@ -51,9 +45,7 @@ impl Material for Flat {
         &self,
         _rng: &mut dyn RngCore,
         _ray: &Ray,
-        _normal: &NormalizedVec3,
-        _point: &Point3,
-        _face: &Face,
+        _hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
         None
     }
@@ -68,18 +60,16 @@ impl Material for Lambertian {
         &self,
         rng: &mut dyn RngCore,
         _ray: &Ray,
-        normal: &NormalizedVec3,
-        point: &Point3,
-        _face: &Face,
+        hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
-        let random_scatter_direction = &**normal + Vec3::random_unit_vector(rng);
+        let random_scatter_direction = &*hitrecord.normal + Vec3::random_unit_vector(rng);
         let scatter_direction = if random_scatter_direction.near_zero() {
             // Catch degenerate scatter direction
-            (**normal).clone()
+            (*hitrecord.normal).clone()
         } else {
             random_scatter_direction
         };
-        let scattered = Ray::new(point.clone(), scatter_direction);
+        let scattered = Ray::new(hitrecord.p.clone(), scatter_direction);
         Some((self.albedo.clone(), scattered))
     }
 }
@@ -94,17 +84,15 @@ impl Material for Metal {
         &self,
         rng: &mut dyn RngCore,
         ray: &Ray,
-        normal: &NormalizedVec3,
-        point: &Point3,
-        _face: &Face,
+        hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
-        let reflected_direction = ray.direction.reflect(normal);
+        let reflected_direction = ray.direction.reflect(&hitrecord.normal);
         let fuzzed_direction =
             reflected_direction.normalize() + (self.fuzz * Vec3::random_unit_vector(rng));
-        let reflected_ray = Ray::new(point.clone(), fuzzed_direction);
+        let reflected_ray = Ray::new(hitrecord.p.clone(), fuzzed_direction);
 
         // Absorb fuzzed reflection if it scatters below the surface of the object
-        if reflected_ray.direction.dot(normal) > 0.0 {
+        if reflected_ray.direction.dot(&hitrecord.normal) > 0.0 {
             Some((self.albedo.clone(), reflected_ray))
         } else {
             None
@@ -126,11 +114,9 @@ impl Material for Dielectric {
         &self,
         rng: &mut dyn RngCore,
         ray: &Ray,
-        normal: &NormalizedVec3,
-        point: &Point3,
-        face: &Face,
+        hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
-        let refraction_index = match &face {
+        let refraction_index = match &hitrecord.face {
             Face::Front => 1.0 / self.refraction_index,
             Face::Back => self.refraction_index,
         };
@@ -138,16 +124,16 @@ impl Material for Dielectric {
         let unit_direction = NormalizedVec3::try_from(&ray.direction)
             .expect("How did the incident ray have magnitude 0?");
 
-        let cos_theta = (-&unit_direction).dot(normal).min(1.0);
+        let cos_theta = (-&unit_direction).dot(&hitrecord.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = refraction_index * sin_theta > 1.0;
 
         let direction = if cannot_refract || reflectance(cos_theta, refraction_index) > rng.gen() {
-            unit_direction.reflect(normal)
+            unit_direction.reflect(&hitrecord.normal)
         } else {
-            unit_direction.refract(normal, refraction_index)
+            unit_direction.refract(&hitrecord.normal, refraction_index)
         };
-        let scattered = Ray::new(point.clone(), direction);
+        let scattered = Ray::new(hitrecord.p.clone(), direction);
 
         Some((Color::new(1.0, 1.0, 1.0), scattered))
     }

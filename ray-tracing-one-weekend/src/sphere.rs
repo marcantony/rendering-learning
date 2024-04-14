@@ -13,7 +13,7 @@ pub struct Sphere<M> {
 }
 
 impl<M: Material> Hittable<M> for Sphere<M> {
-    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<HitRecord<&M>> {
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
         let oc = &r.origin - &self.center;
         let a = r.direction.length_squared();
         let half_b = oc.dot(&r.direction);
@@ -42,13 +42,7 @@ impl<M: Material> Hittable<M> for Sphere<M> {
                 let outward_normal =
                     NormalizedVec3::from_normalized((&p - &self.center) / self.radius);
                 let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
-                HitRecord {
-                    p,
-                    normal,
-                    t,
-                    face,
-                    material: &self.material,
-                }
+                (&self.material, HitRecord { p, normal, t, face })
             })
         }
     }
@@ -83,7 +77,7 @@ mod tests {
         let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 1.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
-        let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
+        let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap().1;
 
         assert_eq!(hit.t, 5.0);
         assert_eq!(hit.face, Face::Front);
@@ -95,7 +89,7 @@ mod tests {
         let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 0.0, 5.0), Vec3::new(0.0, 0.0, -1.0));
 
-        let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
+        let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap().1;
 
         assert_eq!(hit.t, 4.0);
         assert_eq!(hit.face, Face::Front);
@@ -107,7 +101,7 @@ mod tests {
         let sphere = test_sphere();
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -1.0));
 
-        let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap();
+        let hit = sphere.hit(&ray, &Interval::nonnegative()).unwrap().1;
 
         assert_eq!(hit.t, 1.0);
         assert_eq!(hit.face, Face::Back);
@@ -131,6 +125,6 @@ mod tests {
 
         let hit = sphere.hit(&ray, &Interval { min: 0.0, max: 4.0 });
 
-        assert_eq!(hit.map(|h| h.t), Some(4.0));
+        assert_eq!(hit.map(|h| h.1.t), Some(4.0));
     }
 }

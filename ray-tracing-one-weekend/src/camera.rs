@@ -167,7 +167,7 @@ fn ray_color<R: Rng, M: Material, H: Hittable<M>>(
             max: f64::INFINITY,
         };
         let hit = world.hit(r, &interval);
-        let scattered = hit.map(|h| h.material.scatter(&mut rng, r, &h.normal, &h.p, &h.face));
+        let scattered = hit.map(|(m, h)| m.scatter(&mut rng, r, &h));
         scattered.map_or_else(
             || {
                 let direction = r.direction.normalize();
