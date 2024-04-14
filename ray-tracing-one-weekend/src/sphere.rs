@@ -6,15 +6,30 @@ use crate::{
     vec3::{NormalizedVec3, Point3},
 };
 
+pub enum Center {
+    Stationary(Point3),
+    Moving(Point3, Point3),
+}
+
 pub struct Sphere<M> {
-    pub center: Point3,
+    pub center: Center,
     pub radius: f64,
     pub material: M,
 }
 
+impl<M> Sphere<M> {
+    fn center(&self, time: f64) -> Point3 {
+        match &self.center {
+            Center::Stationary(p) => p.clone(),
+            Center::Moving(p1, p2) => p1 + time * (p2 - p1),
+        }
+    }
+}
+
 impl<M: Material> Hittable<M> for Sphere<M> {
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
-        let oc = &r.origin - &self.center;
+        let center = self.center(r.time);
+        let oc = &r.origin - &center;
         let a = r.direction.length_squared();
         let half_b = oc.dot(&r.direction);
         let c = oc.length_squared() - self.radius * self.radius;
@@ -39,8 +54,7 @@ impl<M: Material> Hittable<M> for Sphere<M> {
 
             root.map(|t| {
                 let p = r.at(t);
-                let outward_normal =
-                    NormalizedVec3::from_normalized((&p - &self.center) / self.radius);
+                let outward_normal = NormalizedVec3::from_normalized((&p - &center) / self.radius);
                 let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
                 (&self.material, HitRecord { p, normal, t, face })
             })
@@ -58,7 +72,7 @@ mod tests {
 
     fn test_sphere() -> Sphere<Flat> {
         Sphere {
-            center: Point3::new(0.0, 0.0, 0.0),
+            center: Center::Stationary(Point3::new(0.0, 0.0, 0.0)),
             radius: 1.0,
             material: Flat,
         }

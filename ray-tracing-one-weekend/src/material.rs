@@ -59,7 +59,7 @@ impl Material for Lambertian {
     fn scatter(
         &self,
         rng: &mut dyn RngCore,
-        _ray: &Ray,
+        ray: &Ray,
         hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
         let random_scatter_direction = &*hitrecord.normal + Vec3::random_unit_vector(rng);
@@ -69,7 +69,7 @@ impl Material for Lambertian {
         } else {
             random_scatter_direction
         };
-        let scattered = Ray::new(hitrecord.p.clone(), scatter_direction);
+        let scattered = Ray::new_at_time(hitrecord.p.clone(), scatter_direction, ray.time);
         Some((self.albedo.clone(), scattered))
     }
 }
@@ -89,7 +89,7 @@ impl Material for Metal {
         let reflected_direction = ray.direction.reflect(&hitrecord.normal);
         let fuzzed_direction =
             reflected_direction.normalize() + (self.fuzz * Vec3::random_unit_vector(rng));
-        let reflected_ray = Ray::new(hitrecord.p.clone(), fuzzed_direction);
+        let reflected_ray = Ray::new_at_time(hitrecord.p.clone(), fuzzed_direction, ray.time);
 
         // Absorb fuzzed reflection if it scatters below the surface of the object
         if reflected_ray.direction.dot(&hitrecord.normal) > 0.0 {
@@ -133,7 +133,7 @@ impl Material for Dielectric {
         } else {
             unit_direction.refract(&hitrecord.normal, refraction_index)
         };
-        let scattered = Ray::new(hitrecord.p.clone(), direction);
+        let scattered = Ray::new_at_time(hitrecord.p.clone(), direction, ray.time);
 
         Some((Color::new(1.0, 1.0, 1.0), scattered))
     }

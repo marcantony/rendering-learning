@@ -135,7 +135,8 @@ impl Camera {
             self.defocus_disk_sample(rng)
         };
         let ray_direction = &pixel_sample - &ray_origin;
-        Ray::new(ray_origin, ray_direction)
+        let ray_time = rng.gen();
+        Ray::new_at_time(ray_origin, ray_direction, ray_time)
     }
 
     /// Returns a random offset vector in the square surrounding a pixel

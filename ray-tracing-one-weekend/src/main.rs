@@ -6,7 +6,7 @@ use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
     material::{Dielectric, Lambertian, Material, Metal},
-    sphere::Sphere,
+    sphere::{Center, Sphere},
     vec3::{Point3, Vec3},
 };
 
@@ -19,7 +19,7 @@ fn main() -> Result<()> {
         albedo: Color::new(0.5, 0.5, 0.5),
     };
     world.push(Sphere {
-        center: Point3::new(0.0, -1000.0, 0.0),
+        center: Center::Stationary(Point3::new(0.0, -1000.0, 0.0)),
         radius: 1000.0,
         material: Box::new(ground_material),
     });
@@ -27,29 +27,40 @@ fn main() -> Result<()> {
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat: f64 = master_rng.gen();
-            let center = Point3::new(
+            let center_point = Point3::new(
                 a as f64 + 0.9 * master_rng.gen::<f64>(),
                 0.2,
                 b as f64 + 0.9 * master_rng.gen::<f64>(),
             );
 
-            if (&center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let sphere_material: Box<dyn Material> = if choose_mat < 0.8 {
+            if (&center_point - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let (sphere_material, center): (Box<dyn Material>, Center) = if choose_mat < 0.8 {
                     // diffuse
-                    Box::new(Lambertian {
-                        albedo: Color::random(&mut master_rng) * Color::random(&mut master_rng),
-                    })
+                    let center2 =
+                        &center_point + Vec3::new(0.0, master_rng.gen_range(0.0..0.5), 0.0);
+                    (
+                        Box::new(Lambertian {
+                            albedo: Color::random(&mut master_rng) * Color::random(&mut master_rng),
+                        }),
+                        Center::Moving(center_point, center2),
+                    )
                 } else if choose_mat < 0.95 {
                     // metal
-                    Box::new(Metal {
-                        albedo: Color::random_in_range(&mut master_rng, 0.5, 1.0),
-                        fuzz: master_rng.gen(),
-                    })
+                    (
+                        Box::new(Metal {
+                            albedo: Color::random_in_range(&mut master_rng, 0.5, 1.0),
+                            fuzz: master_rng.gen(),
+                        }),
+                        Center::Stationary(center_point),
+                    )
                 } else {
                     // glass
-                    Box::new(Dielectric {
-                        refraction_index: 1.5,
-                    })
+                    (
+                        Box::new(Dielectric {
+                            refraction_index: 1.5,
+                        }),
+                        Center::Stationary(center_point),
+                    )
                 };
                 world.push(Sphere {
                     center,
@@ -64,7 +75,7 @@ fn main() -> Result<()> {
         refraction_index: 1.5,
     };
     world.push(Sphere {
-        center: Point3::new(0.0, 1.0, 0.0),
+        center: Center::Stationary(Point3::new(0.0, 1.0, 0.0)),
         radius: 1.0,
         material: Box::new(material1),
     });
@@ -73,7 +84,7 @@ fn main() -> Result<()> {
         albedo: Color::new(0.4, 0.2, 0.1),
     };
     world.push(Sphere {
-        center: Point3::new(-4.0, 1.0, 0.0),
+        center: Center::Stationary(Point3::new(-4.0, 1.0, 0.0)),
         radius: 1.0,
         material: Box::new(material2),
     });
@@ -83,7 +94,7 @@ fn main() -> Result<()> {
         fuzz: 0.0,
     };
     world.push(Sphere {
-        center: Point3::new(4.0, 1.0, 0.0),
+        center: Center::Stationary(Point3::new(4.0, 1.0, 0.0)),
         radius: 1.0,
         material: Box::new(material3),
     });
@@ -91,7 +102,7 @@ fn main() -> Result<()> {
     let camera = Camera::new(CameraParams {
         aspect_ratio: 16.0 / 9.0,
         image_width: 400,
-        samples_per_pixel: 10,
+        samples_per_pixel: 100,
         max_depth: 10,
         vfov: 20.0,
         lookfrom: Point3::new(13.0, 2.0, 3.0),

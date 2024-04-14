@@ -83,14 +83,17 @@ mod tests {
     }
 
     mod slice_hittable {
-        use crate::{material::Flat, sphere::Sphere};
+        use crate::{
+            material::Flat,
+            sphere::{Center, Sphere},
+        };
 
         use super::*;
 
         #[test]
         fn hitting_nothing() {
             let sphere = Sphere {
-                center: Point3::new(0.0, 0.0, -10.0),
+                center: Center::Stationary(Point3::new(0.0, 0.0, -10.0)),
                 radius: 1.0,
                 material: Flat,
             };
@@ -107,7 +110,7 @@ mod tests {
         #[test]
         fn hitting_a_hittable() {
             let sphere = Sphere {
-                center: Point3::new(0.0, 0.0, -10.0),
+                center: Center::Stationary(Point3::new(0.0, 0.0, -10.0)),
                 radius: 1.0,
                 material: Flat,
             };
@@ -124,17 +127,17 @@ mod tests {
         #[test]
         fn hitting_the_closest_hittable() {
             let back_sphere = Sphere {
-                center: Point3::new(0.0, 0.0, -10.0),
+                center: Center::Stationary(Point3::new(0.0, 0.0, -10.0)),
                 radius: 1.0,
                 material: Flat,
             };
             let middle_sphere = Sphere {
-                center: Point3::new(0.0, 0.0, -5.0),
+                center: Center::Stationary(Point3::new(0.0, 0.0, -5.0)),
                 radius: 1.0,
                 material: Flat,
             };
             let front_sphere = Sphere {
-                center: Point3::new(0.0, 0.0, 0.0),
+                center: Center::Stationary(Point3::new(0.0, 0.0, 0.0)),
                 radius: 1.0,
                 material: Flat,
             };

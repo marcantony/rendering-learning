@@ -1,10 +1,12 @@
+use std::fs;
+
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
     material::{Dielectric, Lambertian, Material, Metal},
-    sphere::Sphere,
+    sphere::{Center, Sphere},
     vec3::{Point3, Vec3},
 };
 
@@ -34,27 +36,27 @@ fn test_render() {
     // World
     let world: [Sphere<&dyn Material>; 5] = [
         Sphere {
-            center: Point3::new(0.0, -100.5, -1.0),
+            center: Center::Stationary(Point3::new(0.0, -100.5, -1.0)),
             radius: 100.0,
             material: &material_ground,
         },
         Sphere {
-            center: Point3::new(0.0, 0.0, -1.2),
+            center: Center::Stationary(Point3::new(0.0, 0.0, -1.2)),
             radius: 0.5,
             material: &material_center,
         },
         Sphere {
-            center: Point3::new(-1.0, 0.0, -1.0),
+            center: Center::Stationary(Point3::new(-1.0, 0.0, -1.0)),
             radius: 0.5,
             material: &material_left,
         },
         Sphere {
-            center: Point3::new(-1.0, 0.0, -1.0),
+            center: Center::Stationary(Point3::new(-1.0, 0.0, -1.0)),
             radius: 0.4,
             material: &material_bubble,
         },
         Sphere {
-            center: Point3::new(1.0, 0.0, -1.0),
+            center: Center::Stationary(Point3::new(1.0, 0.0, -1.0)),
             radius: 0.5,
             material: &material_right,
         },
@@ -80,6 +82,7 @@ fn test_render() {
         .unwrap();
 
     let out_str = String::from_utf8(out).unwrap();
+    fs::write("test-out.ppm", &out_str).unwrap();
     assert!(
         &out_str == expected_data,
         "output image did not equal expectation"
