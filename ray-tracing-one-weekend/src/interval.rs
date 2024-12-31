@@ -1,3 +1,4 @@
+#[derive(PartialEq, Debug)]
 pub struct Interval {
     pub min: f64,
     pub max: f64,
@@ -31,6 +32,14 @@ impl Interval {
 
     pub fn surrounds(&self, x: f64) -> bool {
         self.min < x && x < self.max
+    }
+
+    pub fn expand(&self, delta: f64) -> Self {
+        let padding = delta / 2.0;
+        Interval {
+            min: self.min - padding,
+            max: self.max + padding,
+        }
     }
 }
 
@@ -78,5 +87,13 @@ mod tests {
         };
 
         assert!(!i.contains(5.0));
+    }
+
+    #[test]
+    fn expanding_an_interval() {
+        let i = Interval { min: 1.0, max: 2.0 };
+        let expanded = i.expand(2.0);
+
+        assert_eq!(expanded, Interval { min: 0.0, max: 3.0 })
     }
 }
