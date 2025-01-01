@@ -41,6 +41,13 @@ impl Interval {
             max: self.max + padding,
         }
     }
+
+    /// Creates a new interval tightly enclosing self and the input interval
+    pub fn merge(&self, other: &Interval) -> Self {
+        let min = self.min.min(other.min);
+        let max = self.max.max(other.max);
+        Interval { min, max }
+    }
 }
 
 #[cfg(test)]

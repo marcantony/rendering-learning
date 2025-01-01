@@ -1,4 +1,5 @@
 use crate::{
+    aabb::AABB,
     interval::Interval,
     ray::Ray,
     vec3::{NormalizedVec3, Point3},
@@ -27,6 +28,7 @@ pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (Normal
 
 pub trait Hittable<M> {
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)>;
+    fn bounding_box(&self) -> AABB;
 }
 
 impl<M, H: Hittable<M>> Hittable<M> for &[H] {
@@ -45,6 +47,11 @@ impl<M, H: Hittable<M>> Hittable<M> for &[H] {
                 )
                 .or(closest_so_far)
         })
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.iter()
+            .fold(AABB::default(), |bbox, h| bbox.merge(&h.bounding_box()))
     }
 }
 

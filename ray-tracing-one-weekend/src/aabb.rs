@@ -65,6 +65,14 @@ impl AABB {
             None
         }
     }
+
+    /// Creates a new AABB which contains self and the input AABB
+    pub fn merge(&self, other: &AABB) -> Self {
+        let x = self.x.merge(&other.x);
+        let y = self.y.merge(&other.y);
+        let z = self.z.merge(&other.z);
+        AABB { x, y, z }
+    }
 }
 
 fn intersect_axis(i: &Interval, origin: f64, speed: f64) -> (f64, f64) {
@@ -75,6 +83,16 @@ fn intersect_axis(i: &Interval, origin: f64, speed: f64) -> (f64, f64) {
         (t0, t1)
     } else {
         (t1, t0)
+    }
+}
+
+impl Default for AABB {
+    fn default() -> Self {
+        Self {
+            x: Interval::empty(),
+            y: Interval::empty(),
+            z: Interval::empty(),
+        }
     }
 }
 

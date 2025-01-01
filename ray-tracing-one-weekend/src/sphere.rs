@@ -1,9 +1,10 @@
 use crate::{
+    aabb::AABB,
     hittable::{self, HitRecord, Hittable},
     interval::Interval,
     material::Material,
     ray::Ray,
-    vec3::{NormalizedVec3, Point3},
+    vec3::{NormalizedVec3, Point3, Vec3},
 };
 
 pub enum Center {
@@ -58,6 +59,20 @@ impl<M: Material> Hittable<M> for Sphere<M> {
                 let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
                 (&self.material, HitRecord { p, normal, t, face })
             })
+        }
+    }
+
+    fn bounding_box(&self) -> crate::aabb::AABB {
+        let rvec = Vec3::new(self.radius, self.radius, self.radius);
+        match &self.center {
+            Center::Stationary(center) => {
+                AABB::new_from_points(&(center - &rvec), &(center + &rvec))
+            }
+            Center::Moving(start, end) => {
+                let start_box = AABB::new_from_points(&(start - &rvec), &(start + &rvec));
+                let end_box = AABB::new_from_points(&(end - &rvec), &(end + &rvec));
+                start_box.merge(&end_box)
+            }
         }
     }
 }
