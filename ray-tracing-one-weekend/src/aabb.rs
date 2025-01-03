@@ -56,22 +56,15 @@ impl AABB {
     }
 
     /// Tests a ray against an AABB. Returns an intersection interval if the ray hit.
-    pub fn hit(&self, ray: &Ray) -> Option<Interval> {
+    pub fn hit(&self, ray: &Ray, ray_t: &Interval) -> bool {
         let (xtmin, xtmax) = intersect_axis(&self.x, ray.origin.x(), ray.direction.x());
         let (ytmin, ytmax) = intersect_axis(&self.y, ray.origin.y(), ray.direction.y());
         let (ztmin, ztmax) = intersect_axis(&self.z, ray.origin.z(), ray.direction.z());
 
-        let tmin = xtmin.max(ytmin).max(ztmin);
-        let tmax = xtmax.min(ytmax).min(ztmax);
+        let tmin = xtmin.max(ytmin).max(ztmin).max(ray_t.min);
+        let tmax = xtmax.min(ytmax).min(ztmax).min(ray_t.max);
 
-        if tmin <= tmax {
-            Some(Interval {
-                min: tmin,
-                max: tmax,
-            })
-        } else {
-            None
-        }
+        tmin < tmax
     }
 
     /// Creates a new AABB which contains self and the input AABB
@@ -111,20 +104,23 @@ mod tests {
             $(
                 #[test]
                 fn $name() {
-                    let (ray, expected) = $value;
+                    let (ray, ray_t, expected) = $value;
 
                     let aabb = AABB::new_from_points(&Point3::new(2.0, 2.0, 2.0), &Point3::new(4.0, 4.0, 4.0));
 
-                    assert_eq!(aabb.hit(&ray), expected);
+                    assert_eq!(aabb.hit(&ray, &ray_t), expected);
                 }
             )*
         };
     }
 
     aabb_intersect_tests! {
-        intersect_x: (Ray::new(Point3::new(0.0, 3.0, 3.0), Vec3::new(1.0, 0.0, 0.0)), Some(Interval {min: 2.0, max: 4.0})),
-        intersect_y: (Ray::new(Point3::new(3.0, 5.0, 3.0), Vec3::new(0.0, -1.0, 0.0)), Some(Interval {min: 1.0, max: 3.0})),
-        intersect_z: (Ray::new(Point3::new(3.0, 3.0, 1.5), Vec3::new(0.0, 0.0, 1.0)), Some(Interval {min: 0.5, max: 2.5})),
-        miss: (Ray::new(Point3::new(5.0, 5.0, 5.0), Vec3::new(0.0, 0.0, 1.0)), None)
+        intersect_x: (Ray::new(Point3::new(0.0, 3.0, 3.0), Vec3::new(1.0, 0.0, 0.0)), Interval::universe(), true),
+        intersect_y: (Ray::new(Point3::new(3.0, 5.0, 3.0), Vec3::new(0.0, -1.0, 0.0)), Interval::universe(), true),
+        intersect_z: (Ray::new(Point3::new(3.0, 3.0, 1.5), Vec3::new(0.0, 0.0, 1.0)), Interval::universe(), true),
+        miss: (Ray::new(Point3::new(5.0, 5.0, 5.0), Vec3::new(0.0, 0.0, 1.0)), Interval::universe(), false),
+        intersect_in_constrained_interval: (Ray::new(Point3::new(0.0, 3.0, 3.0), Vec3::new(1.0, 0.0, 0.0)), Interval {min: 2.0, max: 3.0}, true),
+        intersect_outside_interval: (Ray::new(Point3::new(0.0, 3.0, 3.0), Vec3::new(1.0, 0.0, 0.0)), Interval {min: 1.0, max: 1.9}, false),
+        miss_outside_interval: (Ray::new(Point3::new(5.0, 5.0, 5.0), Vec3::new(0.0, 0.0, 1.0)), Interval::universe(), false)
     }
 }
