@@ -47,6 +47,14 @@ impl AABB {
         AABB { x, y, z }
     }
 
+    pub fn empty() -> Self {
+        AABB {
+            x: Interval::empty(),
+            y: Interval::empty(),
+            z: Interval::empty(),
+        }
+    }
+
     /// Tests a ray against an AABB. Returns an intersection interval if the ray hit.
     pub fn hit(&self, ray: &Ray) -> Option<Interval> {
         let (xtmin, xtmax) = intersect_axis(&self.x, ray.origin.x(), ray.direction.x());
@@ -88,11 +96,7 @@ fn intersect_axis(i: &Interval, origin: f64, speed: f64) -> (f64, f64) {
 
 impl Default for AABB {
     fn default() -> Self {
-        Self {
-            x: Interval::empty(),
-            y: Interval::empty(),
-            z: Interval::empty(),
-        }
+        AABB::empty()
     }
 }
 

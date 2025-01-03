@@ -51,7 +51,7 @@ impl<M, H: Hittable<M>> Hittable<M> for &[H] {
 
     fn bounding_box(&self) -> AABB {
         self.iter()
-            .fold(AABB::default(), |bbox, h| bbox.merge(&h.bounding_box()))
+            .fold(AABB::empty(), |bbox, h| bbox.merge(&h.bounding_box()))
     }
 }
 
