@@ -1,6 +1,7 @@
 use crate::{interval::Interval, ray::Ray, vec3::Point3};
 
 /// An axis-aligned bounding box
+#[derive(Clone)]
 pub struct AABB {
     pub x: Interval,
     pub y: Interval,

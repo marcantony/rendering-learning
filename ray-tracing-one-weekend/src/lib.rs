@@ -1,4 +1,5 @@
 pub mod aabb;
+pub mod bvh_node;
 pub mod camera;
 pub mod color;
 pub mod hittable;
