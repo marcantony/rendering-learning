@@ -26,12 +26,14 @@ pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (Normal
     }
 }
 
-pub trait Hittable<M> {
-    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)>;
+pub trait Hittable {
+    type Material;
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&Self::Material, HitRecord)>;
     fn bounding_box(&self) -> AABB;
 }
 
-impl<M, H: Hittable<M>> Hittable<M> for &[H] {
+impl<M, H: Hittable<Material = M>> Hittable for &[H] {
+    type Material = M;
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
         self.iter().fold(None, |closest_so_far, current_hittable| {
             let new_max = closest_so_far

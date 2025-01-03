@@ -89,7 +89,7 @@ impl Camera {
 }
 
 impl Camera {
-    pub fn render<R: Rng, M: Material, H: Hittable<M>>(
+    pub fn render<R: Rng, M: Material, H: Hittable<Material = M>>(
         &self,
         mut rng: &mut R,
         world: &H,
@@ -154,7 +154,7 @@ impl Camera {
     }
 }
 
-fn ray_color<R: Rng, M: Material, H: Hittable<M>>(
+fn ray_color<R: Rng, M: Material, H: Hittable<Material = M>>(
     mut rng: &mut R,
     r: &Ray,
     world: &H,

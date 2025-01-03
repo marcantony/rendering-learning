@@ -27,7 +27,8 @@ impl<M> Sphere<M> {
     }
 }
 
-impl<M: Material> Hittable<M> for Sphere<M> {
+impl<M: Material> Hittable for Sphere<M> {
+    type Material = M;
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
         let center = self.center(r.time);
         let oc = &r.origin - &center;
