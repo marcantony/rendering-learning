@@ -92,7 +92,7 @@ impl Camera {
     pub fn render<R: Rng, M: Material, H: Hittable<Material = M>>(
         &self,
         mut rng: &mut R,
-        world: &H,
+        world: H,
         out: &mut impl Write,
     ) -> Result<()> {
         let image_width = self.params.image_width;
@@ -108,7 +108,7 @@ impl Camera {
                 let color = (0..self.params.samples_per_pixel)
                     .map(|_n| {
                         let ray = self.get_ray(&mut rng, i, j);
-                        ray_color(rng, &ray, world, self.params.max_depth)
+                        ray_color(rng, &ray, &world, self.params.max_depth)
                     })
                     .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
                     / self.params.samples_per_pixel as f64;
@@ -157,7 +157,7 @@ impl Camera {
 fn ray_color<R: Rng, M: Material, H: Hittable<Material = M>>(
     mut rng: &mut R,
     r: &Ray,
-    world: &H,
+    world: H,
     depth: usize,
 ) -> Color {
     if depth == 0 {
