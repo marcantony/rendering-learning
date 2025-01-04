@@ -3,7 +3,7 @@ use std::io::{self, BufWriter, Result};
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
-    bvh_node::Bvh,
+    bvh::Bvh,
     camera::{Camera, CameraParams},
     color::Color,
     material::{Dielectric, Lambertian, Material, Metal},
