@@ -1,5 +1,3 @@
-use std::fs;
-
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
@@ -87,7 +85,7 @@ fn test_render() {
         .unwrap();
 
     let out_str = String::from_utf8(out).unwrap();
-    fs::write("test-out.ppm", &out_str).unwrap();
+    // std::fs::write("test-out.ppm", &out_str).unwrap(); // Uncomment to view test output
     assert!(
         &out_str == expected_data,
         "output image did not equal expectation"
