@@ -15,6 +15,7 @@ pub struct HitRecord {
     pub p: Point3,
     pub normal: NormalizedVec3,
     pub t: f64,
+    pub uv: (f64, f64),
     pub face: Face,
 }
 

@@ -58,7 +58,16 @@ impl<M: Material> Hittable for Sphere<M> {
                 let p = r.at(t);
                 let outward_normal = NormalizedVec3::from_normalized((&p - &center) / self.radius);
                 let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
-                (&self.material, HitRecord { p, normal, t, face })
+                (
+                    &self.material,
+                    HitRecord {
+                        p,
+                        normal,
+                        t,
+                        face,
+                        uv: (0.0, 0.0),
+                    },
+                )
             })
         }
     }

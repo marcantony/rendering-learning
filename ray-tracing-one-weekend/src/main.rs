@@ -8,6 +8,7 @@ use ray_tracing_one_weekend::{
     color::Color,
     material::{Dielectric, Lambertian, Material, Metal},
     sphere::{Center, Sphere},
+    texture::{Checker, SolidColor},
     vec3::{Point3, Vec3},
 };
 
@@ -16,9 +17,16 @@ fn main() -> Result<()> {
 
     let mut world = Vec::<Sphere<Box<dyn Material>>>::new();
 
-    let ground_material = Lambertian {
-        albedo: Color::new(0.5, 0.5, 0.5),
-    };
+    let checker = Checker::new(
+        0.32,
+        SolidColor {
+            albedo: Color::new(0.2, 0.23, 0.1),
+        },
+        SolidColor {
+            albedo: Color::new(0.9, 0.9, 0.9),
+        },
+    );
+    let ground_material = Lambertian { tex: checker };
     world.push(Sphere {
         center: Center::Stationary(Point3::new(0.0, -1000.0, 0.0)),
         radius: 1000.0,
@@ -41,7 +49,10 @@ fn main() -> Result<()> {
                         &center_point + Vec3::new(0.0, master_rng.gen_range(0.0..0.5), 0.0);
                     (
                         Box::new(Lambertian {
-                            albedo: Color::random(&mut master_rng) * Color::random(&mut master_rng),
+                            tex: SolidColor {
+                                albedo: Color::random(&mut master_rng)
+                                    * Color::random(&mut master_rng),
+                            },
                         }),
                         Center::Moving(center_point, center2),
                     )
@@ -82,7 +93,9 @@ fn main() -> Result<()> {
     });
 
     let material2 = Lambertian {
-        albedo: Color::new(0.4, 0.2, 0.1),
+        tex: SolidColor {
+            albedo: Color::new(0.4, 0.2, 0.1),
+        },
     };
     world.push(Sphere {
         center: Center::Stationary(Point3::new(-4.0, 1.0, 0.0)),

@@ -4,6 +4,7 @@ use crate::{
     color::Color,
     hittable::{Face, HitRecord},
     ray::Ray,
+    texture::Texture,
     vec3::{NormalizedVec3, Vec3},
 };
 
@@ -51,11 +52,11 @@ impl Material for Flat {
     }
 }
 
-pub struct Lambertian {
-    pub albedo: Color,
+pub struct Lambertian<T> {
+    pub tex: T,
 }
 
-impl Material for Lambertian {
+impl<T: Texture> Material for Lambertian<T> {
     fn scatter(
         &self,
         rng: &mut dyn RngCore,
@@ -70,7 +71,8 @@ impl Material for Lambertian {
             random_scatter_direction
         };
         let scattered = Ray::new_at_time(hitrecord.p.clone(), scatter_direction, ray.time);
-        Some((self.albedo.clone(), scattered))
+        let attenuation = self.tex.value(hitrecord.uv.0, hitrecord.uv.1, &hitrecord.p);
+        Some((attenuation, scattered))
     }
 }
 

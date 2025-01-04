@@ -7,6 +7,7 @@ use ray_tracing_one_weekend::{
     color::Color,
     material::{Dielectric, Lambertian, Material, Metal},
     sphere::{Center, Sphere},
+    texture::SolidColor,
     vec3::{Point3, Vec3},
 };
 
@@ -17,10 +18,14 @@ fn test_render() {
     let mut master_rng = Xoshiro256PlusPlus::seed_from_u64(1);
 
     let material_ground = Lambertian {
-        albedo: Color::new(0.8, 0.8, 0.0),
+        tex: SolidColor {
+            albedo: Color::new(0.8, 0.8, 0.0),
+        },
     };
     let material_center = Lambertian {
-        albedo: Color::new(0.1, 0.2, 0.5),
+        tex: SolidColor {
+            albedo: Color::new(0.1, 0.2, 0.5),
+        },
     };
     let material_left = Dielectric {
         refraction_index: 1.5,
