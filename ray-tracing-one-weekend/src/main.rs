@@ -100,7 +100,7 @@ fn main() -> Result<()> {
         material: Box::new(material3),
     });
 
-    let world = Bvh::new(world, &mut master_rng);
+    let world = Bvh::new(world);
 
     let camera = Camera::new(CameraParams {
         aspect_ratio: 16.0 / 9.0,
