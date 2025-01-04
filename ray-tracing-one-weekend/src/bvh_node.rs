@@ -68,8 +68,8 @@ impl<M, H: Hittable<Material = M>> Hittable for Bvh<H> {
     fn hit(&self, ray: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
         if self.bbox.hit(ray, ray_t) {
             match &self.children {
-                Children::Leaf(c) => hit_vec(c, ray, ray_t),
-                Children::Inner(c) => hit_vec(c, ray, ray_t),
+                Children::Leaf(c) => c.as_slice().hit(ray, ray_t),
+                Children::Inner(c) => c.as_slice().hit(ray, ray_t),
             }
         } else {
             None
@@ -79,25 +79,4 @@ impl<M, H: Hittable<Material = M>> Hittable for Bvh<H> {
     fn bounding_box(&self) -> AABB {
         self.bbox.clone()
     }
-}
-
-fn hit_vec<'a, M, H: Hittable<Material = M>>(
-    hs: &'a Vec<H>,
-    r: &Ray,
-    ray_t: &Interval,
-) -> Option<(&'a M, HitRecord)> {
-    hs.iter().fold(None, |closest_so_far, current_hittable| {
-        let new_max = closest_so_far
-            .as_ref()
-            .map_or(ray_t.max, |closest| closest.1.t);
-        current_hittable
-            .hit(
-                r,
-                &Interval {
-                    min: ray_t.min,
-                    max: new_max,
-                },
-            )
-            .or(closest_so_far)
-    })
 }

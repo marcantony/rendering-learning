@@ -32,7 +32,7 @@ pub trait Hittable {
     fn bounding_box(&self) -> AABB;
 }
 
-impl<M, H: Hittable<Material = M>> Hittable for &[H] {
+impl<M, H: Hittable<Material = M>> Hittable for [H] {
     type Material = M;
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
         self.iter().fold(None, |closest_so_far, current_hittable| {
@@ -54,6 +54,18 @@ impl<M, H: Hittable<Material = M>> Hittable for &[H] {
     fn bounding_box(&self) -> AABB {
         self.iter()
             .fold(AABB::empty(), |bbox, h| bbox.merge(&h.bounding_box()))
+    }
+}
+
+impl<M, H: Hittable<Material = M> + ?Sized> Hittable for &H {
+    type Material = M;
+
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&Self::Material, HitRecord)> {
+        (*self).hit(r, ray_t)
+    }
+
+    fn bounding_box(&self) -> AABB {
+        (*self).bounding_box()
     }
 }
 
