@@ -3,7 +3,7 @@ use std::io::{self, BufWriter, Result};
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
-    bvh_node::BvhNode,
+    bvh_node::Bvh,
     camera::{Camera, CameraParams},
     color::Color,
     material::{Dielectric, Lambertian, Material, Metal},
@@ -100,7 +100,7 @@ fn main() -> Result<()> {
         material: Box::new(material3),
     });
 
-    let world = BvhNode::new(world, &mut master_rng);
+    let world = Bvh::new(world, &mut master_rng);
 
     let camera = Camera::new(CameraParams {
         aspect_ratio: 16.0 / 9.0,

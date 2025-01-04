@@ -7,17 +7,18 @@ use crate::{
     ray::Ray,
 };
 
-pub struct BvhNode<H> {
+/// A bounding-volume hierarchy for hittables.
+pub struct Bvh<H> {
     children: Children<H>,
     bbox: AABB,
 }
 
 enum Children<H> {
     Leaf(Vec<H>),
-    Inner(Vec<BvhNode<H>>),
+    Inner(Vec<Bvh<H>>),
 }
 
-impl<M, H: Hittable<Material = M>> BvhNode<H> {
+impl<M, H: Hittable<Material = M>> Bvh<H> {
     pub fn new(mut hs: Vec<H>, rand: &mut impl Rng) -> Self {
         if hs.is_empty() {
             panic!("Cannot make a BVH node without hittables.")
@@ -39,13 +40,13 @@ impl<M, H: Hittable<Material = M>> BvhNode<H> {
             let rs = hs.split_off(mid);
             let ls = hs;
 
-            let left = BvhNode::new(ls, rand);
-            let right = BvhNode::new(rs, rand);
+            let left = Bvh::new(ls, rand);
+            let right = Bvh::new(rs, rand);
             let b = left.bounding_box().merge(&right.bounding_box());
             (Children::Inner(vec![left, right]), b)
         };
 
-        BvhNode { children, bbox }
+        Bvh { children, bbox }
     }
 }
 
@@ -62,7 +63,7 @@ fn sort_hittables<H: Hittable>(hs: &mut [H], rand: &mut impl Rng) {
     hs.sort_unstable_by(|l, r| key_fn(l).total_cmp(&key_fn(r)));
 }
 
-impl<M, H: Hittable<Material = M>> Hittable for BvhNode<H> {
+impl<M, H: Hittable<Material = M>> Hittable for Bvh<H> {
     type Material = M;
     fn hit(&self, ray: &Ray, ray_t: &Interval) -> Option<(&M, HitRecord)> {
         if self.bbox.hit(ray, ray_t) {
