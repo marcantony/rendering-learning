@@ -28,6 +28,24 @@ pub struct CameraParams {
     pub focus_dist: f64,
 }
 
+impl Default for CameraParams {
+    // Defaults as defined in book so that examples will line up more easily
+    fn default() -> Self {
+        Self {
+            aspect_ratio: 1.0,
+            image_width: 100,
+            samples_per_pixel: 10,
+            max_depth: 10,
+            vfov: 90.0,
+            lookfrom: Point3::zero(),
+            lookat: Point3::new(0.0, 0.0, -1.0),
+            vup: Vec3::new(0.0, 1.0, 0.0),
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+        }
+    }
+}
+
 pub struct Camera {
     params: CameraParams,
     image_height: usize,

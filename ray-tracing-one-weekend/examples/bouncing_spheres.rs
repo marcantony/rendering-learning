@@ -1,5 +1,3 @@
-use std::io::{self, BufWriter};
-
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
@@ -11,6 +9,8 @@ use ray_tracing_one_weekend::{
     texture::{Checker, SolidColor},
     vec3::{Point3, Vec3},
 };
+
+mod common;
 
 fn main() {
     let mut master_rng = Xoshiro256PlusPlus::seed_from_u64(1);
@@ -128,7 +128,5 @@ fn main() {
         focus_dist: 10.0,
     });
 
-    let mut out = BufWriter::new(io::stdout().lock());
-
-    camera.render(&mut master_rng, &world, &mut out).unwrap();
+    common::render_to_stdout(&world, &camera);
 }
