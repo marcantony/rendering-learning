@@ -1,6 +1,6 @@
 use image::Rgb32FImage;
 
-use crate::{color::Color, vec3::Point3};
+use crate::{color::Color, perlin::Perlin, vec3::Point3};
 
 pub trait Texture {
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color;
@@ -78,5 +78,15 @@ impl Texture for Image {
         let b = pixel.0[2] as f64;
 
         Color::new(r, g, b)
+    }
+}
+
+pub struct Noise {
+    pub noise: Perlin,
+}
+
+impl Texture for Noise {
+    fn value(&self, _u: f64, _v: f64, p: &Point3) -> Color {
+        Color::new(1.0, 1.0, 1.0) * self.noise.noise(p)
     }
 }
