@@ -57,7 +57,7 @@ impl<M: Material> Hittable for Sphere<M> {
             root.map(|t| {
                 let p = r.at(t);
                 let outward_normal = NormalizedVec3::from_normalized((&p - &center) / self.radius);
-                let (normal, face) = hittable::calculate_face_normal(r, outward_normal);
+                let (normal, face) = hittable::calculate_face_normal(r, outward_normal.clone());
                 (
                     &self.material,
                     HitRecord {
@@ -65,7 +65,7 @@ impl<M: Material> Hittable for Sphere<M> {
                         normal,
                         t,
                         face,
-                        uv: (0.0, 0.0),
+                        uv: get_sphere_uv(&outward_normal),
                     },
                 )
             })
@@ -85,6 +85,14 @@ impl<M: Material> Hittable for Sphere<M> {
             }
         }
     }
+}
+
+/// Given a point on the unit sphere, returns the UV coordinates
+fn get_sphere_uv(p: &Point3) -> (f64, f64) {
+    let theta = -p.y().acos();
+    let phi = -p.z().atan2(p.x()) + std::f64::consts::PI;
+
+    (phi / (std::f64::consts::PI * 2.0), theta / phi)
 }
 
 #[cfg(test)]
