@@ -18,7 +18,7 @@ fn main() {
         .unwrap()
         .decode()
         .unwrap()
-        .into_rgb8();
+        .into_rgb32f();
     let earth_surface = Lambertian {
         tex: Image { image: earth_image },
     };

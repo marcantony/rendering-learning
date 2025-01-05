@@ -25,17 +25,9 @@ impl Color {
             n.clamp(0, 255) as u8
         }
 
-        fn linear_to_gamma(linear_component: f64) -> f64 {
-            if linear_component > 0.0 {
-                linear_component.sqrt()
-            } else {
-                0.0
-            }
-        }
-
-        let ir = to_ppm(linear_to_gamma(self.r()));
-        let ig = to_ppm(linear_to_gamma(self.g()));
-        let ib = to_ppm(linear_to_gamma(self.b()));
+        let ir = to_ppm(srgb::linear_to_srgb(self.r()));
+        let ig = to_ppm(srgb::linear_to_srgb(self.g()));
+        let ib = to_ppm(srgb::linear_to_srgb(self.b()));
 
         writeln!(writer, "{} {} {}", ir, ig, ib)?;
 
@@ -92,5 +84,32 @@ mod tests {
         let output = String::from_utf8(buf);
 
         assert_eq!(output, Ok("0 181 255\n".to_string()));
+    }
+}
+
+/// Provides functions for encoding and decoding sRGB values
+/// https://en.wikipedia.org/wiki/SRGB#Transfer_function_(%22gamma%22)
+pub mod srgb {
+
+    const U: f64 = 0.04045;
+    const V: f64 = 0.0031308;
+    const A: f64 = 12.92;
+    const C: f64 = 0.055;
+    const GAMMA: f64 = 2.4;
+
+    pub fn srgb_to_linear(u: f64) -> f64 {
+        if u <= U {
+            u / A
+        } else {
+            ((u + C) / (1.0 + C)).powf(GAMMA)
+        }
+    }
+
+    pub fn linear_to_srgb(v: f64) -> f64 {
+        if v <= V {
+            A * v
+        } else {
+            (1.0 + C) * v.powf(1.0 / GAMMA) - C
+        }
     }
 }
