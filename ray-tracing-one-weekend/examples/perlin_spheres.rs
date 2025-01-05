@@ -18,6 +18,7 @@ fn main() {
 
     let perlin_texture = Noise {
         noise: Perlin::new(&mut rng),
+        scale: 4.0,
     };
 
     let material = Lambertian {
