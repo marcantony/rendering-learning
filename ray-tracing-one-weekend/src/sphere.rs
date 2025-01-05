@@ -89,15 +89,18 @@ impl<M: Material> Hittable for Sphere<M> {
 
 /// Given a point on the unit sphere, returns the UV coordinates
 fn get_sphere_uv(p: &Point3) -> (f64, f64) {
-    let theta = -p.y().acos();
-    let phi = -p.z().atan2(p.x()) + std::f64::consts::PI;
+    let theta = (-p.y()).acos();
+    let phi = (-p.z()).atan2(p.x()) + std::f64::consts::PI;
 
-    (phi / (std::f64::consts::PI * 2.0), theta / phi)
+    (
+        phi / (2.0 * std::f64::consts::PI),
+        theta / std::f64::consts::PI,
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use float_cmp::assert_approx_eq;
+    use float_cmp::{approx_eq, assert_approx_eq};
 
     use crate::{hittable::Face, material::Flat, vec3::Vec3};
 
@@ -173,5 +176,32 @@ mod tests {
         let hit = sphere.hit(&ray, &Interval { min: 0.0, max: 4.0 });
 
         assert_eq!(hit.map(|h| h.1.t), Some(4.0));
+    }
+
+    mod uv {
+        use super::*;
+
+        macro_rules! uv_coord_tests {
+            ($($name:ident: $value:expr),*) => {
+                $(
+                    #[test]
+                    fn $name() {
+                        let (point, (expected_u, expected_v)) = $value;
+                        let (u, v) = get_sphere_uv(&point);
+                        assert!(approx_eq!(f64, u, expected_u, epsilon = 0.01));
+                        assert!(approx_eq!(f64, v, expected_v, epsilon = 0.01));
+                    }
+                )*
+            };
+        }
+
+        uv_coord_tests! {
+            pos_x: (Point3::new(1.0, 0.0, 0.0), (0.5, 0.5)),
+            pos_y: (Point3::new(0.0, 1.0, 0.0), (0.5, 1.0)),
+            pos_z: (Point3::new(0.0, 0.0, 1.0), (0.25, 0.5)),
+            neg_x: (Point3::new(-1.0, 0.0, 0.0), (0.0, 0.5)),
+            neg_y: (Point3::new(0.0, -1.0, 0.0), (0.5, 0.0)),
+            neg_z: (Point3::new(0.0, 0.0, -1.0), (0.75, 0.5))
+        }
     }
 }
