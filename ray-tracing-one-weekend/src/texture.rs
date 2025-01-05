@@ -1,3 +1,5 @@
+use image::RgbImage;
+
 use crate::{color::Color, vec3::Point3};
 
 pub trait Texture {
@@ -48,6 +50,32 @@ impl<A: Texture, B: Texture> Texture for Checker<A, B> {
             self.even.value(u, v, p)
         } else {
             self.odd.value(u, v, p)
+        }
+    }
+}
+
+pub struct Image {
+    pub image: RgbImage,
+}
+
+impl Texture for Image {
+    fn value(&self, u: f64, v: f64, _p: &Point3) -> Color {
+        if self.image.height() <= 0 {
+            Color::new(0.0, 1.0, 1.0) // Return solid cyan if no texture data as debugging aid
+        } else {
+            let u = u.clamp(0.0, 1.0);
+            let v = 1.0 - v.clamp(0.0, 1.0); // Flip v to image coordinates (top to bottom)
+
+            let i = (u * (self.image.width() - 1) as f64) as u32;
+            let j = (v * (self.image.height() - 1) as f64) as u32;
+            let pixel = self.image.get_pixel(i, j);
+            let r = pixel.0[0] as f64;
+            let g = pixel.0[1] as f64;
+            let b = pixel.0[2] as f64;
+
+            let color_scale = 1.0 / 255.0;
+
+            Color::new(color_scale * r, color_scale * g, color_scale * b)
         }
     }
 }
