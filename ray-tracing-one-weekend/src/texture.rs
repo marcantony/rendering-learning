@@ -1,7 +1,7 @@
 use image::Rgb32FImage;
 
 use crate::{
-    color::{srgb, Color},
+    color::Color,
     vec3::Point3,
 };
 
@@ -57,6 +57,7 @@ impl<A: Texture, B: Texture> Texture for Checker<A, B> {
     }
 }
 
+/// A texture based on an image. The image data should be in linear color space.
 pub struct Image {
     pub image: Rgb32FImage,
 }
@@ -73,9 +74,9 @@ impl Texture for Image {
             let j = (v * (self.image.height() - 1) as f64) as u32;
 
             let pixel = self.image.get_pixel(i, j);
-            let r = srgb::srgb_to_linear(pixel.0[0] as f64);
-            let g = srgb::srgb_to_linear(pixel.0[1] as f64);
-            let b = srgb::srgb_to_linear(pixel.0[2] as f64);
+            let r = pixel.0[0] as f64;
+            let g = pixel.0[1] as f64;
+            let b = pixel.0[2] as f64;
 
             Color::new(r, g, b)
         }
