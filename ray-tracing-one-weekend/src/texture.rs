@@ -1,9 +1,6 @@
 use image::Rgb32FImage;
 
-use crate::{
-    color::Color,
-    vec3::Point3,
-};
+use crate::{color::Color, vec3::Point3};
 
 pub trait Texture {
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color;
@@ -64,21 +61,22 @@ pub struct Image {
 
 impl Texture for Image {
     fn value(&self, u: f64, v: f64, _p: &Point3) -> Color {
-        if self.image.height() <= 0 {
-            Color::new(0.0, 1.0, 1.0) // Return solid cyan if no texture data as debugging aid
-        } else {
-            let u = u.clamp(0.0, 1.0);
-            let v = 1.0 - v.clamp(0.0, 1.0); // Flip v to image coordinates (top to bottom)
+        assert!(
+            self.image.width() > 0 && self.image.height() > 0,
+            "Image has no data"
+        );
 
-            let i = (u * (self.image.width() - 1) as f64) as u32;
-            let j = (v * (self.image.height() - 1) as f64) as u32;
+        let u = u.clamp(0.0, 1.0);
+        let v = 1.0 - v.clamp(0.0, 1.0); // Flip v to image coordinates (top to bottom)
 
-            let pixel = self.image.get_pixel(i, j);
-            let r = pixel.0[0] as f64;
-            let g = pixel.0[1] as f64;
-            let b = pixel.0[2] as f64;
+        let i = (u * (self.image.width() - 1) as f64) as u32;
+        let j = (v * (self.image.height() - 1) as f64) as u32;
 
-            Color::new(r, g, b)
-        }
+        let pixel = self.image.get_pixel(i, j);
+        let r = pixel.0[0] as f64;
+        let g = pixel.0[1] as f64;
+        let b = pixel.0[2] as f64;
+
+        Color::new(r, g, b)
     }
 }
