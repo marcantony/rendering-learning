@@ -6,6 +6,10 @@ members = [
 ]
 resolver = "2"
 
+[profile.dev-raytrace]
+inherits = "dev"
+opt-level = 1
+
 [profile.bench]
 debug = true
 
