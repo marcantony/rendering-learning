@@ -37,9 +37,9 @@ impl<M, H: Hittable<Material = M>> Bvh<H> {
                 .fold(AABB::empty(), |b, h| b.merge(&h.bounding_box()));
             let choice = find_longest_axis(&bbox);
             let key_fn = match choice {
-                0 => |h: &H| h.bounding_box().x.min,
-                1 => |h: &H| h.bounding_box().y.min,
-                2 => |h: &H| h.bounding_box().z.min,
+                0 => |h: &H| h.bounding_box().x().min,
+                1 => |h: &H| h.bounding_box().y().min,
+                2 => |h: &H| h.bounding_box().z().min,
                 _ => panic!("Sorting choice should be between 0 and 2"),
             };
 
@@ -59,14 +59,14 @@ impl<M, H: Hittable<Material = M>> Bvh<H> {
 }
 
 fn find_longest_axis(bbox: &AABB) -> u8 {
-    if bbox.x.size() > bbox.y.size() {
-        if bbox.x.size() > bbox.z.size() {
+    if bbox.x().size() > bbox.y().size() {
+        if bbox.x().size() > bbox.z().size() {
             0
         } else {
             2
         }
     } else {
-        if bbox.y.size() > bbox.z.size() {
+        if bbox.y().size() > bbox.z().size() {
             1
         } else {
             2

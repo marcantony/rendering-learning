@@ -3,12 +3,27 @@ use crate::{interval::Interval, ray::Ray, vec3::Point3};
 /// An axis-aligned bounding box
 #[derive(Clone)]
 pub struct AABB {
-    pub x: Interval,
-    pub y: Interval,
-    pub z: Interval,
+    x: Interval,
+    y: Interval,
+    z: Interval,
 }
 
 impl AABB {
+    pub fn new(x: Interval, y: Interval, z: Interval) -> Self {
+        const DELTA: f64 = 1e-4;
+
+        // Adjust the AABB so that no side is narrower than some delta, padding if necessary
+        let x_padded = if x.size() < DELTA { x.expand(DELTA) } else { x };
+        let y_padded = if y.size() < DELTA { y.expand(DELTA) } else { y };
+        let z_padded = if z.size() < DELTA { z.expand(DELTA) } else { z };
+
+        AABB {
+            x: x_padded,
+            y: y_padded,
+            z: z_padded,
+        }
+    }
+
     /// Generates a bounding box from the extrema points
     pub fn new_from_points(a: &Point3, b: &Point3) -> Self {
         let x = if a.x() <= b.x() {
@@ -45,7 +60,7 @@ impl AABB {
             }
         };
 
-        AABB { x, y, z }
+        AABB::new(x, y, z)
     }
 
     pub fn empty() -> Self {
@@ -54,6 +69,18 @@ impl AABB {
             y: Interval::empty(),
             z: Interval::empty(),
         }
+    }
+
+    pub fn x(&self) -> &Interval {
+        &self.x
+    }
+
+    pub fn y(&self) -> &Interval {
+        &self.y
+    }
+
+    pub fn z(&self) -> &Interval {
+        &self.z
     }
 
     /// Tests a ray against an AABB. Returns an intersection interval if the ray hit.
