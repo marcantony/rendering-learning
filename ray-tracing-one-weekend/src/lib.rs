@@ -6,6 +6,7 @@ pub mod hittable;
 pub mod interval;
 pub mod material;
 pub mod perlin;
+pub mod quad;
 pub mod ray;
 pub mod sphere;
 pub mod texture;
