@@ -26,6 +26,7 @@ pub struct CameraParams {
     /// In degrees
     pub defocus_angle: f64,
     pub focus_dist: f64,
+    pub background: Color,
 }
 
 impl Default for CameraParams {
@@ -42,6 +43,7 @@ impl Default for CameraParams {
             vup: Vec3::new(0.0, 1.0, 0.0),
             defocus_angle: 0.0,
             focus_dist: 10.0,
+            background: Color::new(0.7, 0.8, 1.0),
         }
     }
 }
@@ -126,7 +128,7 @@ impl Camera {
                 let color = (0..self.params.samples_per_pixel)
                     .map(|_n| {
                         let ray = self.get_ray(&mut rng, i, j);
-                        ray_color(rng, &ray, &world, self.params.max_depth)
+                        self.ray_color(rng, &ray, &world, self.params.max_depth)
                     })
                     .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
                     / self.params.samples_per_pixel as f64;
@@ -170,34 +172,34 @@ impl Camera {
         let [px, py]: [f64; 2] = UnitDisc.sample(rng);
         &self.params.lookfrom + (px * &self.defocus_disk_u) + (py * &self.defocus_disk_v)
     }
-}
 
-fn ray_color<R: Rng, M: Material, H: Hittable<Material = M>>(
-    mut rng: &mut R,
-    r: &Ray,
-    world: H,
-    depth: usize,
-) -> Color {
-    if depth == 0 {
-        Color::new(0.0, 0.0, 0.0)
-    } else {
-        let interval = Interval {
-            min: 1e-10,
-            max: f64::INFINITY,
-        };
-        let hit = world.hit(r, &interval);
-        let scattered = hit.map(|(m, h)| m.scatter(&mut rng, r, &h));
-        scattered.map_or_else(
-            || {
-                let direction = r.direction.normalize();
-                let a = 0.5 * (direction.y() + 1.0);
-                (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
-            },
-            |s| {
-                s.map_or(Color::new(0.0, 0.0, 0.0), |(attenuation, scattered)| {
-                    attenuation * ray_color(rng, &scattered, world, depth - 1)
-                })
-            },
-        )
+    fn ray_color<R: Rng, M: Material, H: Hittable<Material = M>>(
+        &self,
+        rng: &mut R,
+        r: &Ray,
+        world: H,
+        depth: usize,
+    ) -> Color {
+        if depth == 0 {
+            Color::new(0.0, 0.0, 0.0)
+        } else {
+            let interval = Interval {
+                min: 1e-10,
+                max: f64::INFINITY,
+            };
+            // Not as pretty as using Option combinators, but working with closures was finicky and this just works
+            if let Some((mat, hit_rec)) = world.hit(r, &interval) {
+                let color_from_emission = mat.emitted(hit_rec.uv.0, hit_rec.uv.1, &hit_rec.p);
+                if let Some((attenuation, scattered)) = mat.scatter(rng, r, &hit_rec) {
+                    let color_from_scatter =
+                        attenuation * self.ray_color(rng, &scattered, world, depth - 1);
+                    color_from_emission + color_from_scatter
+                } else {
+                    color_from_emission
+                }
+            } else {
+                self.params.background.clone()
+            }
+        }
     }
 }

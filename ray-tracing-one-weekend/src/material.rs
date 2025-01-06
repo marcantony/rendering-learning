@@ -5,7 +5,7 @@ use crate::{
     hittable::{Face, HitRecord},
     ray::Ray,
     texture::Texture,
-    vec3::{NormalizedVec3, Vec3},
+    vec3::{NormalizedVec3, Point3, Vec3},
 };
 
 pub trait Material {
@@ -15,6 +15,8 @@ pub trait Material {
         ray: &Ray,
         hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)>;
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
 
 impl<T: Material + ?Sized> Material for &T {
@@ -26,6 +28,10 @@ impl<T: Material + ?Sized> Material for &T {
     ) -> Option<(Color, Ray)> {
         (**self).scatter(rng, ray, hitrecord)
     }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        (**self).emitted(u, v, p)
+    }
 }
 
 impl<T: Material + ?Sized> Material for Box<T> {
@@ -36,6 +42,10 @@ impl<T: Material + ?Sized> Material for Box<T> {
         hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
         (**self).scatter(rng, ray, hitrecord)
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        (**self).emitted(u, v, p)
     }
 }
 
@@ -49,6 +59,10 @@ impl Material for Flat {
         _hitrecord: &HitRecord,
     ) -> Option<(Color, Ray)> {
         None
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
     }
 }
 
@@ -73,6 +87,10 @@ impl<T: Texture> Material for Lambertian<T> {
         let scattered = Ray::new_at_time(hitrecord.p.clone(), scatter_direction, ray.time);
         let attenuation = self.tex.value(hitrecord.uv.0, hitrecord.uv.1, &hitrecord.p);
         Some((attenuation, scattered))
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
     }
 }
 
@@ -99,6 +117,10 @@ impl Material for Metal {
         } else {
             None
         }
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
     }
 }
 
@@ -139,10 +161,33 @@ impl Material for Dielectric {
 
         Some((Color::new(1.0, 1.0, 1.0), scattered))
     }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
 }
 
 /// Approximate reflectance of a dielectric using Schlick's approximation
 fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
     let r0 = ((1.0 - refraction_index) / (1.0 + refraction_index)).powi(2);
     r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+}
+
+pub struct DiffuseLight<T> {
+    pub tex: T,
+}
+
+impl<T: Texture> Material for DiffuseLight<T> {
+    fn scatter(
+        &self,
+        _rng: &mut dyn RngCore,
+        _ray: &Ray,
+        _hitrecord: &HitRecord,
+    ) -> Option<(Color, Ray)> {
+        None
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        self.tex.value(u, v, p)
+    }
 }

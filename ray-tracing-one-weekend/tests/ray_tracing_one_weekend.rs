@@ -76,6 +76,7 @@ fn test_render() {
         vup: Vec3::new(0.0, 1.0, 0.0),
         defocus_angle: 10.0,
         focus_dist: 3.4,
+        background: Color::new(0.7, 0.8, 1.0),
     });
 
     let mut out = Vec::new();

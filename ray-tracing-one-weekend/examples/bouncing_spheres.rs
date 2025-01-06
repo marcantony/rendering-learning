@@ -126,6 +126,7 @@ fn main() {
         vup: Vec3::new(0.0, 1.0, 0.0),
         defocus_angle: 0.6,
         focus_dist: 10.0,
+        ..Default::default()
     });
 
     common::render_to_stdout(&world, &camera);
