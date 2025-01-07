@@ -58,6 +58,18 @@ impl<M, H: Hittable<Material = M>> Hittable for [H] {
     }
 }
 
+impl<const N: usize, M, H: Hittable<Material = M>> Hittable for [H; N] {
+    type Material = M;
+
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&Self::Material, HitRecord)> {
+        self.as_slice().hit(r, ray_t)
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.as_slice().bounding_box()
+    }
+}
+
 impl<M, H: Hittable<Material = M> + ?Sized> Hittable for &H {
     type Material = M;
 
