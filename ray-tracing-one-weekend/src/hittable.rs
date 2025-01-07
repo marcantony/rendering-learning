@@ -70,6 +70,18 @@ impl<M, H: Hittable<Material = M> + ?Sized> Hittable for &H {
     }
 }
 
+impl<M, H: Hittable<Material = M> + ?Sized> Hittable for Box<H> {
+    type Material = M;
+
+    fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&Self::Material, HitRecord)> {
+        (**self).hit(r, ray_t)
+    }
+
+    fn bounding_box(&self) -> AABB {
+        (**self).bounding_box()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::vec3::Vec3;
