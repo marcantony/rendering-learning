@@ -176,7 +176,7 @@ fn reflectance(cosine: f64, refraction_index: f64) -> f64 {
 }
 
 pub struct DiffuseLight<T> {
-    pub tex: T,
+    pub texture: T,
 }
 
 impl<T: Texture> Material for DiffuseLight<T> {
@@ -190,6 +190,6 @@ impl<T: Texture> Material for DiffuseLight<T> {
     }
 
     fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
-        self.tex.value(u, v, p)
+        self.texture.value(u, v, p)
     }
 }

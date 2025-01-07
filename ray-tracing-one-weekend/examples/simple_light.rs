@@ -39,7 +39,7 @@ fn main() {
     });
 
     let light_material = DiffuseLight {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(4.0, 4.0, 4.0),
         },
     };
