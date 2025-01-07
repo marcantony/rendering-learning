@@ -16,12 +16,12 @@ fn test_render() {
     let mut master_rng = Xoshiro256PlusPlus::seed_from_u64(1);
 
     let material_ground = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(0.8, 0.8, 0.0),
         },
     };
     let material_center = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(0.1, 0.2, 0.5),
         },
     };

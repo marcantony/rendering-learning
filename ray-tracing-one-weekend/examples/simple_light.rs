@@ -23,7 +23,7 @@ fn main() {
     };
 
     let material = Lambertian {
-        tex: perlin_texture,
+        texture: perlin_texture,
     };
 
     let sphere1 = Box::new(Sphere {

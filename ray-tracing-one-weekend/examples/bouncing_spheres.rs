@@ -26,7 +26,7 @@ fn main() {
             albedo: Color::new(0.9, 0.9, 0.9),
         },
     );
-    let ground_material = Lambertian { tex: checker };
+    let ground_material = Lambertian { texture: checker };
     world.push(Sphere {
         center: Center::Stationary(Point3::new(0.0, -1000.0, 0.0)),
         radius: 1000.0,
@@ -49,7 +49,7 @@ fn main() {
                         &center_point + Vec3::new(0.0, master_rng.gen_range(0.0..0.5), 0.0);
                     (
                         Box::new(Lambertian {
-                            tex: SolidColor {
+                            texture: SolidColor {
                                 albedo: Color::random(&mut master_rng)
                                     * Color::random(&mut master_rng),
                             },
@@ -93,7 +93,7 @@ fn main() {
     });
 
     let material2 = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(0.4, 0.2, 0.1),
         },
     };

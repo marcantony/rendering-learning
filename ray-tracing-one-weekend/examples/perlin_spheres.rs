@@ -22,7 +22,7 @@ fn main() {
     };
 
     let material = Lambertian {
-        tex: perlin_texture,
+        texture: perlin_texture,
     };
 
     world.push(Sphere {

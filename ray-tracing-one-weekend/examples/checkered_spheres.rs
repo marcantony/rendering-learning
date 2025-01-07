@@ -21,7 +21,7 @@ fn main() {
             albedo: Color::new(0.9, 0.9, 0.9),
         },
     );
-    let lambertian = Lambertian { tex: checker };
+    let lambertian = Lambertian { texture: checker };
 
     world.push(Sphere {
         center: Center::Stationary(Point3::new(0.0, -10.0, 0.0)),

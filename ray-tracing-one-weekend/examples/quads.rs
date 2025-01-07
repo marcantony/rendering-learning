@@ -12,27 +12,27 @@ mod common;
 fn main() {
     // Materials
     let left_red = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(1.0, 0.2, 0.2),
         },
     };
     let back_green = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(0.2, 1.0, 0.2),
         },
     };
     let right_blue = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(0.2, 0.2, 1.0),
         },
     };
     let upper_orange = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(1.0, 0.5, 0.0),
         },
     };
     let lower_teal = Lambertian {
-        tex: SolidColor {
+        texture: SolidColor {
             albedo: Color::new(0.2, 0.8, 0.8),
         },
     };

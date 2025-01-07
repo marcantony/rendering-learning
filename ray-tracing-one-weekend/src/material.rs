@@ -67,7 +67,7 @@ impl Material for Flat {
 }
 
 pub struct Lambertian<T> {
-    pub tex: T,
+    pub texture: T,
 }
 
 impl<T: Texture> Material for Lambertian<T> {
@@ -85,7 +85,9 @@ impl<T: Texture> Material for Lambertian<T> {
             random_scatter_direction
         };
         let scattered = Ray::new_at_time(hitrecord.p.clone(), scatter_direction, ray.time);
-        let attenuation = self.tex.value(hitrecord.uv.0, hitrecord.uv.1, &hitrecord.p);
+        let attenuation = self
+            .texture
+            .value(hitrecord.uv.0, hitrecord.uv.1, &hitrecord.p);
         Some((attenuation, scattered))
     }
 

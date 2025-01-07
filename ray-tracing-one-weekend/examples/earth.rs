@@ -28,7 +28,7 @@ fn main() {
     });
 
     let earth_surface = Lambertian {
-        tex: Image { image: earth_image },
+        texture: Image { image: earth_image },
     };
     let globe = Sphere {
         center: Center::Stationary(Point3::new(0.0, 0.0, 0.0)),
