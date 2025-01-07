@@ -74,16 +74,24 @@ fn main() {
         &white as &dyn Material,
     )));
 
-    world.push(Box::new(make_box(
-        &Point3::new(130.0, 0.0, 65.0),
-        &Point3::new(295.0, 165.0, 230.0),
-        &white as &dyn Material,
-    )));
-    world.push(Box::new(make_box(
-        &Point3::new(265.0, 0.0, 295.0),
-        &Point3::new(430.0, 330.0, 460.0),
-        &white as &dyn Material,
-    )));
+    world.push(Box::new(
+        make_box(
+            &Point3::new(0.0, 0.0, 0.0),
+            &Point3::new(165.0, 330.0, 165.0),
+            &white as &dyn Material,
+        )
+        .rotate_y(15.0)
+        .translate(Point3::new(265.0, 0.0, 295.0)),
+    ));
+    world.push(Box::new(
+        make_box(
+            &Point3::new(0.0, 0.0, 0.0),
+            &Point3::new(165.0, 165.0, 165.0),
+            &white as &dyn Material,
+        )
+        .rotate_y(-18.0)
+        .translate(Point3::new(130.0, 0.0, 65.0)),
+    ));
 
     let world = Bvh::new(world);
 

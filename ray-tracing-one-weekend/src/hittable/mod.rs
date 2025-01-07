@@ -1,6 +1,10 @@
 pub mod quad;
+pub mod rotate_y;
 pub mod sphere;
 pub mod translate;
+
+use rotate_y::RotateY;
+use translate::Translate;
 
 use crate::{
     aabb::AABB,
@@ -35,6 +39,24 @@ pub trait Hittable {
     type Material;
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&Self::Material, HitRecord)>;
     fn bounding_box(&self) -> AABB;
+
+    fn translate(self, offset: Point3) -> Translate<Self>
+    where
+        Self: Sized,
+    {
+        Translate {
+            object: self,
+            offset,
+        }
+    }
+    /// Rotates the hittable counter-clockwise about the Y-axis by the given number of degrees
+    fn rotate_y(self, degrees: f64) -> RotateY<Self>
+    where
+        Self: Sized,
+        Self::Material: crate::material::Material,
+    {
+        RotateY::new(self, degrees)
+    }
 }
 
 impl<M, H: Hittable<Material = M>> Hittable for [H] {
