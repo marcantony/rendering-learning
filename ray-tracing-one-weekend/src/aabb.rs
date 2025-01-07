@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use crate::{interval::Interval, ray::Ray, vec3::Point3};
 
 /// An axis-aligned bounding box
@@ -118,6 +120,22 @@ fn intersect_axis(i: &Interval, origin: f64, speed: f64) -> (f64, f64) {
 impl Default for AABB {
     fn default() -> Self {
         AABB::empty()
+    }
+}
+
+impl Add<&Point3> for &AABB {
+    type Output = AABB;
+
+    fn add(self, rhs: &Point3) -> Self::Output {
+        AABB::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
+    }
+}
+
+impl Add<&AABB> for &Point3 {
+    type Output = AABB;
+
+    fn add(self, rhs: &AABB) -> Self::Output {
+        rhs + self
     }
 }
 
