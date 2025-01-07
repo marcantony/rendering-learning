@@ -4,8 +4,8 @@ use ray_tracing_one_weekend::{
     bvh::Bvh,
     camera::{Camera, CameraParams},
     color::Color,
+    hittable::sphere::{Center, Sphere},
     material::{Dielectric, Lambertian, Material, Metal},
-    sphere::{Center, Sphere},
     texture::{Checker, SolidColor},
     vec3::{Point3, Vec3},
 };

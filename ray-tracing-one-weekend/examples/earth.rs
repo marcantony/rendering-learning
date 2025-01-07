@@ -4,8 +4,8 @@ use image::ImageReader;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::srgb,
+    hittable::sphere::{Center, Sphere},
     material::Lambertian,
-    sphere::{Center, Sphere},
     texture::Image,
     vec3::Point3,
 };

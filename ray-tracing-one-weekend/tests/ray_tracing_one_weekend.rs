@@ -3,8 +3,8 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
+    hittable::sphere::{Center, Sphere},
     material::{Dielectric, Lambertian, Material, Metal},
-    sphere::{Center, Sphere},
     texture::SolidColor,
     vec3::{Point3, Vec3},
 };

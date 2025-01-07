@@ -2,9 +2,9 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
+    hittable::sphere::{Center, Sphere},
     material::Lambertian,
     perlin::Perlin,
-    sphere::{Center, Sphere},
     texture::Noise,
     vec3::Point3,
 };

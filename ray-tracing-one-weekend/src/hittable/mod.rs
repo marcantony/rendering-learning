@@ -1,3 +1,6 @@
+pub mod quad;
+pub mod sphere;
+
 use crate::{
     aabb::AABB,
     interval::Interval,
@@ -130,8 +133,8 @@ mod tests {
 
     mod slice_hittable {
         use crate::{
+            hittable::sphere::{Center, Sphere},
             material::Flat,
-            sphere::{Center, Sphere},
         };
 
         use super::*;

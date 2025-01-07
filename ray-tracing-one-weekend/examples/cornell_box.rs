@@ -4,9 +4,9 @@ use ray_tracing_one_weekend::{
     bvh::Bvh,
     camera::{Camera, CameraParams},
     color::Color,
+    hittable::quad::Quad,
     hittable::Hittable,
     material::{DiffuseLight, Lambertian, Material},
-    quad::Quad,
     texture::SolidColor,
     vec3::{Point3, Vec3},
 };
