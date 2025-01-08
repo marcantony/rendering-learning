@@ -22,9 +22,15 @@ use ray_tracing_one_weekend::{
 
 mod common;
 
+// "Dev" parameters
 const IMAGE_WIDTH: usize = 400;
 const SAMPLES_PER_PIXEL: usize = 250;
 const MAX_DEPTH: usize = 4;
+
+// "High quality" parameters
+// const IMAGE_WIDTH: usize = 800;
+// const SAMPLES_PER_PIXEL: usize = 10000;
+// const MAX_DEPTH: usize = 40;
 
 fn main() {
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(0);
