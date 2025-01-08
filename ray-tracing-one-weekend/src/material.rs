@@ -193,3 +193,27 @@ impl<T: Texture> Material for DiffuseLight<T> {
         self.texture.value(u, v, p)
     }
 }
+
+pub struct Isotropic<T> {
+    pub texture: T,
+}
+
+impl<T: Texture> Material for Isotropic<T> {
+    fn scatter(
+        &self,
+        rng: &mut dyn RngCore,
+        ray: &Ray,
+        hitrecord: &HitRecord,
+    ) -> Option<(Color, Ray)> {
+        let scattered =
+            Ray::new_at_time(hitrecord.p.clone(), Vec3::random_unit_vector(rng), ray.time);
+        let attenuation = self
+            .texture
+            .value(hitrecord.uv.0, hitrecord.uv.1, &hitrecord.p);
+        Some((attenuation, scattered))
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
+}

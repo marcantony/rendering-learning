@@ -1,3 +1,4 @@
+pub mod constant_medium;
 pub mod quad;
 pub mod rotate_y;
 pub mod sphere;

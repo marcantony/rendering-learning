@@ -1,10 +1,11 @@
+// use ray_tracing_one_weekend::material::Lambertian;
+
 use ray_tracing_one_weekend::{
     bvh::Bvh,
     camera::{Camera, CameraParams},
     color::Color,
-    hittable::quad::Quad,
-    hittable::Hittable,
-    material::{DiffuseLight, Lambertian, Material},
+    hittable::{constant_medium::ConstantMedium, quad::Quad, Hittable},
+    material::{DiffuseLight, Isotropic, Lambertian, Material},
     texture::SolidColor,
     vec3::{Point3, Vec3},
 };
@@ -29,7 +30,7 @@ fn main() {
     };
     let light = DiffuseLight {
         texture: SolidColor {
-            albedo: Color::new(15.0, 15.0, 15.0),
+            albedo: Color::new(7.0, 7.0, 7.0),
         },
     };
 
@@ -48,21 +49,21 @@ fn main() {
         &red as &dyn Material,
     )));
     world.push(Box::new(Quad::new(
-        Point3::new(343.0, 554.0, 332.0),
-        Vec3::new(-130.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -105.0),
+        Point3::new(113.0, 554.0, 127.0),
+        Vec3::new(330.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 305.0),
         &light as &dyn Material,
     )));
     world.push(Box::new(Quad::new(
-        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(0.0, 555.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         &white as &dyn Material,
     )));
     world.push(Box::new(Quad::new(
-        Point3::new(555.0, 555.0, 555.0),
-        Vec3::new(-555.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -555.0),
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
         &white as &dyn Material,
     )));
     world.push(Box::new(Quad::new(
@@ -72,24 +73,35 @@ fn main() {
         &white as &dyn Material,
     )));
 
-    world.push(Box::new(
-        common::make_box(
-            &Point3::new(0.0, 0.0, 0.0),
-            &Point3::new(165.0, 330.0, 165.0),
-            &white as &dyn Material,
-        )
-        .rotate_y(15.0)
-        .translate(Point3::new(265.0, 0.0, 295.0)),
-    ));
-    world.push(Box::new(
-        common::make_box(
-            &Point3::new(0.0, 0.0, 0.0),
-            &Point3::new(165.0, 165.0, 165.0),
-            &white as &dyn Material,
-        )
-        .rotate_y(-18.0)
-        .translate(Point3::new(130.0, 0.0, 65.0)),
-    ));
+    let box1 = common::make_box(
+        &Point3::new(0.0, 0.0, 0.0),
+        &Point3::new(165.0, 330.0, 165.0),
+        &white as &dyn Material,
+    )
+    .rotate_y(15.0)
+    .translate(Vec3::new(265.0, 0.0, 295.0));
+    let smoke = Isotropic {
+        texture: SolidColor {
+            albedo: Color::new(0.0, 0.0, 0.0),
+        },
+    };
+    let smoky_box = ConstantMedium::new(box1, 0.01, &smoke as &dyn Material);
+    world.push(Box::new(smoky_box) as Box<dyn Hittable<Material = &dyn Material>>);
+
+    let box2 = common::make_box(
+        &Point3::new(0.0, 0.0, 0.0),
+        &Point3::new(165.0, 165.0, 165.0),
+        &white as &dyn Material,
+    )
+    .rotate_y(-18.0)
+    .translate(Vec3::new(130.0, 0.0, 65.0));
+    let fog = Isotropic {
+        texture: SolidColor {
+            albedo: Color::new(1.0, 1.0, 1.0),
+        },
+    };
+    let foggy_box = ConstantMedium::new(box2, 0.01, &fog as &dyn Material);
+    world.push(Box::new(foggy_box) as Box<dyn Hittable<Material = &dyn Material>>);
 
     let world = Bvh::new(world);
 
