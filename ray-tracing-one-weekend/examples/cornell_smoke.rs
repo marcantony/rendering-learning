@@ -1,5 +1,3 @@
-// use ray_tracing_one_weekend::material::Lambertian;
-
 use ray_tracing_one_weekend::{
     bvh::Bvh,
     camera::{Camera, CameraParams},
