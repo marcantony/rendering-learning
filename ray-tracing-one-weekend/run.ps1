@@ -3,4 +3,5 @@ param (
     [string]$profile = "dev-raytrace"
 )
 
-cargo run --profile $profile --package ray-tracing-one-weekend --example $example | set-content output/$example-$(Get-Date -UFormat %s -Millisecond 0).ppm -encoding String
+cargo build --profile $profile --package ray-tracing-one-weekend --example $example
+Measure-Command { cargo run --profile $profile  --example $example | set-content output/$example-$(Get-Date -UFormat %s -Millisecond 0).ppm -encoding String }
