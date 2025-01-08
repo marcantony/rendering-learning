@@ -11,7 +11,7 @@ use crate::{
     aabb::AABB,
     interval::Interval,
     ray::Ray,
-    vec3::{NormalizedVec3, Point3},
+    vec3::{NormalizedVec3, Point3, Vec3},
 };
 
 #[derive(Debug, PartialEq)]
@@ -41,7 +41,7 @@ pub trait Hittable {
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&Self::Material, HitRecord)>;
     fn bounding_box(&self) -> AABB;
 
-    fn translate(self, offset: Point3) -> Translate<Self>
+    fn translate(self, offset: Vec3) -> Translate<Self>
     where
         Self: Sized,
     {

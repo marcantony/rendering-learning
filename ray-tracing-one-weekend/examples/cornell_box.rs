@@ -79,7 +79,7 @@ fn main() {
             &white as &dyn Material,
         )
         .rotate_y(15.0)
-        .translate(Point3::new(265.0, 0.0, 295.0)),
+        .translate(Vec3::new(265.0, 0.0, 295.0)),
     ));
     world.push(Box::new(
         common::make_box(
@@ -88,7 +88,7 @@ fn main() {
             &white as &dyn Material,
         )
         .rotate_y(-18.0)
-        .translate(Point3::new(130.0, 0.0, 65.0)),
+        .translate(Vec3::new(130.0, 0.0, 65.0)),
     ));
 
     let world = Bvh::new(world);

@@ -1,10 +1,10 @@
-use crate::{aabb::AABB, interval::Interval, material::Material, ray::Ray, vec3::Point3};
+use crate::{aabb::AABB, interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
 use super::{HitRecord, Hittable};
 
 pub struct Translate<H> {
     pub object: H,
-    pub offset: Point3,
+    pub offset: Vec3,
 }
 
 impl<M: Material, H: Hittable<Material = M>> Hittable for Translate<H> {
