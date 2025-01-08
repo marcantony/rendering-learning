@@ -7,11 +7,13 @@ use crate::{
     vec3::{NormalizedVec3, Point3, Vec3},
 };
 
+#[derive(Clone)]
 pub enum Center {
     Stationary(Point3),
     Moving(Point3, Point3),
 }
 
+#[derive(Clone)]
 pub struct Sphere<M> {
     pub center: Center,
     pub radius: f64,
