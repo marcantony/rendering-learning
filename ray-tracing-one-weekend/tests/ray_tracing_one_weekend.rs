@@ -1,5 +1,3 @@
-use rand::SeedableRng;
-use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
@@ -12,8 +10,6 @@ use ray_tracing_one_weekend::{
 #[test]
 fn test_render() {
     let expected_data = include_str!("expectations/test.ppm");
-
-    let mut master_rng = Xoshiro256PlusPlus::seed_from_u64(1);
 
     let material_ground = Lambertian {
         texture: SolidColor {
@@ -81,9 +77,7 @@ fn test_render() {
 
     let mut out = Vec::new();
 
-    camera
-        .render(&mut master_rng, &world.as_slice(), &mut out)
-        .unwrap();
+    camera.render(0, &world.as_slice(), &mut out).unwrap();
 
     let out_str = String::from_utf8(out).unwrap();
     // std::fs::write("test-out.ppm", &out_str).unwrap(); // Uncomment to view test output

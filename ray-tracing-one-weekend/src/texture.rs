@@ -2,7 +2,7 @@ use image::Rgb32FImage;
 
 use crate::{color::Color, perlin::Perlin, vec3::Point3};
 
-pub trait Texture {
+pub trait Texture: Sync + Send {
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
 

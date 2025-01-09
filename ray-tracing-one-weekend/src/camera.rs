@@ -1,7 +1,10 @@
 use std::io::{Result, Write};
 
-use rand::Rng;
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, UnitDisc};
+
+use rayon::prelude::*;
 
 use crate::{
     color::Color,
@@ -109,9 +112,9 @@ impl Camera {
 }
 
 impl Camera {
-    pub fn render<R: Rng, M: Material, H: Hittable<Material = M>>(
+    pub fn render<M: Material, H: Hittable<Material = M>>(
         &self,
-        mut rng: &mut R,
+        seed: u64,
         world: H,
         out: &mut impl Write,
     ) -> Result<()> {
@@ -119,31 +122,30 @@ impl Camera {
         let image_height = self.image_height;
 
         let indices = (0..image_height)
-            .into_iter()
-            .flat_map(|y| (0..image_width).map(move |x| (x, y)));
+            .into_par_iter()
+            .flat_map_iter(|y| (0..image_width).map(move |x| (x, y)));
 
-        let colors = indices.map(|(i, j)| {
-            let color = (0..self.params.samples_per_pixel)
-                .map(|_n| {
-                    let ray = self.get_ray(&mut rng, i, j);
-                    self.ray_color(rng, &ray, &world, self.params.max_depth)
-                })
-                .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
-                / self.params.samples_per_pixel as f64;
-
-            // Logging
-            if i == 0 {
-                eprintln!("Scanlines remaining: {}", (image_height - j));
-            }
-
-            ((i, j), color)
-        });
+        let colors: Vec<((usize, usize), Color)> = indices
+            .map(|(i, j)| {
+                let mut rng = ChaCha8Rng::seed_from_u64(seed);
+                rng.set_stream((i * image_width + j) as u64);
+                let color = (0..self.params.samples_per_pixel)
+                    .map(|_n| {
+                        let ray = self.get_ray(&mut rng, i, j);
+                        self.ray_color(&mut rng, &ray, &world, self.params.max_depth)
+                    })
+                    .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
+                    / self.params.samples_per_pixel as f64;
+                ((i, j), color)
+            })
+            .collect();
 
         writeln!(out, "P3")?;
         writeln!(out, "{} {}", image_width, image_height)?;
         writeln!(out, "255")?;
 
         colors
+            .iter()
             .map(|(_, c)| c.write_ppm(out))
             .collect::<Result<Vec<()>>>()?;
 
