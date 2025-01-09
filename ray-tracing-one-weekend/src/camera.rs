@@ -118,26 +118,34 @@ impl Camera {
         let image_width = self.params.image_width;
         let image_height = self.image_height;
 
+        let indices = (0..image_height)
+            .into_iter()
+            .flat_map(|y| (0..image_width).map(move |x| (x, y)));
+
+        let colors = indices.map(|(i, j)| {
+            let color = (0..self.params.samples_per_pixel)
+                .map(|_n| {
+                    let ray = self.get_ray(&mut rng, i, j);
+                    self.ray_color(rng, &ray, &world, self.params.max_depth)
+                })
+                .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
+                / self.params.samples_per_pixel as f64;
+
+            // Logging
+            if i == 0 {
+                eprintln!("Scanlines remaining: {}", (image_height - j));
+            }
+
+            ((i, j), color)
+        });
+
         writeln!(out, "P3")?;
         writeln!(out, "{} {}", image_width, image_height)?;
         writeln!(out, "255")?;
 
-        for j in 0..image_height {
-            eprintln!("Scanlines remaining: {}", (image_height - j));
-            for i in 0..image_width {
-                let color = (0..self.params.samples_per_pixel)
-                    .map(|_n| {
-                        let ray = self.get_ray(&mut rng, i, j);
-                        self.ray_color(rng, &ray, &world, self.params.max_depth)
-                    })
-                    .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
-                    / self.params.samples_per_pixel as f64;
-
-                color.write_ppm(out)?;
-            }
-        }
-
-        eprintln!("Done.");
+        colors
+            .map(|(_, c)| c.write_ppm(out))
+            .collect::<Result<Vec<()>>>()?;
 
         Ok(())
     }
