@@ -182,7 +182,7 @@ fn main() {
     };
     world.push(Box::new(ConstantMedium::new(
         fog_boundary,
-        0.001,
+        0.0001,
         &fog_material as &dyn Material,
     )));
 
