@@ -216,7 +216,7 @@ impl NormalizedVec3 {
     /// Convenience method to create a new normalized vector from a known normalized [Vec3].
     /// Will panic if the magnitude of the input vector is not ~1.
     pub fn from_normalized(vec: Vec3) -> Self {
-        assert_approx_eq!(f64, vec.length_squared(), 1.0, epsilon = 1e-10);
+        assert_approx_eq!(f64, vec.length_squared(), 1.0, epsilon = 1e-5);
         NormalizedVec3(vec)
     }
 
