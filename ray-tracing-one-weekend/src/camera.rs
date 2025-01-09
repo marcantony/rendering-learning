@@ -1,4 +1,10 @@
-use std::io::{Result, Write};
+use std::{
+    io::{Result, Write},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -125,6 +131,8 @@ impl Camera {
             .into_par_iter()
             .flat_map_iter(|y| (0..image_width).map(move |x| (x, y)));
 
+        let pixel_counter = Arc::new(AtomicUsize::new(0));
+
         let colors: Vec<((usize, usize), Color)> = indices
             .map(|(i, j)| {
                 let mut rng = ChaCha8Rng::seed_from_u64(seed);
@@ -136,6 +144,17 @@ impl Camera {
                     })
                     .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
                     / self.params.samples_per_pixel as f64;
+
+                let pixel_counter = Arc::clone(&pixel_counter);
+                let pixels_completed = pixel_counter.fetch_add(1, Ordering::Relaxed) + 1;
+                if pixels_completed % image_width == 0 {
+                    let scanlines_completed = pixels_completed / image_width;
+                    eprintln!(
+                        "Scanline-equivalents remaining: {}.",
+                        image_height - scanlines_completed
+                    );
+                }
+
                 ((i, j), color)
             })
             .collect();
