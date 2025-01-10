@@ -4,12 +4,15 @@ use ray_tracing_one_weekend::{
     camera::Camera,
     hittable::{quad::Quad, Hittable},
     material::Material,
+    output,
     vec3::{Point3, Vec3},
 };
 
 pub fn render_to_stdout<M: Material, H: Hittable<Material = M>>(world: &H, camera: &Camera) {
     let mut out = BufWriter::new(io::stdout().lock());
-    camera.render(0, &world, &mut out).unwrap();
+    let canvas = camera.render(0, &world);
+
+    output::output_ppm(&canvas, &mut out).unwrap();
 }
 
 /// Returns the 3D box (six sides) that contains the two opposite vertices a & b

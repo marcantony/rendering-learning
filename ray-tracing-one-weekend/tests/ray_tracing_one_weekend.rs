@@ -3,6 +3,7 @@ use ray_tracing_one_weekend::{
     color::Color,
     hittable::sphere::{Center, Sphere},
     material::{Dielectric, Lambertian, Material, Metal},
+    output,
     texture::SolidColor,
     vec3::{Point3, Vec3},
 };
@@ -77,7 +78,8 @@ fn test_render() {
 
     let mut out = Vec::new();
 
-    camera.render(0, &world.as_slice(), &mut out).unwrap();
+    let canvas = camera.render(0, &world.as_slice());
+    output::output_ppm(&canvas, &mut out).unwrap();
 
     let out_str = String::from_utf8(out).unwrap();
     // std::fs::write("test-out.ppm", &out_str).unwrap(); // Uncomment to view test output

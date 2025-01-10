@@ -5,6 +5,7 @@ pub mod color;
 pub mod hittable;
 pub mod interval;
 pub mod material;
+pub mod output;
 pub mod perlin;
 pub mod ray;
 pub mod texture;

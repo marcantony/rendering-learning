@@ -1,9 +1,6 @@
-use std::{
-    io::{Result, Write},
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
 };
 
 use rand::{Rng, SeedableRng};
@@ -118,12 +115,7 @@ impl Camera {
 }
 
 impl Camera {
-    pub fn render<M: Material, H: Hittable<Material = M>>(
-        &self,
-        seed: u64,
-        world: H,
-        out: &mut impl Write,
-    ) -> Result<()> {
+    pub fn render<M: Material, H: Hittable<Material = M>>(&self, seed: u64, world: H) -> Canvas {
         let image_width = self.params.image_width;
         let image_height = self.image_height;
 
@@ -133,7 +125,7 @@ impl Camera {
 
         let pixel_counter = Arc::new(AtomicUsize::new(0));
 
-        let colors: Vec<((usize, usize), Color)> = indices
+        let mut colors: Vec<((usize, usize), Color)> = indices
             .map(|(i, j)| {
                 let mut rng = ChaCha8Rng::seed_from_u64(seed);
                 rng.set_stream((i * image_width + j) as u64);
@@ -159,16 +151,15 @@ impl Camera {
             })
             .collect();
 
-        writeln!(out, "P3")?;
-        writeln!(out, "{} {}", image_width, image_height)?;
-        writeln!(out, "255")?;
+        // Sort pixels in row-major order
+        colors.sort_unstable_by_key(|((x, y), _)| (*y, *x));
 
-        colors
-            .iter()
-            .map(|(_, c)| c.write_ppm(out))
-            .collect::<Result<Vec<()>>>()?;
-
-        Ok(())
+        Canvas {
+            samples: self.params.samples_per_pixel,
+            width: image_width,
+            height: image_height,
+            data: colors.into_iter().map(|(_, c)| c).collect(),
+        }
     }
 
     /// Returns a randomly sampled camera ray for the pixel at location (i, j).
@@ -231,4 +222,12 @@ impl Camera {
             }
         }
     }
+}
+
+pub struct Canvas {
+    pub samples: usize,
+    pub width: usize,
+    pub height: usize,
+    /// Image pixels in row-major order
+    pub data: Vec<Color>,
 }
