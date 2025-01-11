@@ -73,6 +73,14 @@ impl AABB {
         }
     }
 
+    pub fn universe() -> Self {
+        AABB {
+            x: Interval::universe(),
+            y: Interval::universe(),
+            z: Interval::universe(),
+        }
+    }
+
     pub fn x(&self) -> &Interval {
         &self.x
     }
