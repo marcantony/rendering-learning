@@ -6,8 +6,9 @@ use std::{
 use float_cmp::{assert_approx_eq, ApproxEq, F64Margin};
 use rand::Rng;
 use rand_distr::{Distribution, UnitSphere};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vec3([f64; 3]);
 pub type Point3 = Vec3;
 

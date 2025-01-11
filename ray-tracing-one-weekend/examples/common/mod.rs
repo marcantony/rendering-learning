@@ -1,18 +1,74 @@
-use std::io::{self, BufWriter};
+use std::{
+    fs,
+    io::{self, BufWriter},
+    time::SystemTime,
+};
 
 use ray_tracing_one_weekend::{
-    camera::Camera,
+    camera::{Camera, Canvas},
     hittable::{quad::Quad, Hittable},
     material::Material,
     output,
     vec3::{Point3, Vec3},
 };
 
+#[allow(dead_code)]
 pub fn render_to_stdout<M: Material, H: Hittable<Material = M>>(world: &H, camera: &Camera) {
     let mut out = BufWriter::new(io::stdout().lock());
     let canvas = camera.render(0, &world);
 
     output::output_ppm(&canvas, &mut out).unwrap();
+}
+
+#[allow(dead_code)]
+pub fn render_save_checkpoint<M: Material, H: Hittable<Material = M>>(
+    world: &H,
+    camera: &Camera,
+    checkpoint_name: &str,
+) {
+    let mut out = BufWriter::new(io::stdout().lock());
+    let canvas = camera.render(0, &world);
+
+    let output_checkpoint = bincode::serialize(&canvas).unwrap();
+    write_to_file(&output_checkpoint, checkpoint_name, "chkpt");
+
+    output::output_ppm(&canvas, &mut out).unwrap();
+}
+
+#[allow(dead_code)]
+pub fn render_from_checkpoint<M: Material, H: Hittable<Material = M>>(
+    world: &H,
+    camera: &Camera,
+    checkpoint_name: &str,
+) {
+    let checkpoint_bytes: Vec<u8> = read_from_file(checkpoint_name);
+    let checkpoint: Canvas = bincode::deserialize(&checkpoint_bytes.as_slice()).unwrap();
+
+    let mut out = BufWriter::new(io::stdout().lock());
+    let canvas = camera.render(checkpoint.samples as u64, &world);
+    let new_checkpoint = canvas.merge(&checkpoint);
+
+    let output_checkpoint = bincode::serialize(&new_checkpoint).unwrap();
+    write_to_file(&output_checkpoint, checkpoint_name, "chkpt");
+
+    output::output_ppm(&new_checkpoint, &mut out).unwrap();
+}
+
+fn write_to_file(data: &[u8], filename_prefix: &str, extension: &str) {
+    let filename = format!(
+        "{}-{}.{}",
+        filename_prefix,
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("time went backwards")
+            .as_secs(),
+        extension
+    );
+    fs::write(filename, data).expect("unable to write file")
+}
+
+fn read_from_file(filename: &str) -> Vec<u8> {
+    fs::read(filename).unwrap()
 }
 
 /// Returns the 3D box (six sides) that contains the two opposite vertices a & b

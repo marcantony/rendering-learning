@@ -231,4 +231,10 @@ fn main() {
     });
 
     common::render_to_stdout(&world.as_slice(), &camera);
+    // common::render_save_checkpoint(&world.as_slice(), &camera, "output/final-scene");
+    // common::render_from_checkpoint(
+    //     &world.as_slice(),
+    //     &camera,
+    //     "output/final-scene-1736561842.chkpt",
+    // );
 }

@@ -8,6 +8,7 @@ use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, UnitDisc};
 
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     color::Color,
@@ -224,10 +225,36 @@ impl Camera {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Canvas {
     pub samples: usize,
     pub width: usize,
     pub height: usize,
     /// Image pixels in row-major order
     pub data: Vec<Color>,
+}
+
+impl Canvas {
+    pub fn merge(&self, other: &Canvas) -> Canvas {
+        assert_eq!(self.width, other.width);
+        assert_eq!(self.height, other.height);
+        assert_eq!(self.data.len(), other.data.len());
+
+        let total_samples = self.samples + other.samples;
+        let new_data = self
+            .data
+            .iter()
+            .zip(other.data.iter())
+            .map(|(checkpoint_pixel, new_pixel)| {
+                (checkpoint_pixel * self.samples as f64 + new_pixel * other.samples as f64)
+                    / (total_samples as f64)
+            })
+            .collect::<Vec<_>>();
+        Canvas {
+            samples: total_samples,
+            width: self.width,
+            height: self.height,
+            data: new_data,
+        }
+    }
 }
