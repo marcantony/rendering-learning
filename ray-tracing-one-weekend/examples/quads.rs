@@ -1,7 +1,7 @@
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
-    hittable::quad::Quad,
+    hittable::flat::quad::Quad,
     material::Lambertian,
     texture::SolidColor,
     vec3::{Point3, Vec3},

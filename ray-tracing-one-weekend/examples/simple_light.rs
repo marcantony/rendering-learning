@@ -3,9 +3,11 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
-    hittable::quad::Quad,
-    hittable::sphere::{Center, Sphere},
-    hittable::Hittable,
+    hittable::{
+        flat::quad::Quad,
+        sphere::{Center, Sphere},
+        Hittable,
+    },
     material::{DiffuseLight, Lambertian, Material},
     perlin::Perlin,
     texture::{Noise, SolidColor},

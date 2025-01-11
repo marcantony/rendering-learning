@@ -6,7 +6,7 @@ use std::{
 
 use ray_tracing_one_weekend::{
     camera::{Camera, Canvas},
-    hittable::{quad::Quad, Hittable},
+    hittable::{flat::quad::Quad, Hittable},
     material::Material,
     output,
     vec3::{Point3, Vec3},

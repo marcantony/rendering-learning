@@ -1,6 +1,5 @@
 pub mod constant_medium;
 pub mod flat;
-pub mod quad;
 pub mod rotate_y;
 pub mod sphere;
 pub mod translate;

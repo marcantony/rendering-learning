@@ -10,7 +10,7 @@ use ray_tracing_one_weekend::{
     color::{srgb, Color},
     hittable::{
         constant_medium::ConstantMedium,
-        quad::Quad,
+        flat::quad::Quad,
         sphere::{Center, Sphere},
         Hittable,
     },

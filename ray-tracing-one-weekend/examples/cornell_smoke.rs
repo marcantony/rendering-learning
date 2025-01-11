@@ -2,7 +2,7 @@ use ray_tracing_one_weekend::{
     bvh::Bvh,
     camera::{Camera, CameraParams},
     color::Color,
-    hittable::{constant_medium::ConstantMedium, quad::Quad, Hittable},
+    hittable::{constant_medium::ConstantMedium, flat::quad::Quad, Hittable},
     material::{DiffuseLight, Isotropic, Lambertian, Material},
     texture::SolidColor,
     vec3::{Point3, Vec3},
