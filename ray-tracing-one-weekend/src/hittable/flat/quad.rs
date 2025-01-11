@@ -20,8 +20,8 @@ impl<M> Quad<M> {
     /// originating from the starting corner.
     pub fn new(q: Point3, u: Vec3, v: Vec3, material: M) -> Self {
         // Compute the bounding box of all four vertices
-        let bbox_diagonal1 = AABB::new_from_points(&q, &(&q + &u + &v));
-        let bbox_diagonal2 = AABB::new_from_points(&(&q + &u), &(&q + &v));
+        let bbox_diagonal1 = AABB::from_extrema(&q, &(&q + &u + &v));
+        let bbox_diagonal2 = AABB::from_extrema(&(&q + &u), &(&q + &v));
         let bbox = bbox_diagonal1.merge(&bbox_diagonal2);
 
         let plane = Plane::new(q, u, v, material);

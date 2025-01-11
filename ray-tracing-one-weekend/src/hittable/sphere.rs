@@ -77,12 +77,10 @@ impl<M: Material> Hittable for Sphere<M> {
     fn bounding_box(&self) -> crate::aabb::AABB {
         let rvec = Vec3::new(self.radius, self.radius, self.radius);
         match &self.center {
-            Center::Stationary(center) => {
-                AABB::new_from_points(&(center - &rvec), &(center + &rvec))
-            }
+            Center::Stationary(center) => AABB::from_extrema(&(center - &rvec), &(center + &rvec)),
             Center::Moving(start, end) => {
-                let start_box = AABB::new_from_points(&(start - &rvec), &(start + &rvec));
-                let end_box = AABB::new_from_points(&(end - &rvec), &(end + &rvec));
+                let start_box = AABB::from_extrema(&(start - &rvec), &(start + &rvec));
+                let end_box = AABB::from_extrema(&(end - &rvec), &(end + &rvec));
                 start_box.merge(&end_box)
             }
         }

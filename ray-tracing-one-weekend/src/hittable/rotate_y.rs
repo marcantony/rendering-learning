@@ -61,7 +61,7 @@ impl<M: Material, H: Hittable<Material = M>> RotateY<H> {
         let min_point = Point3::new(min_x, min_y, min_z);
         let max_point = Point3::new(max_x, max_y, max_z);
 
-        let rotated_bbox = AABB::new_from_points(&min_point, &max_point);
+        let rotated_bbox = AABB::from_extrema(&min_point, &max_point);
 
         RotateY {
             object,

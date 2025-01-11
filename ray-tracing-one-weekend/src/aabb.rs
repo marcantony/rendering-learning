@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::{borrow::Borrow, ops::Add};
 
 use crate::{interval::Interval, ray::Ray, vec3::Point3};
 
@@ -27,7 +27,7 @@ impl AABB {
     }
 
     /// Generates a bounding box from the extrema points
-    pub fn new_from_points(a: &Point3, b: &Point3) -> Self {
+    pub fn from_extrema(a: &Point3, b: &Point3) -> Self {
         let x = if a.x() <= b.x() {
             Interval {
                 min: a.x(),
@@ -63,6 +63,32 @@ impl AABB {
         };
 
         AABB::new(x, y, z)
+    }
+
+    /// Generates a bounding box containing a set of arbitrary points. Panics if
+    /// the set of points is empty.
+    pub fn from_points<P: Borrow<Point3>>(points: &[P]) -> Self {
+        assert!(!points.is_empty());
+
+        let first = &points[0].borrow();
+        let (min, max) = points.iter().fold(
+            (
+                [first.x(), first.y(), first.z()],
+                [first.x(), first.y(), first.z()],
+            ),
+            |(mn, mx), p| {
+                let p = p.borrow();
+                (
+                    [mn[0].min(p.x()), mn[1].min(p.y()), mn[2].min(p.z())],
+                    [mx[0].max(p.x()), mx[1].max(p.y()), mx[2].max(p.z())],
+                )
+            },
+        );
+
+        let min_point = Point3::new(min[0], min[1], min[2]);
+        let max_point = Point3::new(max[0], max[1], max[2]);
+
+        AABB::from_extrema(&min_point, &max_point)
     }
 
     pub fn empty() -> Self {
@@ -160,7 +186,7 @@ mod tests {
                 fn $name() {
                     let (ray, ray_t, expected) = $value;
 
-                    let aabb = AABB::new_from_points(&Point3::new(2.0, 2.0, 2.0), &Point3::new(4.0, 4.0, 4.0));
+                    let aabb = AABB::from_extrema(&Point3::new(2.0, 2.0, 2.0), &Point3::new(4.0, 4.0, 4.0));
 
                     assert_eq!(aabb.hit(&ray, &ray_t), expected);
                 }
