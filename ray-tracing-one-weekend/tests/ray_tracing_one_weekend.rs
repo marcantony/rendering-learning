@@ -87,7 +87,7 @@ fn test_render() {
     output::output_ppm(&canvas, &mut out).unwrap();
 
     let out_str = String::from_utf8(out).unwrap();
-    std::fs::write("test-out.ppm", &out_str).unwrap(); // Uncomment to view test output
+    // std::fs::write("test-out.ppm", &out_str).unwrap(); // Uncomment to view test output
     assert!(
         &out_str == expected_data,
         "output image did not equal expectation"
