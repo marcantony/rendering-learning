@@ -2,7 +2,7 @@ use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
     hittable::{
-        flat::{plane::Plane, quad::Quad},
+        flat::{plane::Plane, quad::Quad, triangle::Triangle},
         Hittable,
     },
     material::{Lambertian, Material},
@@ -55,7 +55,7 @@ fn main() {
         Vec3::new(0.0, 4.0, 0.0),
         &left_red as &dyn Material,
     )));
-    world.push(Box::new(Quad::new(
+    world.push(Box::new(Triangle::new(
         Point3::new(-2.0, -2.0, 0.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 4.0, 0.0),
