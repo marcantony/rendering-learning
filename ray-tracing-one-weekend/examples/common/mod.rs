@@ -15,7 +15,7 @@ use ray_tracing_one_weekend::{
 #[allow(dead_code)]
 pub fn render_to_stdout<M: Material, H: Hittable<Material = M>>(world: &H, camera: &Camera) {
     let mut out = BufWriter::new(io::stdout().lock());
-    let canvas = camera.render(0, &world);
+    let canvas = camera.render(&world);
 
     output::output_ppm(&canvas, &mut out).unwrap();
 }
@@ -27,7 +27,7 @@ pub fn render_save_checkpoint<M: Material, H: Hittable<Material = M>>(
     checkpoint_name: &str,
 ) {
     let mut out = BufWriter::new(io::stdout().lock());
-    let canvas = camera.render(0, &world);
+    let canvas = camera.render(&world);
 
     let output_checkpoint = bincode::serialize(&canvas).unwrap();
     write_to_file(&output_checkpoint, checkpoint_name, "chkpt");
@@ -45,13 +45,12 @@ pub fn render_from_checkpoint<M: Material, H: Hittable<Material = M>>(
     let checkpoint: Canvas = bincode::deserialize(&checkpoint_bytes.as_slice()).unwrap();
 
     let mut out = BufWriter::new(io::stdout().lock());
-    let canvas = camera.render(checkpoint.samples as u64, &world);
-    let new_checkpoint = canvas.merge(&checkpoint);
+    let new_render = camera.render_from_checkpoint(&world, &checkpoint);
 
-    let output_checkpoint = bincode::serialize(&new_checkpoint).unwrap();
+    let output_checkpoint = bincode::serialize(&new_render).unwrap();
     write_to_file(&output_checkpoint, checkpoint_name, "chkpt");
 
-    output::output_ppm(&new_checkpoint, &mut out).unwrap();
+    output::output_ppm(&new_render, &mut out).unwrap();
 }
 
 fn write_to_file(data: &[u8], filename_prefix: &str, extension: &str) {

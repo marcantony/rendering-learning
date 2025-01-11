@@ -8,8 +8,7 @@ pub fn output_ppm(canvas: &Canvas, out: &mut impl Write) -> Result<()> {
     writeln!(out, "255")?;
 
     canvas
-        .data
-        .iter()
+        .pixel_data()
         .map(|c| c.write_ppm(out))
         .collect::<Result<()>>()
 }

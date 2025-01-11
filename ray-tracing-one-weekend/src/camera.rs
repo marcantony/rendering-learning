@@ -20,6 +20,7 @@ use crate::{
     vec3::{NormalizedVec3, Point3, Vec3},
 };
 
+#[derive(Clone)]
 pub struct CameraParams {
     pub aspect_ratio: f64,
     pub image_width: usize,
@@ -34,6 +35,7 @@ pub struct CameraParams {
     pub defocus_angle: f64,
     pub focus_dist: f64,
     pub background: Color,
+    pub seed: u64,
 }
 
 impl Default for CameraParams {
@@ -51,6 +53,7 @@ impl Default for CameraParams {
             defocus_angle: 0.0,
             focus_dist: 10.0,
             background: Color::new(0.7, 0.8, 1.0),
+            seed: 0,
         }
     }
 }
@@ -116,7 +119,34 @@ impl Camera {
 }
 
 impl Camera {
-    pub fn render<M: Material, H: Hittable<Material = M>>(&self, seed: u64, world: H) -> Canvas {
+    pub fn render<M: Material, H: Hittable<Material = M>>(&self, world: H) -> Canvas {
+        self._render(0, world)
+    }
+
+    /**
+     * Renders a scene, continuing from a previous checkpoint. Behavior is undefined if
+     * the supplied checkpoint belongs to a different scene.
+     *
+     * Note: rendering from a checkpoint is deterministic. (Rendering from the same
+     * checkpoint multiple times will result in the same render.) However, because
+     * floating-point arithmetic is not associative, rendering N + N samples of a scene
+     * using checkpointing will not produce the same result as rendering 2N samples at
+     * once.
+     */
+    pub fn render_from_checkpoint<M: Material, H: Hittable<Material = M>>(
+        &self,
+        world: H,
+        checkpoint: &Canvas,
+    ) -> Canvas {
+        let new_render = self._render(checkpoint.samples, world);
+        new_render.merge(&checkpoint)
+    }
+
+    fn _render<M: Material, H: Hittable<Material = M>>(
+        &self,
+        samples_already_rendered: usize,
+        world: H,
+    ) -> Canvas {
         let image_width = self.params.image_width;
         let image_height = self.image_height;
 
@@ -128,15 +158,20 @@ impl Camera {
 
         let mut colors: Vec<((usize, usize), Color)> = indices
             .map(|(i, j)| {
-                let mut rng = ChaCha8Rng::seed_from_u64(seed);
-                rng.set_stream((i * image_width + j) as u64);
-                let color = (0..self.params.samples_per_pixel)
-                    .map(|_n| {
+                let mut rng = ChaCha8Rng::seed_from_u64(self.params.seed);
+                let color_sum = (0..self.params.samples_per_pixel)
+                    .map(|n| n + samples_already_rendered)
+                    .map(|sample_index| {
+                        // Use a different RNG stream per sample so that RNG is deterministic
+                        // whether starting a fresh render or continuing from a checkpoint.
+                        let stream_index = (sample_index * image_width * image_height
+                            + i * image_width
+                            + j) as u64;
+                        rng.set_stream(stream_index);
                         let ray = self.get_ray(&mut rng, i, j);
                         self.ray_color(&mut rng, &ray, &world, self.params.max_depth)
                     })
-                    .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c)
-                    / self.params.samples_per_pixel as f64;
+                    .fold(Color::new(0.0, 0.0, 0.0), |acc, c| acc + c);
 
                 let pixel_counter = Arc::clone(&pixel_counter);
                 let pixels_completed = pixel_counter.fetch_add(1, Ordering::Relaxed) + 1;
@@ -148,7 +183,7 @@ impl Camera {
                     );
                 }
 
-                ((i, j), color)
+                ((i, j), color_sum)
             })
             .collect();
 
@@ -225,13 +260,13 @@ impl Camera {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Canvas {
     pub samples: usize,
     pub width: usize,
     pub height: usize,
     /// Image pixels in row-major order
-    pub data: Vec<Color>,
+    data: Vec<Color>,
 }
 
 impl Canvas {
@@ -245,10 +280,7 @@ impl Canvas {
             .data
             .iter()
             .zip(other.data.iter())
-            .map(|(checkpoint_pixel, new_pixel)| {
-                (checkpoint_pixel * self.samples as f64 + new_pixel * other.samples as f64)
-                    / (total_samples as f64)
-            })
+            .map(|(p1, p2)| p1 + p2)
             .collect::<Vec<_>>();
         Canvas {
             samples: total_samples,
@@ -256,5 +288,41 @@ impl Canvas {
             height: self.height,
             data: new_data,
         }
+    }
+
+    pub fn pixel_data<'a>(&'a self) -> impl Iterator<Item = Color> + 'a {
+        self.data.iter().map(|c| c / (self.samples as f64))
+    }
+}
+
+#[cfg(test)]
+mod canvas_tests {
+    use super::*;
+
+    #[test]
+    fn test_merge() {
+        let c1 = Canvas {
+            samples: 10,
+            width: 100,
+            height: 100,
+            data: vec![Color::new(1.0, 1.0, 1.0), Color::new(1.0, 1.0, 1.0)],
+        };
+
+        let c2 = Canvas {
+            samples: 10,
+            width: 100,
+            height: 100,
+            data: vec![Color::new(2.0, 3.0, 4.0), Color::new(5.0, 6.0, 7.0)],
+        };
+
+        assert_eq!(
+            c1.merge(&c2),
+            Canvas {
+                samples: 20,
+                width: 100,
+                height: 100,
+                data: vec![Color::new(3.0, 4.0, 5.0), Color::new(6.0, 7.0, 8.0)]
+            }
+        );
     }
 }
