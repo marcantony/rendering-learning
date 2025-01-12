@@ -4,6 +4,7 @@ pub mod camera;
 pub mod color;
 pub mod hittable;
 pub mod interval;
+pub mod io;
 pub mod material;
 pub mod output;
 pub mod perlin;
