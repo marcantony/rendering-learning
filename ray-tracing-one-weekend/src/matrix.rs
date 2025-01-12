@@ -5,6 +5,20 @@ use crate::vec3::Vec3;
 #[derive(Debug, PartialEq)]
 pub struct Matrix3(pub [[f64; 3]; 3]);
 
+impl Matrix3 {
+    pub fn transpose(&self) -> Self {
+        let mut out = [[0.0; 3]; 3];
+
+        for n in 0..3 {
+            for m in 0..3 {
+                out[n][m] = self.0[m][n];
+            }
+        }
+
+        Matrix3(out)
+    }
+}
+
 impl Mul<&Matrix3> for &Matrix3 {
     type Output = Matrix3;
 
@@ -68,5 +82,12 @@ mod tests {
         let b = Vec3::new(1.0, 2.0, 3.0);
 
         assert_eq!(&a * &b, Vec3::new(2.0, 7.0, 2.0));
+    }
+
+    #[test]
+    fn transpose_matrix() {
+        let a = Matrix3([[1.0; 3], [2.0; 3], [3.0; 3]]);
+
+        assert_eq!(a.transpose(), Matrix3([[1.0, 2.0, 3.0]; 3]));
     }
 }

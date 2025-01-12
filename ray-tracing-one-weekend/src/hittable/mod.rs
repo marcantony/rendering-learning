@@ -1,10 +1,10 @@
 pub mod constant_medium;
 pub mod flat;
-pub mod rotate_y;
 pub mod sphere;
+pub mod transform;
 pub mod translate;
 
-use rotate_y::RotateY;
+use transform::Transform;
 use translate::Translate;
 
 use crate::{
@@ -51,12 +51,12 @@ pub trait Hittable: Sync + Send {
         }
     }
     /// Rotates the hittable counter-clockwise about the Y-axis by the given number of degrees
-    fn rotate_y(self, degrees: f64) -> RotateY<Self>
+    fn rotate_y(self, degrees: f64) -> Transform<Self>
     where
         Self: Sized,
         Self::Material: crate::material::Material,
     {
-        RotateY::new(self, degrees)
+        Transform::rotate_y(self, degrees)
     }
 }
 
