@@ -10,6 +10,7 @@ use translate::Translate;
 use crate::{
     aabb::AABB,
     interval::Interval,
+    material::Material,
     ray::Ray,
     vec3::{NormalizedVec3, Point3, Vec3},
 };
@@ -54,7 +55,7 @@ pub trait Hittable: Sync + Send {
     fn rotate_x(self, degrees: f64) -> Transform<Self>
     where
         Self: Sized,
-        Self::Material: crate::material::Material,
+        Self::Material: Material,
     {
         Transform::rotate_x(self, degrees)
     }
@@ -62,7 +63,7 @@ pub trait Hittable: Sync + Send {
     fn rotate_y(self, degrees: f64) -> Transform<Self>
     where
         Self: Sized,
-        Self::Material: crate::material::Material,
+        Self::Material: Material,
     {
         Transform::rotate_y(self, degrees)
     }
@@ -70,7 +71,7 @@ pub trait Hittable: Sync + Send {
     fn rotate_z(self, degrees: f64) -> Transform<Self>
     where
         Self: Sized,
-        Self::Material: crate::material::Material,
+        Self::Material: Material,
     {
         Transform::rotate_z(self, degrees)
     }
@@ -78,7 +79,7 @@ pub trait Hittable: Sync + Send {
     fn scale(self, scale: f64) -> Transform<Self>
     where
         Self: Sized,
-        Self::Material: crate::material::Material,
+        Self::Material: Material,
     {
         Transform::scale(self, scale)
     }
