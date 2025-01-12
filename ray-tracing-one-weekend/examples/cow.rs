@@ -3,6 +3,7 @@ use std::io::BufReader;
 use ray_tracing_one_weekend::{
     camera::{Camera, CameraParams},
     color::Color,
+    hittable::Hittable,
     io::wavefront_obj::WavefrontObj,
     material::Lambertian,
     texture::SolidColor,
@@ -25,7 +26,7 @@ fn main() {
 
     let mut world = Vec::new();
 
-    world.push(obj);
+    world.push(obj.rotate_z(45.0).rotate_y(-45.0).scale(2.0));
 
     let camera = Camera::new(CameraParams {
         aspect_ratio: 16.0 / 9.0,
@@ -33,7 +34,7 @@ fn main() {
         samples_per_pixel: 100,
         max_depth: 50,
         vfov: 20.0,
-        lookfrom: Point3::new(4.5, 3.0, 2.5),
+        lookfrom: Point3::new(0.0, 5.0, 10.0),
         lookat: Point3::new(0.0, 0.0, 0.0),
         vup: Vec3::new(0.0, 1.0, 0.0),
         defocus_angle: 0.0,

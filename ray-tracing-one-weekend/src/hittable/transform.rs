@@ -18,6 +18,24 @@ pub struct Transform<H> {
 }
 
 impl<M: Material, H: Hittable<Material = M>> Transform<H> {
+    pub fn rotate_x(object: H, degrees: f64) -> Self {
+        let radians = f64::to_radians(degrees);
+        let (sin_theta, cos_theta) = f64::sin_cos(radians);
+
+        let transformation = Matrix3([
+            [1.0, 0.0, 0.0],
+            [0.0, cos_theta, -sin_theta],
+            [0.0, sin_theta, cos_theta],
+        ]);
+        let inv_transformation = Matrix3([
+            [1.0, 0.0, 0.0],
+            [0.0, cos_theta, sin_theta],
+            [0.0, -sin_theta, cos_theta],
+        ]);
+
+        Transform::new(object, transformation, inv_transformation)
+    }
+
     pub fn rotate_y(object: H, degrees: f64) -> Self {
         let radians = f64::to_radians(degrees);
         let (sin_theta, cos_theta) = f64::sin_cos(radians);
@@ -31,6 +49,36 @@ impl<M: Material, H: Hittable<Material = M>> Transform<H> {
             [cos_theta, 0.0, -sin_theta],
             [0.0, 1.0, 0.0],
             [sin_theta, 0.0, cos_theta],
+        ]);
+
+        Transform::new(object, transformation, inv_transformation)
+    }
+
+    pub fn rotate_z(object: H, degrees: f64) -> Self {
+        let radians = f64::to_radians(degrees);
+        let (sin_theta, cos_theta) = f64::sin_cos(radians);
+
+        let transformation = Matrix3([
+            [cos_theta, -sin_theta, 0.0],
+            [sin_theta, cos_theta, 0.0],
+            [0.0, 0.0, 1.0],
+        ]);
+        let inv_transformation = Matrix3([
+            [cos_theta, sin_theta, 0.0],
+            [-sin_theta, cos_theta, 0.0],
+            [0.0, 0.0, 1.0],
+        ]);
+
+        Transform::new(object, transformation, inv_transformation)
+    }
+
+    pub fn scale(object: H, scale: f64) -> Self {
+        let transformation = Matrix3([[scale, 0.0, 0.0], [0.0, scale, 0.0], [0.0, 0.0, scale]]);
+        let inv_scale = 1.0 / scale;
+        let inv_transformation = Matrix3([
+            [inv_scale, 0.0, 0.0],
+            [0.0, inv_scale, 0.0],
+            [0.0, 0.0, inv_scale],
         ]);
 
         Transform::new(object, transformation, inv_transformation)

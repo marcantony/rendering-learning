@@ -50,6 +50,14 @@ pub trait Hittable: Sync + Send {
             offset,
         }
     }
+    /// Rotates the hittable counter-clockwise about the X-axis by the given number of degrees
+    fn rotate_x(self, degrees: f64) -> Transform<Self>
+    where
+        Self: Sized,
+        Self::Material: crate::material::Material,
+    {
+        Transform::rotate_x(self, degrees)
+    }
     /// Rotates the hittable counter-clockwise about the Y-axis by the given number of degrees
     fn rotate_y(self, degrees: f64) -> Transform<Self>
     where
@@ -57,6 +65,22 @@ pub trait Hittable: Sync + Send {
         Self::Material: crate::material::Material,
     {
         Transform::rotate_y(self, degrees)
+    }
+    /// Rotates the hittable counter-clockwise about the Z-axis by the given number of degrees
+    fn rotate_z(self, degrees: f64) -> Transform<Self>
+    where
+        Self: Sized,
+        Self::Material: crate::material::Material,
+    {
+        Transform::rotate_z(self, degrees)
+    }
+
+    fn scale(self, scale: f64) -> Transform<Self>
+    where
+        Self: Sized,
+        Self::Material: crate::material::Material,
+    {
+        Transform::scale(self, scale)
     }
 }
 
