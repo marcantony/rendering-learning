@@ -105,7 +105,7 @@ fn main() {
     let camera = Camera::new(CameraParams {
         aspect_ratio: 1.0,
         image_width: 600,
-        samples_per_pixel: 50,
+        samples_per_pixel: 200,
         max_depth: 40,
         background: Color::new(0.0, 0.0, 0.0),
         vfov: 40.0,
