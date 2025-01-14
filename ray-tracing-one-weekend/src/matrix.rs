@@ -2,7 +2,7 @@ use std::ops::Mul;
 
 use crate::vec3::Vec3;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Matrix3(pub [[f64; 3]; 3]);
 
 impl Matrix3 {

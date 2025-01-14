@@ -4,6 +4,7 @@ use super::{Face, HitRecord, Hittable};
 
 /// A hittable for which rays have a random chance to intersect, proportional to the density,
 /// at any point in the medium. Only intended to be used with Isotropic material.
+#[derive(Clone)]
 pub struct ConstantMedium<M, H> {
     boundary: H,
     neg_inv_density: f64,

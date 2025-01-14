@@ -9,6 +9,7 @@ use crate::{
 
 use super::{HitRecord, Hittable};
 
+#[derive(Clone)]
 pub struct Transform<H> {
     object: H,
     bbox: AABB,

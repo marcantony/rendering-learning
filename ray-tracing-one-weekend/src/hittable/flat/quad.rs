@@ -9,6 +9,7 @@ use crate::{
 
 use super::plane::Plane;
 
+#[derive(Clone)]
 pub struct Quad<M> {
     plane: Plane<M>,
     bbox: AABB,

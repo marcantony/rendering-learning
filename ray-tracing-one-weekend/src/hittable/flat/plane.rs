@@ -7,6 +7,7 @@ use crate::{
     vec3::{NormalizedVec3, Point3, Vec3},
 };
 
+#[derive(Clone)]
 pub struct Plane<M> {
     q: Point3,
     u: Vec3,

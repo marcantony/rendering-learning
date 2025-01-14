@@ -2,6 +2,7 @@ use crate::{aabb::AABB, interval::Interval, material::Material, ray::Ray, vec3::
 
 use super::{HitRecord, Hittable};
 
+#[derive(Clone)]
 pub struct Translate<H> {
     pub object: H,
     pub offset: Vec3,

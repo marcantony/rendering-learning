@@ -6,11 +6,13 @@ use crate::{
 };
 
 /// A bounding-volume hierarchy for hittables.
+#[derive(Clone)]
 pub struct Bvh<H> {
     children: Children<H>,
     bbox: AABB,
 }
 
+#[derive(Clone)]
 enum Children<H> {
     Leaf(Vec<H>),
     Inner(Vec<Bvh<H>>),
