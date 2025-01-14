@@ -2,7 +2,7 @@ use std::{collections::HashMap, io::BufRead};
 
 use crate::{
     bvh::Bvh,
-    hittable::{flat::triangle::Triangle, Hittable},
+    hittable::flat::triangle::Triangle,
     material::Material,
     vec3::{Point3, Vec3},
 };
@@ -76,7 +76,7 @@ impl WavefrontObj {
         obj
     }
 
-    pub fn to_object<'a, M: Material>(self, material: &'a M) -> impl Hittable<Material = &'a M> {
+    pub fn to_object<'a, M: Material + ?Sized>(self, material: &'a M) -> Bvh<Triangle<&'a M>> {
         let all_triangles = self
             .groups
             .into_values()
