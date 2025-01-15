@@ -82,12 +82,8 @@ impl WavefrontObj {
             .into_values()
             .flatten()
             .map(|t| match t {
-                Tri::Flat([q, a, b]) => {
-                    let u = &a - &q;
-                    let v = &b - &q;
-                    Triangle::new(q, u, v, material)
-                }
-                Tri::Smooth(_) => todo!(),
+                Tri::Flat(points) => Triangle::flat(points, material),
+                Tri::Smooth(vertices) => Triangle::smooth(vertices, material),
             })
             .collect::<Vec<_>>();
         Bvh::new(all_triangles)
