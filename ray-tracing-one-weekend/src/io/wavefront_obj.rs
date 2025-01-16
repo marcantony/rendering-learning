@@ -93,15 +93,10 @@ impl WavefrontObj {
             .map(|t| {
                 let Tri {
                     points,
-                    texture_coords: _texture_coords,
+                    texture_coords,
                     normals,
                 } = t;
-                if let Some(norms) = normals {
-                    let vertices = std::array::from_fn(|i| (points[i].clone(), norms[i].clone()));
-                    Triangle::smooth(vertices, material)
-                } else {
-                    Triangle::flat(points, material)
-                }
+                Triangle::from_model(points, texture_coords, normals, material)
             })
             .collect::<Vec<_>>();
         Bvh::new(all_triangles)
