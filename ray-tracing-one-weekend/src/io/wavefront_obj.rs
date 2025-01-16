@@ -18,11 +18,14 @@ pub struct WavefrontObj {
     groups: HashMap<ObjGroup, Vec<Tri>>,
     vertices: Vec<Point3>,
     normals: Vec<Vec3>,
+    texture_coords: Vec<(f64, f64)>,
 }
 
-enum Tri {
-    Smooth([(Point3, Vec3); 3]),
-    Flat([Point3; 3]),
+#[derive(Debug, PartialEq)]
+struct Tri {
+    points: [Point3; 3],
+    texture_coords: Option<[(f64, f64); 3]>,
+    normals: Option<[Vec3; 3]>,
 }
 
 impl WavefrontObj {
@@ -34,6 +37,7 @@ impl WavefrontObj {
             groups: HashMap::new(),
             vertices: Vec::new(),
             normals: Vec::new(),
+            texture_coords: Vec::new(),
         };
 
         let mut current_group_name = ObjGroup::Default;
@@ -48,7 +52,8 @@ impl WavefrontObj {
                         res.map(|p| obj.vertices.push(p))
                     }
                     "f" => {
-                        let res = parse_face(trimmed, &obj.vertices, &obj.normals);
+                        let res =
+                            parse_face(trimmed, &obj.vertices, &obj.texture_coords, &obj.normals);
                         res.map(|mut ts| current_group_val.append(&mut ts))
                     }
                     "g" => {
@@ -61,6 +66,10 @@ impl WavefrontObj {
                     "vn" => {
                         let res = parse_normal(trimmed);
                         res.map(|n| obj.normals.push(n))
+                    }
+                    "vt" => {
+                        let res = parse_texture_coord(trimmed);
+                        res.map(|tc| obj.texture_coords.push(tc))
                     }
                     _ => None,
                 }
@@ -81,13 +90,35 @@ impl WavefrontObj {
             .groups
             .into_values()
             .flatten()
-            .map(|t| match t {
-                Tri::Flat(points) => Triangle::flat(points, material),
-                Tri::Smooth(vertices) => Triangle::smooth(vertices, material),
+            .map(|t| {
+                let Tri {
+                    points,
+                    texture_coords: _texture_coords,
+                    normals,
+                } = t;
+                if let Some(norms) = normals {
+                    let vertices = std::array::from_fn(|i| (points[i].clone(), norms[i].clone()));
+                    Triangle::smooth(vertices, material)
+                } else {
+                    Triangle::flat(points, material)
+                }
             })
             .collect::<Vec<_>>();
         Bvh::new(all_triangles)
     }
+}
+
+fn parse_texture_coord(tail: &str) -> Option<(f64, f64)> {
+    let nums = tail
+        .split_whitespace()
+        .map(|s| s.parse::<f64>().ok())
+        .collect::<Option<Vec<f64>>>();
+
+    nums.and_then(|ns| match ns.len() {
+        0 => None,
+        1 => Some((ns[0], 0.0)),
+        _ => Some((ns[0], ns[1])),
+    })
 }
 
 fn parse_vertex(tail: &str) -> Option<Point3> {
@@ -120,35 +151,49 @@ fn parse_normal(tail: &str) -> Option<Vec3> {
     })
 }
 
-fn parse_face(tail: &str, read_vertices: &[Point3], read_normals: &[Vec3]) -> Option<Vec<Tri>> {
+fn parse_face(
+    tail: &str,
+    read_vertices: &[Point3],
+    read_texcoords: &[(f64, f64)],
+    read_normals: &[Vec3],
+) -> Option<Vec<Tri>> {
     let tokens = tail.split_whitespace();
 
-    let indices: Option<Vec<(usize, Option<usize>)>> = tokens
+    let indices: Option<Vec<(usize, Option<usize>, Option<usize>)>> = tokens
         .map(|token| {
             let indices = token.split('/').collect::<Vec<_>>();
-            let v_n_indices_unparsed = match indices.len() {
-                1 => Some((indices[0], None)),
-                2 => Some((indices[0], None)),
-                3 => Some((indices[0], Some(indices[2]))),
+            let v_t_n_indices_unparsed = match indices.len() {
+                1 => Some((indices[0], None, None)),
+                2 => Some((indices[0], Some(indices[1]), None)),
+                3 => Some((indices[0], Some(indices[1]), Some(indices[2]))),
                 _ => None,
             };
 
-            v_n_indices_unparsed.and_then(|(v_unparsed, n_unparsed)| {
+            v_t_n_indices_unparsed.and_then(|(v_unparsed, t_unparsed, n_unparsed)| {
                 let v_parsed = v_unparsed.parse::<usize>().ok();
-                match n_unparsed {
-                    Some(val) => {
-                        let n_parsed = val.parse::<usize>().ok();
-                        n_parsed.and_then(|n| v_parsed.map(|v| (v, Some(n))))
+                let t_parsed = t_unparsed.and_then(|t| {
+                    if t.is_empty() {
+                        None
+                    } else {
+                        t.parse::<usize>().ok()
                     }
-                    None => v_parsed.map(|v| (v, None)),
-                }
+                });
+                let n_parsed = n_unparsed.and_then(|n| n.parse::<usize>().ok());
+
+                v_parsed.map(|v| (v, t_parsed, n_parsed))
             })
         })
         .collect();
 
     let mapped_indices = indices.map(|ns| {
         ns.iter()
-            .map(|(vi, ni)| (&read_vertices[vi - 1], ni.map(|n| &read_normals[n - 1])))
+            .map(|(vi, ti, ni)| {
+                (
+                    &read_vertices[vi - 1],
+                    ti.map(|t| &read_texcoords[t - 1]),
+                    ni.map(|n| &read_normals[n - 1]),
+                )
+            })
             .collect::<Vec<_>>()
     });
 
@@ -160,21 +205,25 @@ fn parse_face(tail: &str, read_vertices: &[Point3], read_normals: &[Vec3]) -> Op
                     .into_iter()
                     .map(|verts| {
                         let points = [verts[0].0, verts[1].0, verts[2].0].map(|p| p.clone());
-                        let normals = verts[0].1.and_then(|first| {
+                        let texture_coords = verts[0].1.and_then(|first| {
                             verts[1].1.and_then(|second| {
                                 verts[2]
                                     .1
                                     .map(|third| [first, second, third].map(|n| n.clone()))
                             })
                         });
+                        let normals = verts[0].2.and_then(|first| {
+                            verts[1].2.and_then(|second| {
+                                verts[2]
+                                    .2
+                                    .map(|third| [first, second, third].map(|n| n.clone()))
+                            })
+                        });
 
-                        match normals {
-                            Some(ns) => {
-                                let [p1, p2, p3] = points;
-                                let [n1, n2, n3] = ns;
-                                Tri::Smooth([(p1, n1), (p2, n2), (p3, n3)])
-                            }
-                            None => Tri::Flat(points),
+                        Tri {
+                            points,
+                            texture_coords,
+                            normals,
                         }
                     })
                     .collect::<Vec<_>>(),
@@ -186,13 +235,78 @@ fn parse_face(tail: &str, read_vertices: &[Point3], read_normals: &[Vec3]) -> Op
 }
 
 fn fan_triangulate<'a>(
-    vertices: &[(&'a Point3, Option<&'a Vec3>)],
-) -> Vec<[(&'a Point3, Option<&'a Vec3>); 3]> {
-    let mut triangles = Vec::<[(&Point3, Option<&Vec3>); 3]>::new();
+    vertices: &[(&'a Point3, Option<&'a (f64, f64)>, Option<&'a Vec3>)],
+) -> Vec<[(&'a Point3, Option<&'a (f64, f64)>, Option<&'a Vec3>); 3]> {
+    let mut triangles = Vec::<[(&'a Point3, Option<&'a (f64, f64)>, Option<&'a Vec3>); 3]>::new();
 
     for i in 2..vertices.len() {
         triangles.push([vertices[0], vertices[i - 1], vertices[i]])
     }
 
     triangles
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn faces_with_normals() {
+        let data = "
+v 0 1 0
+v -1 0 0
+v 1 0 0
+
+vn -1 0 0
+vn 1 0 0
+vn 0 1 0
+
+vt 1 2
+vt 4 5
+vt 7 8
+
+f 1//3 2//1 3//2
+f 1/2/3 2/3/1 3/1/2
+";
+
+        let parsed = WavefrontObj::parse(data.as_bytes());
+
+        let g = parsed.groups.get(&ObjGroup::Default).unwrap();
+        let t1 = &g[0];
+        let t2 = &g[1];
+
+        assert_eq!(
+            t1,
+            &Tri {
+                points: [
+                    Point3::new(0.0, 1.0, 0.0),
+                    Point3::new(-1.0, 0.0, 0.0),
+                    Point3::new(1.0, 0.0, 0.0)
+                ],
+                texture_coords: None,
+                normals: Some([
+                    Vec3::new(0.0, 1.0, 0.0),
+                    Vec3::new(-1.0, 0.0, 0.0),
+                    Vec3::new(1.0, 0.0, 0.0)
+                ])
+            }
+        );
+
+        assert_eq!(
+            t2,
+            &Tri {
+                points: [
+                    Point3::new(0.0, 1.0, 0.0),
+                    Point3::new(-1.0, 0.0, 0.0),
+                    Point3::new(1.0, 0.0, 0.0)
+                ],
+                texture_coords: Some([(4.0, 5.0), (7.0, 8.0), (1.0, 2.0)]),
+                normals: Some([
+                    Vec3::new(0.0, 1.0, 0.0),
+                    Vec3::new(-1.0, 0.0, 0.0),
+                    Vec3::new(1.0, 0.0, 0.0)
+                ])
+            }
+        );
+    }
 }
