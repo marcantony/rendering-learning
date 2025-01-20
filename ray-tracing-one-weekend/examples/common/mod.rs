@@ -3,7 +3,9 @@ use std::{
     io::{self, BufWriter},
     time::SystemTime,
 };
+use std::io::{Cursor, Write};
 
+use image::ImageFormat;
 use ray_tracing_one_weekend::{
     camera::{Camera, Canvas},
     hittable::{flat::quad::Quad, Hittable},
@@ -14,10 +16,14 @@ use ray_tracing_one_weekend::{
 
 #[allow(dead_code)]
 pub fn render_to_stdout<M: Material, H: Hittable<Material = M>>(world: &H, camera: &Camera) {
-    let mut out = BufWriter::new(io::stdout().lock());
     let canvas = camera.render(&world);
 
-    output::output_ppm(&canvas, &mut out).unwrap();
+    let mut buffer = Cursor::new(Vec::new());
+    output::output_image(&canvas, ImageFormat::Png, &mut buffer).unwrap();
+
+    let mut out = std::io::stdout();
+    out.write_all(&buffer.into_inner()).unwrap();
+    out.flush().unwrap();
 }
 
 #[allow(dead_code)]
