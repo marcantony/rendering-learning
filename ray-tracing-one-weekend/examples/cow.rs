@@ -5,9 +5,9 @@ use ray_tracing_one_weekend::{
     bvh::Bvh,
     camera::{Camera, CameraParams},
     color::{srgb, Color},
-    hittable::{constant_medium::ConstantMedium, flat::quad::Quad, Hittable},
+    hittable::{flat::quad::Quad, Hittable},
     io::wavefront_obj::WavefrontObj,
-    material::{Dielectric, DiffuseLight, Isotropic, Lambertian, Material},
+    material::{DiffuseLight, Lambertian, Material},
     texture::{Image, SolidColor},
     vec3::{Point3, Vec3},
 };
