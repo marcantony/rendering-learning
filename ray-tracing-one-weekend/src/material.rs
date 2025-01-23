@@ -8,7 +8,7 @@ use crate::{
     vec3::{NormalizedVec3, Point3, Vec3},
 };
 
-pub trait Material: Sync + Send {
+pub trait Material {
     fn scatter(
         &self,
         rng: &mut dyn RngCore,

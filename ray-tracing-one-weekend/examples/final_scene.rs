@@ -103,7 +103,7 @@ fn main() {
     };
 
     // Start defining world
-    let mut world: Vec<Box<dyn Hittable<Material = &dyn Material>>> = Vec::new();
+    let mut world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> = Vec::new();
 
     // Floor boxes
     let mut boxes = Vec::new();
@@ -124,7 +124,7 @@ fn main() {
             boxes.push(make_box(
                 &Point3::new(x0, y0, z0),
                 &Point3::new(x1, y1, z1),
-                &ground_material as &dyn Material,
+                &ground_material as &(dyn Material + Sync),
             ));
         }
     }
@@ -135,7 +135,7 @@ fn main() {
         Point3::new(123.0, 554.0, 147.0),
         Vec3::new(300.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 265.0),
-        &light_material as &dyn Material,
+        &light_material as &(dyn Material + Sync),
     );
     world.push(Box::new(light));
 
@@ -145,59 +145,59 @@ fn main() {
     world.push(Box::new(Sphere {
         center: Center::Moving(center1, center2),
         radius: 50.0,
-        material: &sphere_material as &dyn Material,
+        material: &sphere_material as &(dyn Material + Sync),
     }));
 
     // Glass sphere
     world.push(Box::new(Sphere {
         center: Center::Stationary(Point3::new(260.0, 150.0, 45.0)),
         radius: 50.0,
-        material: &glass_material as &dyn Material,
+        material: &glass_material as &(dyn Material + Sync),
     }));
 
     // Metal sphere
     world.push(Box::new(Sphere {
         center: Center::Stationary(Point3::new(0.0, 150.0, 145.0)),
         radius: 50.0,
-        material: &metal_material as &dyn Material,
+        material: &metal_material as &(dyn Material + Sync),
     }));
 
     // Subsurface reflection sphere
     let subsurface_boundary = Sphere {
         center: Center::Stationary(Point3::new(360.0, 150.0, 145.0)),
         radius: 70.0,
-        material: &glass_material as &dyn Material,
+        material: &glass_material as &(dyn Material + Sync),
     };
     world.push(Box::new(subsurface_boundary.clone()));
     world.push(Box::new(ConstantMedium::new(
         subsurface_boundary,
         0.2,
-        &subsurface_material as &dyn Material,
+        &subsurface_material as &(dyn Material + Sync),
     )));
     // Fog
     let fog_boundary = Sphere {
         center: Center::Stationary(Point3::new(0.0, 0.0, 0.0)),
         radius: 5000.0,
-        material: &glass_material as &dyn Material,
+        material: &glass_material as &(dyn Material + Sync),
     };
     world.push(Box::new(ConstantMedium::new(
         fog_boundary,
         0.0001,
-        &fog_material as &dyn Material,
+        &fog_material as &(dyn Material + Sync),
     )));
 
     // Earth texture sphere
     world.push(Box::new(Sphere {
         center: Center::Stationary(Point3::new(400.0, 200.0, 400.0)),
         radius: 100.0,
-        material: &earth_material as &dyn Material,
+        material: &earth_material as &(dyn Material + Sync),
     }));
 
     // Perlin noise sphere
     world.push(Box::new(Sphere {
         center: Center::Stationary(Point3::new(220.0, 280.0, 300.0)),
         radius: 80.0,
-        material: &perlin_material as &dyn Material,
+        material: &perlin_material as &(dyn Material + Sync),
     }));
 
     // Box of small spheres
@@ -207,7 +207,7 @@ fn main() {
         boxes2.push(Sphere {
             center: Center::Stationary(Point3::random_in_range(&mut rng, 0.0, 165.0)),
             radius: 10.0,
-            material: &white_material as &dyn Material,
+            material: &white_material as &(dyn Material + Sync),
         });
     }
     world.push(Box::new(

@@ -15,7 +15,7 @@ mod common;
 fn main() {
     let mut master_rng = Xoshiro256PlusPlus::seed_from_u64(1);
 
-    let mut world = Vec::<Sphere<Box<dyn Material>>>::new();
+    let mut world = Vec::<Sphere<Box<dyn Material + Sync>>>::new();
 
     let checker = Checker::new(
         0.32,
@@ -43,37 +43,38 @@ fn main() {
             );
 
             if (&center_point - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let (sphere_material, center): (Box<dyn Material>, Center) = if choose_mat < 0.8 {
-                    // diffuse
-                    let center2 =
-                        &center_point + Vec3::new(0.0, master_rng.gen_range(0.0..0.5), 0.0);
-                    (
-                        Box::new(Lambertian {
-                            texture: SolidColor {
-                                albedo: Color::random(&mut master_rng)
-                                    * Color::random(&mut master_rng),
-                            },
-                        }),
-                        Center::Moving(center_point, center2),
-                    )
-                } else if choose_mat < 0.95 {
-                    // metal
-                    (
-                        Box::new(Metal {
-                            albedo: Color::random_in_range(&mut master_rng, 0.5, 1.0),
-                            fuzz: master_rng.gen(),
-                        }),
-                        Center::Stationary(center_point),
-                    )
-                } else {
-                    // glass
-                    (
-                        Box::new(Dielectric {
-                            refraction_index: 1.5,
-                        }),
-                        Center::Stationary(center_point),
-                    )
-                };
+                let (sphere_material, center): (Box<dyn Material + Sync>, Center) =
+                    if choose_mat < 0.8 {
+                        // diffuse
+                        let center2 =
+                            &center_point + Vec3::new(0.0, master_rng.gen_range(0.0..0.5), 0.0);
+                        (
+                            Box::new(Lambertian {
+                                texture: SolidColor {
+                                    albedo: Color::random(&mut master_rng)
+                                        * Color::random(&mut master_rng),
+                                },
+                            }),
+                            Center::Moving(center_point, center2),
+                        )
+                    } else if choose_mat < 0.95 {
+                        // metal
+                        (
+                            Box::new(Metal {
+                                albedo: Color::random_in_range(&mut master_rng, 0.5, 1.0),
+                                fuzz: master_rng.gen(),
+                            }),
+                            Center::Stationary(center_point),
+                        )
+                    } else {
+                        // glass
+                        (
+                            Box::new(Dielectric {
+                                refraction_index: 1.5,
+                            }),
+                            Center::Stationary(center_point),
+                        )
+                    };
                 world.push(Sphere {
                     center,
                     radius: 0.2,

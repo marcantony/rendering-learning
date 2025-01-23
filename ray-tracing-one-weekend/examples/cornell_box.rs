@@ -32,50 +32,50 @@ fn main() {
         },
     };
 
-    let mut world: Vec<Box<dyn Hittable<Material = &dyn Material>>> = Vec::new();
+    let mut world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> = Vec::new();
 
     world.push(Box::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &green as &dyn Material,
+        &green as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &red as &dyn Material,
+        &red as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        &light as &dyn Material,
+        &light as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(555.0, 555.0, 555.0),
         Vec3::new(-555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -555.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
 
     world.push(Box::new(
         common::make_box(
             &Point3::new(0.0, 0.0, 0.0),
             &Point3::new(165.0, 330.0, 165.0),
-            &white as &dyn Material,
+            &white as &(dyn Material + Sync),
         )
         .rotate_y(15.0)
         .translate(Vec3::new(265.0, 0.0, 295.0)),
@@ -84,7 +84,7 @@ fn main() {
         common::make_box(
             &Point3::new(0.0, 0.0, 0.0),
             &Point3::new(165.0, 165.0, 165.0),
-            &white as &dyn Material,
+            &white as &(dyn Material + Sync),
         )
         .rotate_y(-18.0)
         .translate(Vec3::new(130.0, 0.0, 65.0)),

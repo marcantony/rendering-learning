@@ -11,7 +11,7 @@ use ray_tracing_one_weekend::{
     vec3::{Point3, Vec3},
 };
 
-fn test_scene() -> (impl Hittable<Material = impl Material>, CameraParams) {
+fn test_scene() -> (impl Hittable<Material = impl Material> + Sync, CameraParams) {
     // World
     let world = [
         Sphere {
@@ -21,7 +21,7 @@ fn test_scene() -> (impl Hittable<Material = impl Material>, CameraParams) {
                 texture: SolidColor {
                     albedo: Color::new(0.8, 0.8, 0.0),
                 },
-            }) as Box<dyn Material>,
+            }) as Box<dyn Material + Sync>,
         },
         Sphere {
             center: Center::Stationary(Point3::new(0.0, 0.0, -1.2)),
@@ -30,21 +30,21 @@ fn test_scene() -> (impl Hittable<Material = impl Material>, CameraParams) {
                 texture: SolidColor {
                     albedo: Color::new(0.1, 0.2, 0.5),
                 },
-            }) as Box<dyn Material>,
+            }) as Box<dyn Material + Sync>,
         },
         Sphere {
             center: Center::Stationary(Point3::new(-1.0, 0.0, -1.0)),
             radius: 0.5,
             material: Box::new(Dielectric {
                 refraction_index: 1.5,
-            }) as Box<dyn Material>,
+            }) as Box<dyn Material + Sync>,
         },
         Sphere {
             center: Center::Stationary(Point3::new(-1.0, 0.0, -1.0)),
             radius: 0.4,
             material: Box::new(Dielectric {
                 refraction_index: 1.0 / 1.5,
-            }) as Box<dyn Material>,
+            }) as Box<dyn Material + Sync>,
         },
         Sphere {
             center: Center::Stationary(Point3::new(1.0, 0.0, -1.0)),
@@ -52,7 +52,7 @@ fn test_scene() -> (impl Hittable<Material = impl Material>, CameraParams) {
             material: Box::new(Metal {
                 albedo: Color::new(0.8, 0.6, 0.2),
                 fuzz: 1.0,
-            }) as Box<dyn Material>,
+            }) as Box<dyn Material + Sync>,
         },
     ];
 

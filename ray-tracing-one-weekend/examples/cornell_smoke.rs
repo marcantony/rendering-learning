@@ -32,49 +32,49 @@ fn main() {
         },
     };
 
-    let mut world: Vec<Box<dyn Hittable<Material = &dyn Material>>> = Vec::new();
+    let mut world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> = Vec::new();
 
     world.push(Box::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &green as &dyn Material,
+        &green as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &red as &dyn Material,
+        &red as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(113.0, 554.0, 127.0),
         Vec3::new(330.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 305.0),
-        &light as &dyn Material,
+        &light as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 555.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
 
     let box1 = common::make_box(
         &Point3::new(0.0, 0.0, 0.0),
         &Point3::new(165.0, 330.0, 165.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )
     .rotate_y(15.0)
     .translate(Vec3::new(265.0, 0.0, 295.0));
@@ -83,13 +83,13 @@ fn main() {
             albedo: Color::new(0.0, 0.0, 0.0),
         },
     };
-    let smoky_box = ConstantMedium::new(box1, 0.01, &smoke as &dyn Material);
-    world.push(Box::new(smoky_box) as Box<dyn Hittable<Material = &dyn Material>>);
+    let smoky_box = ConstantMedium::new(box1, 0.01, &smoke as &(dyn Material + Sync));
+    world.push(Box::new(smoky_box) as Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>);
 
     let box2 = common::make_box(
         &Point3::new(0.0, 0.0, 0.0),
         &Point3::new(165.0, 165.0, 165.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )
     .rotate_y(-18.0)
     .translate(Vec3::new(130.0, 0.0, 65.0));
@@ -98,8 +98,8 @@ fn main() {
             albedo: Color::new(1.0, 1.0, 1.0),
         },
     };
-    let foggy_box = ConstantMedium::new(box2, 0.01, &fog as &dyn Material);
-    world.push(Box::new(foggy_box) as Box<dyn Hittable<Material = &dyn Material>>);
+    let foggy_box = ConstantMedium::new(box2, 0.01, &fog as &(dyn Material + Sync));
+    world.push(Box::new(foggy_box) as Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>);
 
     let world = Bvh::new(world);
 

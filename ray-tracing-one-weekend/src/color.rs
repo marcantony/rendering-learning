@@ -52,7 +52,7 @@ impl Color {
         (
             channel_to_u8(self.r()),
             channel_to_u8(self.g()),
-            channel_to_u8(self.b())
+            channel_to_u8(self.b()),
         )
     }
 

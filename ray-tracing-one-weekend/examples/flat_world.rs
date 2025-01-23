@@ -47,37 +47,37 @@ fn main() {
     };
 
     // Quads
-    let mut world: Vec<Box<dyn Hittable<Material = &dyn Material>>> = Vec::new();
+    let mut world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> = Vec::new();
 
     world.push(Box::new(Quad::new(
         Point3::new(-3.0, -2.0, 5.0),
         Vec3::new(0.0, 0.0, -4.0),
         Vec3::new(0.0, 4.0, 0.0),
-        &left_red as &dyn Material,
+        &left_red as &(dyn Material + Sync),
     )));
     world.push(Box::new(Triangle::new(
         Point3::new(-2.0, -2.0, 0.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 4.0, 0.0),
-        &back_green as &dyn Material,
+        &back_green as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(3.0, -2.0, 1.0),
         Vec3::new(0.0, 0.0, 4.0),
         Vec3::new(0.0, 4.0, 0.0),
-        &right_blue as &dyn Material,
+        &right_blue as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(-2.0, 3.0, 1.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 4.0),
-        &upper_orange as &dyn Material,
+        &upper_orange as &(dyn Material + Sync),
     )));
     world.push(Box::new(Plane::new(
         Point3::new(-2.0, -3.0, 5.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -4.0),
-        &lower_checker as &dyn Material,
+        &lower_checker as &(dyn Material + Sync),
     )));
 
     let camera = Camera::new(CameraParams {

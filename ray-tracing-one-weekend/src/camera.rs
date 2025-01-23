@@ -119,7 +119,7 @@ impl Camera {
 }
 
 impl Camera {
-    pub fn render<M: Material, H: Hittable<Material = M>>(&self, world: H) -> Canvas {
+    pub fn render<M: Material, H: Hittable<Material = M> + Sync>(&self, world: H) -> Canvas {
         self._render(0, world)
     }
 
@@ -133,7 +133,7 @@ impl Camera {
      * using checkpointing will not produce the same result as rendering 2N samples at
      * once.
      */
-    pub fn render_from_checkpoint<M: Material, H: Hittable<Material = M>>(
+    pub fn render_from_checkpoint<M: Material, H: Hittable<Material = M> + Sync>(
         &self,
         world: H,
         checkpoint: &Canvas,
@@ -142,7 +142,7 @@ impl Camera {
         new_render.merge(&checkpoint)
     }
 
-    fn _render<M: Material, H: Hittable<Material = M>>(
+    fn _render<M: Material, H: Hittable<Material = M> + Sync>(
         &self,
         samples_already_rendered: usize,
         world: H,

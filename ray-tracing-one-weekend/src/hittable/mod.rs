@@ -37,7 +37,7 @@ pub fn calculate_face_normal(r: &Ray, outward_normal: NormalizedVec3) -> (Normal
     }
 }
 
-pub trait Hittable: Sync + Send {
+pub trait Hittable {
     type Material;
     fn hit(&self, r: &Ray, ray_t: &Interval) -> Option<(&Self::Material, HitRecord)>;
     fn bounding_box(&self) -> AABB;

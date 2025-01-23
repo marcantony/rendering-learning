@@ -13,7 +13,7 @@ use ray_tracing_one_weekend::{
 };
 
 #[allow(dead_code)]
-pub fn render_to_stdout<M: Material, H: Hittable<Material = M>>(world: &H, camera: &Camera) {
+pub fn render_to_stdout<M: Material, H: Hittable<Material = M> + Sync>(world: &H, camera: &Camera) {
     let mut out = BufWriter::new(io::stdout().lock());
     let canvas = camera.render(&world);
 
@@ -21,7 +21,7 @@ pub fn render_to_stdout<M: Material, H: Hittable<Material = M>>(world: &H, camer
 }
 
 #[allow(dead_code)]
-pub fn render_save_checkpoint<M: Material, H: Hittable<Material = M>>(
+pub fn render_save_checkpoint<M: Material, H: Hittable<Material = M> + Sync>(
     world: &H,
     camera: &Camera,
     checkpoint_name: &str,
@@ -36,7 +36,7 @@ pub fn render_save_checkpoint<M: Material, H: Hittable<Material = M>>(
 }
 
 #[allow(dead_code)]
-pub fn render_from_checkpoint<M: Material, H: Hittable<Material = M>>(
+pub fn render_from_checkpoint<M: Material, H: Hittable<Material = M> + Sync>(
     world: &H,
     camera: &Camera,
     checkpoint_name: &str,

@@ -44,7 +44,7 @@ fn main() {
 
     let obj_bytes = include_bytes!("../../objs/spot_triangulated.obj");
     let reader = BufReader::new(obj_bytes.as_slice());
-    let cow = WavefrontObj::parse(reader).to_object(&cow_surface as &dyn Material);
+    let cow = WavefrontObj::parse(reader).to_object(&cow_surface as &(dyn Material + Sync));
     let transformed_cow = cow
         .scale(200.0)
         .rotate_y(45.0)
@@ -77,43 +77,43 @@ fn main() {
         },
     };
 
-    let mut world: Vec<Box<dyn Hittable<Material = &dyn Material>>> = Vec::new();
+    let mut world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> = Vec::new();
 
     world.push(Box::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &green as &dyn Material,
+        &green as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &red as &dyn Material,
+        &red as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(113.0, 554.0, 127.0),
         Vec3::new(330.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 305.0),
-        &light as &dyn Material,
+        &light as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(555.0, 555.0, 555.0),
         Vec3::new(-555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -555.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
     world.push(Box::new(Quad::new(
         Point3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
-        &white as &dyn Material,
+        &white as &(dyn Material + Sync),
     )));
 
     world.push(Box::new(transformed_cow));

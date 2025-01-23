@@ -31,13 +31,13 @@ fn main() {
     let sphere1 = Box::new(Sphere {
         center: Center::Stationary(Point3::new(0.0, -1000.0, 0.0)),
         radius: 1000.0,
-        material: &material as &dyn Material,
+        material: &material as &(dyn Material + Sync),
     });
 
     let sphere2 = Box::new(Sphere {
         center: Center::Stationary(Point3::new(0.0, 2.0, 0.0)),
         radius: 2.0,
-        material: &material as &dyn Material,
+        material: &material as &(dyn Material + Sync),
     });
 
     let light_material = DiffuseLight {
@@ -49,15 +49,15 @@ fn main() {
         Point3::new(3.0, 1.0, -2.0),
         Vec3::new(2.0, 0.0, 0.0),
         Vec3::new(0.0, 2.0, 0.0),
-        &light_material as &dyn Material,
+        &light_material as &(dyn Material + Sync),
     ));
     let sphere_light = Box::new(Sphere {
         center: Center::Stationary(Point3::new(0.0, 7.0, 0.0)),
         radius: 2.0,
-        material: &light_material as &dyn Material,
+        material: &light_material as &(dyn Material + Sync),
     });
 
-    let world: Vec<Box<dyn Hittable<Material = &dyn Material>>> =
+    let world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> =
         vec![sphere1, sphere2, quad_light, sphere_light];
 
     let camera = Camera::new(CameraParams {
