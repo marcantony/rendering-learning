@@ -20,18 +20,40 @@ impl Color {
     }
 
     pub fn write_ppm(&self, writer: &mut impl Write) -> Result<()> {
-        fn to_ppm(val: f64) -> u8 {
-            let n = (val * 255.999).floor() as i16;
-            n.clamp(0, 255) as u8
-        }
-
-        let ir = to_ppm(srgb::linear_to_srgb(self.r()));
-        let ig = to_ppm(srgb::linear_to_srgb(self.g()));
-        let ib = to_ppm(srgb::linear_to_srgb(self.b()));
+        let in_srgb = self.linear_to_srgb();
+        let (ir, ig, ib) = in_srgb.to_u8();
 
         writeln!(writer, "{} {} {}", ir, ig, ib)?;
 
         Ok(())
+    }
+
+    pub fn linear_to_srgb(&self) -> Self {
+        Color::new(
+            srgb::linear_to_srgb(self.r()),
+            srgb::linear_to_srgb(self.g()),
+            srgb::linear_to_srgb(self.b()),
+        )
+    }
+
+    pub fn srgb_to_linear(&self) -> Self {
+        Color::new(
+            srgb::srgb_to_linear(self.r()),
+            srgb::srgb_to_linear(self.g()),
+            srgb::srgb_to_linear(self.b()),
+        )
+    }
+
+    pub fn to_u8(&self) -> (u8, u8, u8) {
+        fn channel_to_u8(val: f64) -> u8 {
+            let n = (val * 255.999).floor() as i16;
+            n.clamp(0, 255) as u8
+        }
+        (
+            channel_to_u8(self.r()),
+            channel_to_u8(self.g()),
+            channel_to_u8(self.b())
+        )
     }
 
     pub fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
