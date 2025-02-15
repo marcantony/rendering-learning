@@ -59,6 +59,30 @@ impl Mesh {
             .collect::<Vec<_>>();
         Bvh::new(all_triangles)
     }
+
+    pub fn triangulate(self) -> Self {
+        let new_faces = self
+            .faces
+            .into_iter()
+            .flat_map(|f| fan_triangulate(f))
+            .collect::<Vec<_>>();
+
+        Mesh { faces: new_faces }
+    }
+}
+
+fn fan_triangulate(face: Face) -> Vec<Face> {
+    let mut faces = Vec::new();
+    for i in 2..face.vertices.len() {
+        faces.push(Face {
+            vertices: vec![
+                Rc::clone(&face.vertices[0]),
+                Rc::clone(&face.vertices[i - 1]),
+                Rc::clone(&face.vertices[i]),
+            ],
+        });
+    }
+    faces
 }
 
 #[cfg(test)]
@@ -127,5 +151,40 @@ mod tests {
 
         assert!(hittable.hit(&should_hit, &Interval::universe()).is_some());
         assert!(hittable.hit(&should_miss, &Interval::universe()).is_none());
+    }
+
+    #[test]
+    fn triangulation() {
+        let points = [
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 1.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+        ];
+
+        let vertices = points.clone().map(|p| Vertex {
+            point: p,
+            normal: None,
+            texture_coords: None,
+        });
+
+        let face = Face {
+            vertices: vertices.map(|v| Rc::new(v)).into(),
+        };
+        let mesh = Mesh { faces: vec![face] };
+
+        let triangulated = mesh.triangulate();
+        let points_by_face = triangulated
+            .faces
+            .iter()
+            .map(|f| f.vertices.iter().map(|v| &v.point).collect::<Vec<_>>())
+            .collect::<Vec<_>>();
+
+        let expected_points = vec![
+            vec![&points[0], &points[1], &points[2]],
+            vec![&points[0], &points[2], &points[3]],
+        ];
+
+        assert_eq!(points_by_face, expected_points);
     }
 }
