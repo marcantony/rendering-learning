@@ -13,17 +13,22 @@ enum ObjGroup {
 
 pub struct WavefrontObj {
     ignored: u32,
-    groups: HashMap<ObjGroup, Vec<Tri>>,
+    groups: HashMap<ObjGroup, Vec<FaceElement>>,
     vertices: Vec<Point3>,
     normals: Vec<Vec3>,
     texture_coords: Vec<(f64, f64)>,
 }
 
 #[derive(Debug, PartialEq)]
-struct Tri {
-    points: [Point3; 3],
-    texture_coords: Option<[(f64, f64); 3]>,
-    normals: Option<[Vec3; 3]>,
+struct FaceVertex {
+    p_i: usize,
+    tc_i: Option<usize>,
+    n_i: Option<usize>,
+}
+
+#[derive(Debug, PartialEq)]
+struct FaceElement {
+    face_vertices: Vec<FaceVertex>,
 }
 
 impl WavefrontObj {
@@ -39,7 +44,7 @@ impl WavefrontObj {
         };
 
         let mut current_group_name = ObjGroup::Default;
-        let mut current_group_val = Vec::<Tri>::new();
+        let mut current_group_val = Vec::new();
         for line in lines_iter {
             let split = line.split_once(' ');
             let status: Option<()> = split.and_then(|(head, tail)| {
@@ -50,9 +55,8 @@ impl WavefrontObj {
                         res.map(|p| obj.vertices.push(p))
                     }
                     "f" => {
-                        let res =
-                            parse_face(trimmed, &obj.vertices, &obj.texture_coords, &obj.normals);
-                        res.map(|mut ts| current_group_val.append(&mut ts))
+                        let res = parse_face(trimmed);
+                        res.map(|ts| current_group_val.push(ts))
                     }
                     "g" => {
                         let group_vals = std::mem::take(&mut current_group_val);
@@ -84,26 +88,28 @@ impl WavefrontObj {
     }
 
     pub fn to_mesh(self) -> Mesh {
-        let tris = self.groups.into_values().flatten();
-        let faces = tris
-            .map(|t| {
-                let Tri {
-                    points,
-                    texture_coords,
-                    normals,
-                } = t;
-                let vertices = (0..3)
-                    .map(|i| {
-                        Rc::new(Vertex {
-                            point: points[i].clone(),
-                            normal: normals.as_ref().map(|ns| ns[i].clone()),
-                            texture_coords: texture_coords.as_ref().map(|tcs| tcs[i].clone()),
-                        })
+        let face_elements = self.groups.into_values().flatten();
+        let faces = face_elements
+            .map(|fe| {
+                let vertices = fe
+                    .face_vertices
+                    .into_iter()
+                    .map(|fv| {
+                        let p = self.vertices[fv.p_i - 1].clone();
+                        let tc = fv.tc_i.map(|i| self.texture_coords[i - 1].clone());
+                        let n = fv.n_i.map(|i| self.normals[i - 1].clone());
+                        Vertex {
+                            point: p,
+                            normal: n,
+                            texture_coords: tc,
+                        }
                     })
-                    .collect::<Vec<_>>();
+                    .map(|v| Rc::new(v))
+                    .collect();
                 Face { vertices }
             })
             .collect::<Vec<_>>();
+
         Mesh { faces }
     }
 }
@@ -151,12 +157,7 @@ fn parse_normal(tail: &str) -> Option<Vec3> {
     })
 }
 
-fn parse_face(
-    tail: &str,
-    read_vertices: &[Point3],
-    read_texcoords: &[(f64, f64)],
-    read_normals: &[Vec3],
-) -> Option<Vec<Tri>> {
+fn parse_face(tail: &str) -> Option<FaceElement> {
     let tokens = tail.split_whitespace();
 
     let indices: Option<Vec<(usize, Option<usize>, Option<usize>)>> = tokens
@@ -185,65 +186,13 @@ fn parse_face(
         })
         .collect();
 
-    let mapped_indices = indices.map(|ns| {
-        ns.iter()
-            .map(|(vi, ti, ni)| {
-                (
-                    &read_vertices[vi - 1],
-                    ti.map(|t| &read_texcoords[t - 1]),
-                    ni.map(|n| &read_normals[n - 1]),
-                )
-            })
-            .collect::<Vec<_>>()
-    });
-
-    mapped_indices.and_then(|vertices| {
-        if vertices.len() >= 3 {
-            let triangulated = fan_triangulate(&vertices);
-            Some(
-                triangulated
-                    .into_iter()
-                    .map(|verts| {
-                        let points = [verts[0].0, verts[1].0, verts[2].0].map(|p| p.clone());
-                        let texture_coords = verts[0].1.and_then(|first| {
-                            verts[1].1.and_then(|second| {
-                                verts[2]
-                                    .1
-                                    .map(|third| [first, second, third].map(|n| n.clone()))
-                            })
-                        });
-                        let normals = verts[0].2.and_then(|first| {
-                            verts[1].2.and_then(|second| {
-                                verts[2]
-                                    .2
-                                    .map(|third| [first, second, third].map(|n| n.clone()))
-                            })
-                        });
-
-                        Tri {
-                            points,
-                            texture_coords,
-                            normals,
-                        }
-                    })
-                    .collect::<Vec<_>>(),
-            )
-        } else {
-            None
-        }
+    indices.map(|is| {
+        let face_vertices = is
+            .into_iter()
+            .map(|(p_i, tc_i, n_i)| FaceVertex { p_i, tc_i, n_i })
+            .collect::<Vec<_>>();
+        FaceElement { face_vertices }
     })
-}
-
-fn fan_triangulate<'a>(
-    vertices: &[(&'a Point3, Option<&'a (f64, f64)>, Option<&'a Vec3>)],
-) -> Vec<[(&'a Point3, Option<&'a (f64, f64)>, Option<&'a Vec3>); 3]> {
-    let mut triangles = Vec::<[(&'a Point3, Option<&'a (f64, f64)>, Option<&'a Vec3>); 3]>::new();
-
-    for i in 2..vertices.len() {
-        triangles.push([vertices[0], vertices[i - 1], vertices[i]])
-    }
-
-    triangles
 }
 
 #[cfg(test)]
@@ -277,35 +226,47 @@ f 1/2/3 2/3/1 3/1/2
 
         assert_eq!(
             t1,
-            &Tri {
-                points: [
-                    Point3::new(0.0, 1.0, 0.0),
-                    Point3::new(-1.0, 0.0, 0.0),
-                    Point3::new(1.0, 0.0, 0.0)
-                ],
-                texture_coords: None,
-                normals: Some([
-                    Vec3::new(0.0, 1.0, 0.0),
-                    Vec3::new(-1.0, 0.0, 0.0),
-                    Vec3::new(1.0, 0.0, 0.0)
-                ])
+            &FaceElement {
+                face_vertices: vec![
+                    FaceVertex {
+                        p_i: 1,
+                        tc_i: None,
+                        n_i: Some(3)
+                    },
+                    FaceVertex {
+                        p_i: 2,
+                        tc_i: None,
+                        n_i: Some(1)
+                    },
+                    FaceVertex {
+                        p_i: 3,
+                        tc_i: None,
+                        n_i: Some(2)
+                    }
+                ]
             }
         );
 
         assert_eq!(
             t2,
-            &Tri {
-                points: [
-                    Point3::new(0.0, 1.0, 0.0),
-                    Point3::new(-1.0, 0.0, 0.0),
-                    Point3::new(1.0, 0.0, 0.0)
-                ],
-                texture_coords: Some([(4.0, 5.0), (7.0, 8.0), (1.0, 2.0)]),
-                normals: Some([
-                    Vec3::new(0.0, 1.0, 0.0),
-                    Vec3::new(-1.0, 0.0, 0.0),
-                    Vec3::new(1.0, 0.0, 0.0)
-                ])
+            &FaceElement {
+                face_vertices: vec![
+                    FaceVertex {
+                        p_i: 1,
+                        tc_i: Some(2),
+                        n_i: Some(3)
+                    },
+                    FaceVertex {
+                        p_i: 2,
+                        tc_i: Some(3),
+                        n_i: Some(1)
+                    },
+                    FaceVertex {
+                        p_i: 3,
+                        tc_i: Some(1),
+                        n_i: Some(2)
+                    }
+                ]
             }
         );
     }
