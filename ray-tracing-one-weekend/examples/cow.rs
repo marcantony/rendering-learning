@@ -46,6 +46,7 @@ fn main() {
     let reader = BufReader::new(obj_bytes.as_slice());
     let cow = WavefrontObj::parse(reader)
         .to_mesh()
+        .triangulate() // TODO: remove triangulation when no longer necessary
         .to_hittable(&cow_surface as &(dyn Material + Sync));
     let transformed_cow = cow
         .scale(200.0)

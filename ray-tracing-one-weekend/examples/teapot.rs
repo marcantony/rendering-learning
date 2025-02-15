@@ -32,6 +32,7 @@ fn main() {
     let reader = BufReader::new(obj_bytes.as_slice());
     let teapot = WavefrontObj::parse(reader)
         .to_mesh()
+        .triangulate() // TODO: remove triangulation when no longer necessary
         .to_hittable(&diffuse as &(dyn Material + Sync));
     let transformed_teapot = teapot.scale(2.0).rotate_x(-90.0);
 

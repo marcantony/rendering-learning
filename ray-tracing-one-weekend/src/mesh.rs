@@ -45,14 +45,22 @@ pub struct Mesh<F: Face> {
 }
 
 impl<F: Face> Mesh<F> {
+    pub fn triangulate(self) -> Mesh<FaceN<3>> {
+        let new_faces = self
+            .faces
+            .into_iter()
+            .flat_map(|f| fan_triangulate(f))
+            .collect::<Vec<_>>();
+
+        Mesh { faces: new_faces }
+    }
+}
+
+impl Mesh<FaceN<3>> {
     pub fn to_hittable<'a, M: Material + ?Sized>(
         &self,
         material: &'a M,
     ) -> impl Hittable<Material = &'a M> {
-        assert!(
-            self.faces.iter().all(|f| f.vertices().len() == 3),
-            "Only a triangulated mesh can be turned into a hittable"
-        );
         let all_triangles = self
             .faces
             .iter()
@@ -82,16 +90,6 @@ impl<F: Face> Mesh<F> {
             .collect::<Vec<_>>();
         Bvh::new(all_triangles)
     }
-
-    pub fn triangulate(self) -> Mesh<FaceN<3>> {
-        let new_faces = self
-            .faces
-            .into_iter()
-            .flat_map(|f| fan_triangulate(f))
-            .collect::<Vec<_>>();
-
-        Mesh { faces: new_faces }
-    }
 }
 
 fn fan_triangulate<F: Face>(face: F) -> Vec<FaceN<3>> {
@@ -113,41 +111,6 @@ mod tests {
     use crate::{interval::Interval, material::Flat, ray::Ray};
 
     use super::*;
-
-    #[test]
-    #[should_panic(expected = "triangulated mesh")]
-    fn non_triangulated_mesh_to_hittable() {
-        let points = (0..=7)
-            .map(|i| i as f64 * 3.0)
-            .map(|i| [i, i + 1.0, i + 2.0])
-            .map(|[i1, i2, i3]| Point3::new(i1, i2, i3));
-        let mut vertices = points
-            .map(|p| {
-                Rc::new(Vertex {
-                    point: p,
-                    normal: None,
-                    texture_coords: None,
-                })
-            })
-            .collect::<Vec<_>>();
-
-        let face2_vertices = vertices.split_off(3);
-        let face1_vertices = vertices;
-
-        let face1 = FaceDyn {
-            vertices: face1_vertices,
-        };
-        let face2 = FaceDyn {
-            vertices: face2_vertices,
-        };
-
-        let mesh = Mesh {
-            faces: vec![face1, face2],
-        };
-
-        let material = Flat;
-        mesh.to_hittable(&material);
-    }
 
     #[test]
     fn creates_correct_hittable() {
