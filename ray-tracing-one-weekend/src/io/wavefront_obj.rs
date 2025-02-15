@@ -106,7 +106,7 @@ impl WavefrontObj {
                     })
                     .map(|v| Rc::new(v))
                     .collect();
-                FaceDyn { vertices }
+                FaceDyn::new(vertices)
             })
             .collect::<Vec<_>>();
 

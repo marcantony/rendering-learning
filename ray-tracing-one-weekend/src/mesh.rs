@@ -23,7 +23,13 @@ pub trait Face {
 }
 
 pub struct FaceN<const N: usize> {
-    pub vertices: [Rc<Vertex>; N],
+    vertices: [Rc<Vertex>; N],
+}
+impl<const N: usize> FaceN<N> {
+    pub fn new(vertices: [Rc<Vertex>; N]) -> Self {
+        assert!(N >= 3, "Polygons must have at least 3 vertices");
+        FaceN { vertices }
+    }
 }
 impl<const N: usize> Face for FaceN<N> {
     fn vertices(&self) -> &[Rc<Vertex>] {
@@ -32,7 +38,16 @@ impl<const N: usize> Face for FaceN<N> {
 }
 
 pub struct FaceDyn {
-    pub vertices: Vec<Rc<Vertex>>,
+    vertices: Vec<Rc<Vertex>>,
+}
+impl FaceDyn {
+    pub fn new(vertices: Vec<Rc<Vertex>>) -> Self {
+        assert!(
+            vertices.len() >= 3,
+            "Polygons must have at least 3 vertices"
+        );
+        FaceDyn { vertices }
+    }
 }
 impl Face for FaceDyn {
     fn vertices(&self) -> &[Rc<Vertex>] {
@@ -95,13 +110,11 @@ impl Mesh<FaceN<3>> {
 fn fan_triangulate<F: Face>(face: F) -> Vec<FaceN<3>> {
     let mut faces = Vec::new();
     for i in 2..face.vertices().len() {
-        faces.push(FaceN {
-            vertices: [
-                Rc::clone(&face.vertices()[0]),
-                Rc::clone(&face.vertices()[i - 1]),
-                Rc::clone(&face.vertices()[i]),
-            ],
-        });
+        faces.push(FaceN::new([
+            Rc::clone(&face.vertices()[0]),
+            Rc::clone(&face.vertices()[i - 1]),
+            Rc::clone(&face.vertices()[i]),
+        ]));
     }
     faces
 }
@@ -111,6 +124,34 @@ mod tests {
     use crate::{interval::Interval, material::Flat, ray::Ray};
 
     use super::*;
+
+    mod face {
+        use super::*;
+
+        #[test]
+        #[should_panic(expected = "3 vertices")]
+        fn constructing_face_with_less_than_three_vertices_facen() {
+            let v = Vertex {
+                point: Point3::new(0.0, 0.0, 0.0),
+                normal: None,
+                texture_coords: None,
+            };
+
+            FaceN::new([Rc::new(v)]);
+        }
+
+        #[test]
+        #[should_panic(expected = "3 vertices")]
+        fn constructing_face_with_less_than_three_vertices_facedyn() {
+            let v = Vertex {
+                point: Point3::new(0.0, 0.0, 0.0),
+                normal: None,
+                texture_coords: None,
+            };
+
+            FaceDyn::new(vec![Rc::new(v)]);
+        }
+    }
 
     #[test]
     fn creates_correct_hittable() {
@@ -126,7 +167,7 @@ mod tests {
                 texture_coords: None,
             })
         });
-        let face = FaceN { vertices };
+        let face = FaceN::new(vertices);
         let mesh = Mesh { faces: vec![face] };
         let hittable = mesh.to_hittable(&Flat);
 
@@ -152,9 +193,7 @@ mod tests {
             texture_coords: None,
         });
 
-        let face = FaceN {
-            vertices: vertices.map(|v| Rc::new(v)),
-        };
+        let face = FaceN::new(vertices.map(|v| Rc::new(v)));
         let mesh = Mesh { faces: vec![face] };
 
         let triangulated = mesh.triangulate();
