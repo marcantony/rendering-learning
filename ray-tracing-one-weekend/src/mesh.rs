@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, usize};
 
 use crate::{
     bvh::Bvh,
@@ -15,24 +15,42 @@ pub struct Vertex {
 
 /// Represents a single face of a mesh. The vertices of the face should be planar.
 /// Behavior for nonplanar faces is undefined.
-pub struct Face {
+pub trait Face {
     /// The vertices composing the face. Vertices are stored in [Rc] allowing for shared ownership.
     /// A given vertex is assumed to be shared between two faces geometrically if and only if both
     /// faces share ownership of it.
+    fn vertices(&self) -> &[Rc<Vertex>];
+}
+
+pub struct FaceN<const N: usize> {
+    pub vertices: [Rc<Vertex>; N],
+}
+impl<const N: usize> Face for FaceN<N> {
+    fn vertices(&self) -> &[Rc<Vertex>] {
+        &self.vertices
+    }
+}
+
+pub struct FaceDyn {
     pub vertices: Vec<Rc<Vertex>>,
 }
-
-pub struct Mesh {
-    pub faces: Vec<Face>,
+impl Face for FaceDyn {
+    fn vertices(&self) -> &[Rc<Vertex>] {
+        &self.vertices
+    }
 }
 
-impl Mesh {
+pub struct Mesh<F: Face> {
+    pub faces: Vec<F>,
+}
+
+impl<F: Face> Mesh<F> {
     pub fn to_hittable<'a, M: Material + ?Sized>(
         &self,
         material: &'a M,
     ) -> impl Hittable<Material = &'a M> {
         assert!(
-            self.faces.iter().all(|f| f.vertices.len() == 3),
+            self.faces.iter().all(|f| f.vertices().len() == 3),
             "Only a triangulated mesh can be turned into a hittable"
         );
         let all_triangles = self
@@ -40,17 +58,17 @@ impl Mesh {
             .iter()
             .map(|f| {
                 let points = f
-                    .vertices
+                    .vertices()
                     .iter()
                     .map(|v| v.point.clone())
                     .collect::<Vec<_>>();
                 let normals = f
-                    .vertices
+                    .vertices()
                     .iter()
                     .map(|v| v.normal.clone())
                     .collect::<Option<Vec<_>>>();
                 let texture_coords = f
-                    .vertices
+                    .vertices()
                     .iter()
                     .map(|v| v.texture_coords.clone())
                     .collect::<Option<Vec<_>>>();
@@ -65,7 +83,7 @@ impl Mesh {
         Bvh::new(all_triangles)
     }
 
-    pub fn triangulate(self) -> Self {
+    pub fn triangulate(self) -> Mesh<FaceN<3>> {
         let new_faces = self
             .faces
             .into_iter()
@@ -76,14 +94,14 @@ impl Mesh {
     }
 }
 
-fn fan_triangulate(face: Face) -> Vec<Face> {
+fn fan_triangulate<F: Face>(face: F) -> Vec<FaceN<3>> {
     let mut faces = Vec::new();
-    for i in 2..face.vertices.len() {
-        faces.push(Face {
-            vertices: vec![
-                Rc::clone(&face.vertices[0]),
-                Rc::clone(&face.vertices[i - 1]),
-                Rc::clone(&face.vertices[i]),
+    for i in 2..face.vertices().len() {
+        faces.push(FaceN {
+            vertices: [
+                Rc::clone(&face.vertices()[0]),
+                Rc::clone(&face.vertices()[i - 1]),
+                Rc::clone(&face.vertices()[i]),
             ],
         });
     }
@@ -116,10 +134,10 @@ mod tests {
         let face2_vertices = vertices.split_off(3);
         let face1_vertices = vertices;
 
-        let face1 = Face {
+        let face1 = FaceDyn {
             vertices: face1_vertices,
         };
-        let face2 = Face {
+        let face2 = FaceDyn {
             vertices: face2_vertices,
         };
 
@@ -145,9 +163,7 @@ mod tests {
                 texture_coords: None,
             })
         });
-        let face = Face {
-            vertices: Vec::from(vertices),
-        };
+        let face = FaceN { vertices };
         let mesh = Mesh { faces: vec![face] };
         let hittable = mesh.to_hittable(&Flat);
 
@@ -173,8 +189,8 @@ mod tests {
             texture_coords: None,
         });
 
-        let face = Face {
-            vertices: vertices.map(|v| Rc::new(v)).into(),
+        let face = FaceN {
+            vertices: vertices.map(|v| Rc::new(v)),
         };
         let mesh = Mesh { faces: vec![face] };
 

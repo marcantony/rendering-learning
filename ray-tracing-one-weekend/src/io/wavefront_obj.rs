@@ -1,7 +1,7 @@
 use std::{collections::HashMap, io::BufRead, rc::Rc};
 
 use crate::{
-    mesh::{Face, Mesh, Vertex},
+    mesh::{FaceDyn, Mesh, Vertex},
     vec3::{Point3, Vec3},
 };
 
@@ -87,7 +87,7 @@ impl WavefrontObj {
         obj
     }
 
-    pub fn to_mesh(self) -> Mesh {
+    pub fn to_mesh(self) -> Mesh<FaceDyn> {
         let face_elements = self.groups.into_values().flatten();
         let faces = face_elements
             .map(|fe| {
@@ -106,7 +106,7 @@ impl WavefrontObj {
                     })
                     .map(|v| Rc::new(v))
                     .collect();
-                Face { vertices }
+                FaceDyn { vertices }
             })
             .collect::<Vec<_>>();
 
