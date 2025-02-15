@@ -30,7 +30,9 @@ fn main() {
 
     let obj_bytes = include_bytes!("../../objs/teapot-low.obj");
     let reader = BufReader::new(obj_bytes.as_slice());
-    let teapot = WavefrontObj::parse(reader).to_object(&diffuse as &(dyn Material + Sync));
+    let teapot = WavefrontObj::parse(reader)
+        .to_mesh()
+        .to_hittable(&diffuse as &(dyn Material + Sync));
     let transformed_teapot = teapot.scale(2.0).rotate_x(-90.0);
 
     let mut world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> = Vec::new();

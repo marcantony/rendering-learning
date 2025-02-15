@@ -1,9 +1,7 @@
-use std::{collections::HashMap, io::BufRead};
+use std::{collections::HashMap, io::BufRead, rc::Rc};
 
 use crate::{
-    bvh::Bvh,
-    hittable::flat::triangle::Triangle,
-    material::Material,
+    mesh::{Face, Mesh, Vertex},
     vec3::{Point3, Vec3},
 };
 
@@ -85,21 +83,28 @@ impl WavefrontObj {
         obj
     }
 
-    pub fn to_object<'a, M: Material + ?Sized>(self, material: &'a M) -> Bvh<Triangle<&'a M>> {
-        let all_triangles = self
-            .groups
-            .into_values()
-            .flatten()
+    pub fn to_mesh(self) -> Mesh {
+        let tris = self.groups.into_values().flatten();
+        let faces = tris
             .map(|t| {
                 let Tri {
                     points,
                     texture_coords,
                     normals,
                 } = t;
-                Triangle::from_model(points, texture_coords, normals, material)
+                let vertices = (0..3)
+                    .map(|i| {
+                        Rc::new(Vertex {
+                            point: points[i].clone(),
+                            normal: normals.as_ref().map(|ns| ns[i].clone()),
+                            texture_coords: texture_coords.as_ref().map(|tcs| tcs[i].clone()),
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                Face { vertices }
             })
             .collect::<Vec<_>>();
-        Bvh::new(all_triangles)
+        Mesh { faces }
     }
 }
 

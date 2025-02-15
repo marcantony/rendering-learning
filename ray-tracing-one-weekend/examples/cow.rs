@@ -44,7 +44,9 @@ fn main() {
 
     let obj_bytes = include_bytes!("../../objs/spot_triangulated.obj");
     let reader = BufReader::new(obj_bytes.as_slice());
-    let cow = WavefrontObj::parse(reader).to_object(&cow_surface as &(dyn Material + Sync));
+    let cow = WavefrontObj::parse(reader)
+        .to_mesh()
+        .to_hittable(&cow_surface as &(dyn Material + Sync));
     let transformed_cow = cow
         .scale(200.0)
         .rotate_y(45.0)
