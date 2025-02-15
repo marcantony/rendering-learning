@@ -13,7 +13,12 @@ pub struct Vertex {
     pub texture_coords: Option<(f64, f64)>,
 }
 
+/// Represents a single face of a mesh. The vertices of the face should be planar.
+/// Behavior for nonplanar faces is undefined.
 pub struct Face {
+    /// The vertices composing the face. Vertices are stored in [Rc] allowing for shared ownership.
+    /// A given vertex is assumed to be shared between two faces geometrically if and only if both
+    /// faces share ownership of it.
     pub vertices: Vec<Rc<Vertex>>,
 }
 
