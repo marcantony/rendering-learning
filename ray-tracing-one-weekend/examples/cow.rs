@@ -8,6 +8,7 @@ use ray_tracing_one_weekend::{
     hittable::{flat::quad::Quad, Hittable},
     io::wavefront_obj::WavefrontObj,
     material::{DiffuseLight, Lambertian, Material},
+    mesh::{FaceN, Mesh},
     texture::{Image, SolidColor},
     vec3::{Point3, Vec3},
 };
@@ -44,10 +45,8 @@ fn main() {
 
     let obj_bytes = include_bytes!("../../objs/spot_triangulated.obj");
     let reader = BufReader::new(obj_bytes.as_slice());
-    let cow = WavefrontObj::parse(reader)
-        .to_mesh()
-        .triangulate() // TODO: remove triangulation when no longer necessary
-        .to_hittable(&cow_surface as &(dyn Material + Sync));
+    let cow_mesh: Mesh<FaceN<3>> = WavefrontObj::parse(reader).to_mesh().try_into().unwrap();
+    let cow = cow_mesh.to_hittable(&cow_surface as &(dyn Material + Sync));
     let transformed_cow = cow
         .scale(200.0)
         .rotate_y(45.0)

@@ -36,6 +36,19 @@ impl<const N: usize> Face for FaceN<N> {
         &self.vertices
     }
 }
+impl<const N: usize> TryFrom<FaceDyn> for FaceN<N> {
+    type Error = String;
+
+    fn try_from(value: FaceDyn) -> Result<Self, Self::Error> {
+        let len = value.vertices.len();
+        Ok(FaceN {
+            vertices: value
+                .vertices
+                .try_into()
+                .map_err(|_| format!("Face has {len} vertices but N={N}"))?,
+        })
+    }
+}
 
 pub struct FaceDyn {
     vertices: Vec<Rc<Vertex>>,
@@ -52,6 +65,13 @@ impl FaceDyn {
 impl Face for FaceDyn {
     fn vertices(&self) -> &[Rc<Vertex>] {
         &self.vertices
+    }
+}
+impl<const N: usize> From<FaceN<N>> for FaceDyn {
+    fn from(value: FaceN<N>) -> Self {
+        FaceDyn {
+            vertices: value.vertices.into(),
+        }
     }
 }
 
@@ -104,6 +124,40 @@ impl Mesh<FaceN<3>> {
             })
             .collect::<Vec<_>>();
         Bvh::new(all_triangles)
+    }
+}
+
+impl<const N: usize> TryFrom<Mesh<FaceDyn>> for Mesh<FaceN<N>> {
+    type Error = String;
+
+    fn try_from(value: Mesh<FaceDyn>) -> Result<Self, Self::Error> {
+        let (faces, errors): (Vec<_>, Vec<_>) = value
+            .faces
+            .into_iter()
+            .map(|f| TryInto::<FaceN<N>>::try_into(f))
+            .enumerate()
+            .map(|(i, r)| r.map_err(|s| format!("Face {i}: {s}")))
+            .partition(Result::is_ok);
+
+        let errors: Vec<String> = errors
+            .into_iter()
+            .map(|r| r.err().unwrap_or_else(|| panic!("oh no")))
+            .collect();
+        if !errors.is_empty() {
+            let message = errors.join("; ");
+            Err(message)
+        } else {
+            let faces: Vec<FaceN<N>> = faces.into_iter().map(Result::unwrap).collect();
+            Ok(Mesh { faces })
+        }
+    }
+}
+
+impl<const N: usize> From<Mesh<FaceN<N>>> for Mesh<FaceDyn> {
+    fn from(value: Mesh<FaceN<N>>) -> Self {
+        Mesh {
+            faces: value.faces.into_iter().map(|f| f.into()).collect(),
+        }
     }
 }
 

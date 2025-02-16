@@ -10,6 +10,7 @@ use ray_tracing_one_weekend::{
     },
     io::wavefront_obj::WavefrontObj,
     material::{DiffuseLight, Lambertian, Material},
+    mesh::{FaceN, Mesh},
     texture::SolidColor,
     vec3::{Point3, Vec3},
 };
@@ -30,10 +31,8 @@ fn main() {
 
     let obj_bytes = include_bytes!("../../objs/teapot-low.obj");
     let reader = BufReader::new(obj_bytes.as_slice());
-    let teapot = WavefrontObj::parse(reader)
-        .to_mesh()
-        .triangulate() // TODO: remove triangulation when no longer necessary
-        .to_hittable(&diffuse as &(dyn Material + Sync));
+    let teapot_mesh: Mesh<FaceN<3>> = WavefrontObj::parse(reader).to_mesh().try_into().unwrap();
+    let teapot = teapot_mesh.to_hittable(&diffuse as &(dyn Material + Sync));
     let transformed_teapot = teapot.scale(2.0).rotate_x(-90.0);
 
     let mut world: Vec<Box<dyn Hittable<Material = &(dyn Material + Sync)> + Sync>> = Vec::new();
