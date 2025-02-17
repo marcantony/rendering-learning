@@ -49,6 +49,34 @@ impl<const N: usize> TryFrom<FaceDyn> for FaceN<N> {
         })
     }
 }
+impl FaceN<3> {
+    pub fn to_hittable<'a, M: Material + ?Sized>(
+        &self,
+        material: &'a M,
+    ) -> impl Hittable<Material = &'a M> {
+        let points = self
+            .vertices()
+            .iter()
+            .map(|v| v.point.clone())
+            .collect::<Vec<_>>();
+        let normals = self
+            .vertices()
+            .iter()
+            .map(|v| v.normal.clone())
+            .collect::<Option<Vec<_>>>();
+        let texture_coords = self
+            .vertices()
+            .iter()
+            .map(|v| v.texture_coords.clone())
+            .collect::<Option<Vec<_>>>();
+
+        let ps: [Point3; 3] = points.try_into().unwrap();
+        let ns: Option<[Vec3; 3]> = normals.map(|n| n.try_into().unwrap());
+        let tcs: Option<[(f64, f64); 3]> = texture_coords.map(|tc| tc.try_into().unwrap());
+
+        Triangle::from_model(ps, tcs, ns, material)
+    }
+}
 
 pub struct FaceDyn {
     vertices: Vec<Rc<Vertex>>,
@@ -99,29 +127,7 @@ impl Mesh<FaceN<3>> {
         let all_triangles = self
             .faces
             .iter()
-            .map(|f| {
-                let points = f
-                    .vertices()
-                    .iter()
-                    .map(|v| v.point.clone())
-                    .collect::<Vec<_>>();
-                let normals = f
-                    .vertices()
-                    .iter()
-                    .map(|v| v.normal.clone())
-                    .collect::<Option<Vec<_>>>();
-                let texture_coords = f
-                    .vertices()
-                    .iter()
-                    .map(|v| v.texture_coords.clone())
-                    .collect::<Option<Vec<_>>>();
-
-                let ps: [Point3; 3] = points.try_into().unwrap();
-                let ns: Option<[Vec3; 3]> = normals.map(|n| n.try_into().unwrap());
-                let tcs: Option<[(f64, f64); 3]> = texture_coords.map(|tc| tc.try_into().unwrap());
-
-                Triangle::from_model(ps, tcs, ns, material)
-            })
+            .map(|f| f.to_hittable(material))
             .collect::<Vec<_>>();
         Bvh::new(all_triangles)
     }
