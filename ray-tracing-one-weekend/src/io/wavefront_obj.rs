@@ -19,7 +19,7 @@ pub struct WavefrontObj {
     texture_coords: Vec<(f64, f64)>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct FaceVertex {
     p_i: usize,
     tc_i: Option<usize>,
@@ -88,6 +88,11 @@ impl WavefrontObj {
     }
 
     pub fn to_mesh(self) -> Mesh<FaceDyn> {
+        // Basic heuristic to get a reasonable starting map capacity
+        let number_of_faces = self.groups.values().map(Vec::len).sum::<usize>();
+        let mut face_vertex_map: HashMap<FaceVertex, Rc<Vertex>> =
+            HashMap::with_capacity(number_of_faces);
+
         let face_elements = self.groups.into_values().flatten();
         let faces = face_elements
             .map(|fe| {
@@ -95,16 +100,18 @@ impl WavefrontObj {
                     .face_vertices
                     .into_iter()
                     .map(|fv| {
-                        let p = self.vertices[fv.p_i - 1].clone();
-                        let tc = fv.tc_i.map(|i| self.texture_coords[i - 1].clone());
-                        let n = fv.n_i.map(|i| self.normals[i - 1].clone());
-                        Vertex {
-                            point: p,
-                            normal: n,
-                            texture_coords: tc,
-                        }
+                        let vertex_from_map = face_vertex_map.entry(fv).or_insert_with_key(|fv| {
+                            let p = self.vertices[fv.p_i - 1].clone();
+                            let tc = fv.tc_i.map(|i| self.texture_coords[i - 1].clone());
+                            let n = fv.n_i.map(|i| self.normals[i - 1].clone());
+                            Rc::new(Vertex {
+                                point: p,
+                                normal: n,
+                                texture_coords: tc,
+                            })
+                        });
+                        Rc::clone(&vertex_from_map)
                     })
-                    .map(|v| Rc::new(v))
                     .collect();
                 FaceDyn::new(vertices)
             })
@@ -269,5 +276,157 @@ f 1/2/3 2/3/1 3/1/2
                 ]
             }
         );
+    }
+
+    mod to_mesh {
+        use crate::mesh::Face;
+
+        use super::*;
+
+        #[test]
+        fn to_mesh_basic() {
+            let points = vec![
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(1.0, 0.0, 0.0),
+                Point3::new(0.0, 0.0, 1.0),
+            ];
+            let obj = WavefrontObj {
+                ignored: 0,
+                groups: HashMap::from([(
+                    ObjGroup::Default,
+                    vec![FaceElement {
+                        face_vertices: vec![
+                            FaceVertex {
+                                p_i: 1,
+                                tc_i: None,
+                                n_i: None,
+                            },
+                            FaceVertex {
+                                p_i: 2,
+                                tc_i: None,
+                                n_i: None,
+                            },
+                            FaceVertex {
+                                p_i: 3,
+                                tc_i: None,
+                                n_i: None,
+                            },
+                        ],
+                    }],
+                )]),
+                vertices: points.clone(),
+                normals: Vec::new(),
+                texture_coords: Vec::new(),
+            };
+
+            let mesh = obj.to_mesh();
+
+            assert_eq!(mesh.faces.len(), 1);
+
+            let mesh_points = mesh.faces[0]
+                .vertices()
+                .iter()
+                .map(|v| v.point.clone())
+                .collect::<Vec<_>>();
+            assert_eq!(mesh_points, points);
+        }
+
+        #[test]
+        fn common_vertices_shared() {
+            let points = vec![
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(1.0, 0.0, 0.0),
+                Point3::new(0.0, 0.0, 1.0),
+                Point3::new(0.5, 0.5, 0.5),
+            ];
+            let normals = vec![
+                Vec3::new(1.0, 0.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+                Vec3::new(0.0, 0.0, 1.0),
+                Vec3::new(-1.0, 0.0, 0.0),
+            ];
+            let texture_coords = vec![(0.0, 0.0), (0.5, 0.5), (1.0, 1.0), (0.25, 0.75)];
+            let obj = WavefrontObj {
+                ignored: 0,
+                groups: HashMap::from([(
+                    ObjGroup::Default,
+                    vec![
+                        FaceElement {
+                            face_vertices: vec![
+                                FaceVertex {
+                                    p_i: 1,
+                                    tc_i: Some(1),
+                                    n_i: Some(1),
+                                },
+                                FaceVertex {
+                                    p_i: 2,
+                                    tc_i: Some(2),
+                                    n_i: Some(2),
+                                },
+                                FaceVertex {
+                                    p_i: 3,
+                                    tc_i: Some(3),
+                                    n_i: Some(3),
+                                },
+                            ],
+                        },
+                        FaceElement {
+                            face_vertices: vec![
+                                FaceVertex {
+                                    p_i: 2,
+                                    tc_i: Some(2),
+                                    n_i: Some(2),
+                                },
+                                FaceVertex {
+                                    p_i: 3,
+                                    tc_i: Some(3),
+                                    n_i: None,
+                                },
+                                FaceVertex {
+                                    p_i: 4,
+                                    tc_i: Some(4),
+                                    n_i: Some(4),
+                                },
+                            ],
+                        },
+                    ],
+                )]),
+                vertices: points.clone(),
+                normals: normals.clone(),
+                texture_coords: texture_coords.clone(),
+            };
+
+            let mesh = obj.to_mesh();
+
+            assert_eq!(mesh.faces.len(), 2);
+
+            let face1 = &mesh.faces[0];
+            let face2 = &mesh.faces[1];
+
+            // Face 1 vertex 1 should not be in face 2
+            assert!(face2
+                .vertices()
+                .iter()
+                .all(|v| !Rc::ptr_eq(v, &face1.vertices()[0])));
+            // Face 1 vertex 3 should not be in face 2
+            assert!(face2
+                .vertices()
+                .iter()
+                .all(|v| !Rc::ptr_eq(v, &face1.vertices()[2])));
+
+            // Face 2 vertex 2 should not be in face 1
+            assert!(face1
+                .vertices()
+                .iter()
+                .all(|v| !Rc::ptr_eq(v, &face2.vertices()[1])));
+            // Face 2 vertex 3 should not be in face 1
+            assert!(face1
+                .vertices()
+                .iter()
+                .all(|v| !Rc::ptr_eq(v, &face2.vertices()[2])));
+
+            // Face 1 vertex 2 should be shared with face 2 vertex 1
+            assert!(Rc::ptr_eq(&face1.vertices()[1], &face2.vertices()[0]));
+        }
     }
 }
