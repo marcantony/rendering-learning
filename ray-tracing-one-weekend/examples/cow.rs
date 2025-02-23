@@ -16,7 +16,7 @@ use ray_tracing_one_weekend::{
 mod common;
 
 fn main() {
-    let cow_image_bytes = include_bytes!("../../objs/spot_texture.png");
+    let cow_image_bytes = include_bytes!("../../objs/spot/spot_texture.png");
     let mut cow_image = ImageReader::new(Cursor::new(cow_image_bytes))
         .with_guessed_format()
         .unwrap()
@@ -43,9 +43,10 @@ fn main() {
     //     },
     // };
 
-    let obj_bytes = include_bytes!("../../objs/spot_triangulated.obj");
+    let obj_bytes = include_bytes!("../../objs/spot/spot_quadrangulated.obj");
     let reader = BufReader::new(obj_bytes.as_slice());
-    let cow_mesh: Mesh<FaceN<3>> = WavefrontObj::parse(reader).to_mesh().try_into().unwrap();
+    let cow_mesh_quad: Mesh<FaceN<4>> = WavefrontObj::parse(reader).to_mesh().try_into().unwrap();
+    let cow_mesh = cow_mesh_quad.triangulate();
     let cow = cow_mesh.to_hittable(&cow_surface as &(dyn Material + Sync));
     let transformed_cow = cow
         .scale(200.0)
