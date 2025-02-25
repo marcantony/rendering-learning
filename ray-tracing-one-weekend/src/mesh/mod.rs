@@ -1,5 +1,7 @@
 use std::{rc::Rc, usize};
 
+pub mod subdivision;
+
 use crate::{
     bvh::Bvh,
     hittable::{flat::triangle::Triangle, Hittable},
